@@ -66,13 +66,21 @@ public final class UiScale {
 	public static ImageIcon scaledCarIcon(Component component, int modelIndex, int width, int height) {
 		try {
 			BufferedImage sprite = ResourcePaths.loadCarSprite(modelIndex);
-			int scaledWidth = scale(component, width);
-			int scaledHeight = scale(component, height);
-			Image image = sprite.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-			return new ImageIcon(image);
+			return new ImageIcon(scaleImage(sprite, scale(component, width), scale(component, height)));
 		} catch (IOException exception) {
 			return scaledIcon(component, ResourcePaths.carSpritePath(modelIndex), width, height);
 		}
+	}
+
+	private static BufferedImage scaleImage(BufferedImage source, int width, int height) {
+		BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		java.awt.Graphics2D graphics = scaled.createGraphics();
+		graphics.setRenderingHint(
+				java.awt.RenderingHints.KEY_INTERPOLATION,
+				java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		graphics.drawImage(source, 0, 0, width, height, null);
+		graphics.dispose();
+		return scaled;
 	}
 
 	public static ImageIcon scaledIcon(Component component, String spritePath, int width, int height) {

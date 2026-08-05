@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Downloads GTA 2 car artwork sprites, flips them horizontally (art faces left;
 # the game expects sprites facing right like the bundled car PNG files),
-# and writes PNGs to $BUILD_DIR/sprites/carN.png.
+# keys out the top-left background pixel, and writes RGBA PNGs to $BUILD_DIR/sprites/carN.png.
 set -u
 
 BUILD_DIR="${1:-build}"
 OUT_DIR="${BUILD_DIR}/sprites"
 FALLBACK_DIR="src/sprites"
 TARGET_WIDTH="${CAR_SPRITE_WIDTH:-40}"
+CHROMA_TOLERANCE="${CAR_CHROMA_TOLERANCE:-36}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -29,6 +30,13 @@ URLS=(
 )
 NAMES=("A-Type" "B-Type" "Z-Type" "T-Rex")
 
+chroma_filter() {
+	local tolerance="$1"
+	cat <<EOF
+format=rgba,hflip,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte(abs(r(X,Y)-r(0,0))+abs(g(X,Y)-g(0,0))+abs(b(X,Y)-b(0,0)),${tolerance}),0,255)'
+EOF
+}
+
 prepare_sprite() {
 	local index="$1"
 	local url="$2"
@@ -49,9 +57,9 @@ prepare_sprite() {
 		&& command -v ffmpeg >/dev/null 2>&1 \
 		&& curl -fsSL "${url}" -o "${temp_file}" \
 		&& ffmpeg -y -loglevel error -i "${temp_file}" \
-			-vf "hflip,format=rgba,colorkey=0x000000:0.08:0.05,format=rgb24,pad=iw:ih:0:0:white" \
+			-vf "$(chroma_filter "${CHROMA_TOLERANCE}")" \
 			-update 1 -frames:v 1 "${output}"; then
-		echo "Prepared car${index}.png from ${name} artwork (horizontally flipped)."
+		echo "Prepared car${index}.png from ${name} artwork (flipped, top-left chroma key)."
 		rm -f "${temp_file}"
 		return 0
 	fi
