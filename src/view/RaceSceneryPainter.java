@@ -112,7 +112,7 @@ public final class RaceSceneryPainter {
 					* TREE_SIZE_SCALE[variant];
 			double x = size * 0.7 + random.nextDouble() * (width - size * 1.4);
 			double y = size * 0.7 + random.nextDouble() * (height - size * 1.4);
-			double clearance = size * 0.2;
+			double clearance = size * 0.35;
 			Rectangle2D footprint = new Rectangle2D.Double(
 					x - size * 0.5 - clearance,
 					y - size * 0.5 - clearance,
