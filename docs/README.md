@@ -2,8 +2,6 @@
 
 A desktop racing game inspired by [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/), developed as the Supélec engineering software project (Sequence 6, 2014/2015).
 
-Authors: **Alexandre LOEBLEIN HEINEN** and **Gautier SHARPIN**
-
 ## Features
 
 - Top-down arcade racing with four car models and four track layouts
@@ -104,4 +102,4 @@ GitHub Actions (`.github/workflows/ci.yml`) compiles the project and runs a head
 
 ## License
 
-This repository contains a student academic project. No explicit license file is provided; contact the authors for reuse questions.
+This repository contains a student academic project. No explicit license file is provided.

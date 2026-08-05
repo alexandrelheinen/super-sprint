@@ -126,7 +126,7 @@ public class HallOfFame extends Observable {
 				+ " - Track "
 				+ (trackIndex + 1)
 				+ "\nEnter the player name:";
-		String playerName = JOptionPane.showInputDialog(message, "Alexandre LOEBLEIN HEINEN");
+		String playerName = JOptionPane.showInputDialog(message, "Player");
 		for (int shiftIndex = MAX_RESULTS - 1; shiftIndex > rankIndex; shiftIndex--) {
 			results[trackIndex][shiftIndex] = results[trackIndex][shiftIndex - 1];
 		}
