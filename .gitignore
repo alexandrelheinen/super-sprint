@@ -3,3 +3,4 @@
 /src/*/*.class
 Thumbs.db
 .DS_Store
+*.Identifier

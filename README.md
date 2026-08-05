@@ -1,6 +1,12 @@
 # Super Sprint Supélec
 
-A desktop racing game inspired by [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/), developed as the Supélec engineering software project (Sequence 6, 2014/2015).
+<img src="src/sprites/icon2.png" alt="Super Sprint" width="120" align="left" style="margin-right: 15px; margin-bottom: 15px;">
+
+This project was carried out as part of the Supélec engineering curriculum (*Projet Logiciel*, Sequence 6) between November 2014 and February 2015.
+
+The goal was to design and implement a complete desktop application in Java, from requirements analysis through to a playable prototype with documentation and UML models.
+
+The chosen theme is a simplified clone of the arcade game [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/), a top-down car race on modular tracks, with lap counting, collisions, and a persistent leaderboard.
 
 ## Features
 
