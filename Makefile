@@ -1,6 +1,6 @@
 JAVA_SOURCES := $(shell find src -name '*.java')
 BUILD_DIR := build
-MAIN_CLASS := controleur.Main
+MAIN_CLASS := controller.Main
 SMOKE_TIMEOUT_SEC := 5
 
 .PHONY: all compile run smoke-test clean help
