@@ -6,10 +6,10 @@ public final class GameCatalog {
 	private static final String LAP_LABEL_PLURAL = " laps";
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 
-	public static final String[] CAR_MODEL_NAMES = GameSettings.CAR_MODEL_NAMES;
-	public static final String[] TRACK_NAMES = GameSettings.TRACK_NAMES;
-	public static final int[] LAP_COUNT_OPTIONS = GameSettings.LAP_COUNT_OPTIONS;
-	public static final int DEFAULT_LAP_COUNT = GameSettings.DEFAULT_LAP_COUNT;
+	public static final String[] CAR_MODEL_NAMES = GameConfig.CAR_MODEL_NAMES;
+	public static final String[] TRACK_NAMES = GameConfig.TRACK_NAMES;
+	public static final int[] LAP_COUNT_OPTIONS = GameConfig.LAP_COUNT_OPTIONS;
+	public static final int DEFAULT_LAP_COUNT = GameConfig.DEFAULT_LAP_COUNT;
 
 	private GameCatalog() {
 	}

@@ -4,6 +4,7 @@ MAIN_CLASS := controller.Main
 SMOKE_TIMEOUT_SEC := 5
 SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
 BUNDLED_CAR_SPRITES := src/sprites/car1.png src/sprites/car2.png src/sprites/car3.png src/sprites/car4.png
+CONFIG_FILES := $(wildcard src/data/config/*.properties)
 
 .PHONY: all compile run smoke-test clean help prepare-sprites
 
@@ -22,7 +23,12 @@ $(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(BUNDLED_CAR_SPRITES)
 
 prepare-sprites: $(BUILD_DIR)/sprites/.sprites-stamp
 
-$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) src/data/game.properties $(BUILD_DIR)/sprites/.sprites-stamp
+$(BUILD_DIR)/config/.stamp: $(CONFIG_FILES)
+	@mkdir -p $(BUILD_DIR)/config
+	@cp src/data/config/*.properties $(BUILD_DIR)/config/
+	@touch $(BUILD_DIR)/config/.stamp
+
+$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(CONFIG_FILES) $(BUILD_DIR)/sprites/.sprites-stamp $(BUILD_DIR)/config/.stamp
 	@mkdir -p $(BUILD_DIR)
 	@find src -name '*.java' > $(BUILD_DIR)/sources.txt
 	javac -d $(BUILD_DIR) -sourcepath src @$(BUILD_DIR)/sources.txt

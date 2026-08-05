@@ -10,8 +10,8 @@ import view.GameFrame;
 
 public class Car extends Observable {
 
-	public static final int CAR_MODEL_COUNT = GameSettings.CAR_MODEL_NAMES.length;
-	public static final int MAX_CARS = GameSettings.MAX_CARS;
+	public static final int CAR_MODEL_COUNT = GameConfig.CAR_MODEL_NAMES.length;
+	public static final int MAX_CARS = GameConfig.MAX_CARS;
 	public static final int STAT_COUNT = 3;
 	public static final int STAT_HANDLING_INDEX = 2;
 

@@ -5,8 +5,9 @@ import java.util.Timer;
 import javax.swing.SwingUtilities;
 
 import model.Circuit;
+import model.ConfigLoader;
 import model.GameCatalog;
-import model.GameSettings;
+import model.GameConfig;
 import model.HallOfFame;
 import view.GameFrame;
 import view.MenuFrame;
@@ -18,8 +19,10 @@ public class Game {
 	public static final int MS_PER_SECOND = 1000;
 	public static final int ONE_BASED_INDEX_OFFSET = 1;
 
-	private static final String GAME_TITLE_PREFIX = GameSettings.GAME_TITLE + " — ";
-	private static final String MSG_COMPUTER_WON = "The computer won.";
+	private static final String GAME_TITLE_PREFIX = GameConfig.GAME_TITLE + " — ";
+	private static final String MSG_COMPUTER_WON = ConfigLoader.getMessage(
+			"messages.game.computer.won",
+			"The computer won.");
 	private static final double AI_HALL_OF_FAME_TIME_MULTIPLIER = 1000.0;
 
 	public static final int[][][] TRACK_MAPS = {

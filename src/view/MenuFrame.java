@@ -27,7 +27,8 @@ import controller.Game;
 import model.Car;
 import model.Circuit;
 import model.GameCatalog;
-import model.GameSettings;
+import model.ConfigLoader;
+import model.GameConfig;
 import model.HallOfFame;
 import model.ResourcePaths;
 import view.components.ArcadeButton;
@@ -38,9 +39,9 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String WINDOW_TITLE = GameSettings.GAME_TITLE;
-	private static final int MAX_HUMAN_PLAYERS = GameSettings.MAX_HUMAN_PLAYERS;
-	private static final int MAX_CARS = GameSettings.MAX_CARS;
+	private static final String WINDOW_TITLE = GameConfig.GAME_TITLE;
+	private static final int MAX_HUMAN_PLAYERS = GameConfig.MAX_HUMAN_PLAYERS;
+	private static final int MAX_CARS = GameConfig.MAX_CARS;
 	private static final int STAT_COUNT = Car.STAT_COUNT;
 	private static final int DEFAULT_SELECTED_INDEX = 0;
 	private static final int DEFAULT_SELECTED_TRACK = 1;
@@ -85,20 +86,26 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String COMBO_NAME_TRACK = "track";
 	private static final String COMBO_NAME_LAPS = "laps";
 
-	private static final String HERO_TITLE = "SUPER SPRINT SUPELEC";
-	private static final String HERO_SUBTITLE = "Arcade top-down racing";
-	private static final String BUTTON_ONE_PLAYER = "1 Player";
-	private static final String BUTTON_TWO_PLAYERS = "2 Players";
-	private static final String BUTTON_HALL_OF_FAME = "Hall of Fame";
-	private static final String BUTTON_HELP = "Help & Info";
-	private static final String RACE_SETUP_TITLE = "Race Setup";
-	private static final String RACE_SETUP_SUBTITLE = "Choose cars, track, laps, and launch the grid";
-	private static final String PLAYER_SECTION_PREFIX = "Player ";
-	private static final String TRACK_SECTION_TITLE = "Track";
-	private static final String LAPS_SECTION_TITLE = "Laps";
-	private static final String BUTTON_START_RACE = "Start Race";
-	private static final String BUTTON_MAIN_MENU = "Main Menu";
-	private static final String[] STAT_LABELS = {"Acceleration", "Top Speed", "Handling"};
+	private static final String HERO_TITLE = ConfigLoader.getString("messages.menu.hero.title", "SUPER SPRINT SUPELEC");
+	private static final String HERO_SUBTITLE = ConfigLoader.getString("messages.menu.hero.subtitle", "Arcade top-down racing");
+	private static final String BUTTON_ONE_PLAYER = ConfigLoader.getString("messages.menu.button.one.player", "1 Player");
+	private static final String BUTTON_TWO_PLAYERS = ConfigLoader.getString("messages.menu.button.two.players", "2 Players");
+	private static final String BUTTON_HALL_OF_FAME = ConfigLoader.getString("messages.menu.button.hall", "Hall of Fame");
+	private static final String BUTTON_HELP = ConfigLoader.getString("messages.menu.button.help", "Help & Info");
+	private static final String RACE_SETUP_TITLE = ConfigLoader.getString("messages.menu.race.setup.title", "Race Setup");
+	private static final String RACE_SETUP_SUBTITLE = ConfigLoader.getString(
+			"messages.menu.race.setup.subtitle",
+			"Choose cars, track, laps, and launch the grid");
+	private static final String PLAYER_SECTION_PREFIX = ConfigLoader.getString("messages.menu.section.player.prefix", "Player ");
+	private static final String TRACK_SECTION_TITLE = ConfigLoader.getString("messages.menu.section.track", "Track");
+	private static final String LAPS_SECTION_TITLE = ConfigLoader.getString("messages.menu.section.laps", "Laps");
+	private static final String BUTTON_START_RACE = ConfigLoader.getString("messages.menu.button.start", "Start Race");
+	private static final String BUTTON_MAIN_MENU = ConfigLoader.getString("messages.menu.button.main", "Main Menu");
+	private static final String[] STAT_LABELS = {
+			ConfigLoader.getString("messages.menu.stat.acceleration", "Acceleration"),
+			ConfigLoader.getString("messages.menu.stat.top.speed", "Top Speed"),
+			ConfigLoader.getString("messages.menu.stat.handling", "Handling")
+	};
 	private static final int[][] STAT_BAR_LIMITS = {{100, 250}, {200, 400}, {30, 60}};
 
 	private static final String SPRITE_ICON = "icon.png";
@@ -106,17 +113,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String TRACK_PREVIEW_PREFIX = "track_preview";
 	private static final String TRACK_PREVIEW_SUFFIX = ".png";
 
-	private static final String HELP_MESSAGE = "SUPER SPRINT SUPELEC\n"
-			+ "_______________________________________\n"
-			+ "GENERAL INFORMATION:\n\n"
-			+ "Software Project 2014/2015 - Sequence 6\n"
-			+ "Version from 14.01.14\n"
-			+ "_______________________________________\n"
-			+ "CONTROLS:\n\n"
-			+ "Player 1: arrow keys\n"
-			+ "Player 2: W/A/S/D keys\n"
-			+ "_______________________________________\n"
-			+ "Choose the number of laps in the race setup screen.";
+	private static final String HELP_MESSAGE = ConfigLoader.getMessage("messages.help", "");
 
 	private final HallFrame hallFrame;
 	private final HallOfFame hallOfFame;

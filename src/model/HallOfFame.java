@@ -24,16 +24,13 @@ public class HallOfFame extends Observable {
 	private static final int DEFAULT_BASE_TIME_MS = 30000;
 	private static final int DEFAULT_TIME_STEP_MS = 1000;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
-	private static final String DEFAULT_PLAYER_NAME = "Player";
-	private static final String MSG_NEW_ENTRY_PREFIX = "New Hall of Fame entry!\n#";
-	private static final String MSG_NEW_ENTRY_SEPARATOR = " - ";
-	private static final String MSG_NEW_ENTRY_SUFFIX = "\nEnter the player name:";
-	private static final String MSG_CREATE_FILE = "\nA new Hall of Fame file will be created.";
-
-	private static final String[] DEFAULT_NAMES = {
-			"Paul", "Alexandre", "Chloe", "Nathan", "Raphael",
-			"Louise", "Arthur", "Emma", "Jules", "Amelie"
-	};
+	private static final String DEFAULT_PLAYER_NAME = ConfigLoader.getString("messages.hall.default.player", "Player");
+	private static final String MSG_CREATE_FILE_SUFFIX = ConfigLoader.getMessage(
+			"messages.hall.create.file.suffix",
+			"\nA new Hall of Fame file will be created.");
+	private static final String MSG_NEW_ENTRY_PROMPT = ConfigLoader.getMessage(
+			"messages.hall.new.entry.prompt",
+			"New Hall of Fame entry!\n#%d - %s\nEnter the player name:");
 
 	private final Result[][] results;
 	private final Path hallOfFameFile;
@@ -55,7 +52,7 @@ public class HallOfFame extends Observable {
 		} catch (Exception exception) {
 			JOptionPane.showMessageDialog(
 					null,
-					exception.getMessage() + MSG_CREATE_FILE);
+					exception.getMessage() + MSG_CREATE_FILE_SUFFIX);
 			initializeDefaultRecords();
 		}
 
@@ -86,10 +83,11 @@ public class HallOfFame extends Observable {
 	}
 
 	private void initializeDefaultRecords() {
+		String[] defaultNames = GameConfig.HALL_DEFAULT_NAMES;
 		for (int trackIndex = 0; trackIndex < Circuit.TRACK_COUNT; trackIndex++) {
 			for (int rankIndex = 0; rankIndex < MAX_RESULTS; rankIndex++) {
 				results[trackIndex][rankIndex] = new Result(
-						DEFAULT_NAMES[rankIndex],
+						defaultNames[rankIndex],
 						DEFAULT_BASE_TIME_MS + (long) DEFAULT_TIME_STEP_MS * rankIndex);
 			}
 		}
@@ -134,11 +132,10 @@ public class HallOfFame extends Observable {
 	}
 
 	private void insertResult(int rankIndex, double timeMs, int trackIndex) {
-		String message = MSG_NEW_ENTRY_PREFIX
-				+ (rankIndex + ONE_BASED_INDEX_OFFSET)
-				+ MSG_NEW_ENTRY_SEPARATOR
-				+ GameCatalog.trackName(trackIndex + ONE_BASED_INDEX_OFFSET)
-				+ MSG_NEW_ENTRY_SUFFIX;
+		String message = String.format(
+				MSG_NEW_ENTRY_PROMPT,
+				rankIndex + ONE_BASED_INDEX_OFFSET,
+				GameCatalog.trackName(trackIndex + ONE_BASED_INDEX_OFFSET));
 		String playerName = JOptionPane.showInputDialog(message, DEFAULT_PLAYER_NAME);
 		for (int shiftIndex = MAX_RESULTS - ONE_BASED_INDEX_OFFSET; shiftIndex > rankIndex; shiftIndex--) {
 			results[trackIndex][shiftIndex] = results[trackIndex][shiftIndex - ONE_BASED_INDEX_OFFSET];

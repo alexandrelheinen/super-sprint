@@ -8,8 +8,8 @@ import view.GameFrame;
 
 public class Circuit extends Observable {
 
-	public static final int TRACK_COUNT = GameSettings.TRACK_NAMES.length;
-	public static final int START_SLOT_COUNT = GameSettings.MAX_CARS;
+	public static final int TRACK_COUNT = GameConfig.TRACK_NAMES.length;
+	public static final int START_SLOT_COUNT = GameConfig.MAX_CARS;
 
 	public static final int TILE_STRAIGHT_HORIZONTAL = 1;
 	public static final int TILE_STRAIGHT_VERTICAL = 2;
