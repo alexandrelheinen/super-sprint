@@ -3,10 +3,8 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
-import view.GameFrame;
-
 /**
- * Builds ordered centerline waypoints for pure pursuit tracking on tile circuits.
+ * Builds ordered centerline waypoints in meters for pure pursuit tracking.
  */
 public final class CircuitPath {
 
@@ -29,13 +27,13 @@ public final class CircuitPath {
 		int maxCol = bounds[3];
 		int midRow = (minRow + maxRow) / 2;
 
-		double tileSize = GameFrame.TILE_SIZE;
-		double centerRadius = (Circuit.INNER_RADIUS + Circuit.OUTER_RADIUS) / 2.0;
+		double tileSizeMeters = WorldUnits.METERS_PER_TILE;
+		double centerRadiusMeters = WorldUnits.pxToM((Circuit.INNER_RADIUS + Circuit.OUTER_RADIUS) / 2.0);
 
-		double leftX = minCol * tileSize + tileSize / 2.0;
-		double rightX = maxCol * tileSize + tileSize / 2.0;
-		double topY = minRow * tileSize + tileSize / 2.0;
-		double bottomY = midRow * tileSize + tileSize / 2.0;
+		double leftX = minCol * tileSizeMeters + tileSizeMeters / 2.0;
+		double rightX = maxCol * tileSizeMeters + tileSizeMeters / 2.0;
+		double topY = minRow * tileSizeMeters + tileSizeMeters / 2.0;
+		double bottomY = midRow * tileSizeMeters + tileSizeMeters / 2.0;
 
 		List<double[]> points = new ArrayList<>();
 
@@ -47,7 +45,7 @@ public final class CircuitPath {
 				maxCol,
 				-Math.PI / 2.0,
 				0.0,
-				centerRadius);
+				centerRadiusMeters);
 		appendStraight(points, rightX, bottomY, rightX, topY, STRAIGHT_SAMPLE_COUNT);
 		appendCornerArcForTile(
 				points,
@@ -56,7 +54,7 @@ public final class CircuitPath {
 				maxCol,
 				0.0,
 				Math.PI / 2.0,
-				centerRadius);
+				centerRadiusMeters);
 		appendStraight(points, rightX, topY, leftX, topY, STRAIGHT_SAMPLE_COUNT);
 		appendCornerArcForTile(
 				points,
@@ -65,7 +63,7 @@ public final class CircuitPath {
 				minCol,
 				Math.PI / 2.0,
 				Math.PI,
-				centerRadius);
+				centerRadiusMeters);
 		appendStraight(points, leftX, topY, leftX, bottomY, STRAIGHT_SAMPLE_COUNT);
 		appendCornerArcForTile(
 				points,
@@ -74,7 +72,7 @@ public final class CircuitPath {
 				minCol,
 				Math.PI,
 				3.0 * Math.PI / 2.0,
-				centerRadius);
+				centerRadiusMeters);
 
 		return toArray(points);
 	}
@@ -109,23 +107,23 @@ public final class CircuitPath {
 			int col,
 			double startAngle,
 			double endAngle,
-			double radius) {
-		double[] center = cornerCenter(trackMap[row][col], row, col);
-		appendCornerArc(points, center[0], center[1], startAngle, endAngle, radius);
+			double radiusMeters) {
+		double[] center = cornerCenterMeters(trackMap[row][col], row, col);
+		appendCornerArc(points, center[0], center[1], startAngle, endAngle, radiusMeters);
 	}
 
-	private static double[] cornerCenter(int tileType, int row, int col) {
-		double tileSize = GameFrame.TILE_SIZE;
-		double tileOriginX = col * tileSize;
-		double tileOriginY = row * tileSize;
+	private static double[] cornerCenterMeters(int tileType, int row, int col) {
+		double tileSizeMeters = WorldUnits.METERS_PER_TILE;
+		double tileOriginX = col * tileSizeMeters;
+		double tileOriginY = row * tileSizeMeters;
 
 		switch (tileType) {
 			case Circuit.TILE_CORNER_BOTTOM_RIGHT:
-				return new double[] {tileOriginX, tileOriginY + tileSize};
+				return new double[] {tileOriginX, tileOriginY + tileSizeMeters};
 			case Circuit.TILE_CORNER_TOP_RIGHT:
-				return new double[] {tileOriginX + tileSize, tileOriginY + tileSize};
+				return new double[] {tileOriginX + tileSizeMeters, tileOriginY + tileSizeMeters};
 			case Circuit.TILE_CORNER_TOP_LEFT:
-				return new double[] {tileOriginX + tileSize, tileOriginY};
+				return new double[] {tileOriginX + tileSizeMeters, tileOriginY};
 			case Circuit.TILE_CORNER_BOTTOM_LEFT:
 			default:
 				return new double[] {tileOriginX, tileOriginY};
@@ -154,7 +152,7 @@ public final class CircuitPath {
 			double cornerY,
 			double startAngle,
 			double endAngle,
-			double radius) {
+			double radiusMeters) {
 		double delta = endAngle - startAngle;
 		if (delta < 0.0) {
 			delta += TWO_PI;
@@ -163,8 +161,8 @@ public final class CircuitPath {
 			double t = index / (double) ARC_SAMPLE_COUNT;
 			double angle = startAngle + t * delta;
 			points.add(new double[] {
-					cornerX + radius * Math.cos(angle),
-					cornerY + radius * Math.sin(angle)
+					cornerX + radiusMeters * Math.cos(angle),
+					cornerY + radiusMeters * Math.sin(angle)
 			});
 		}
 	}

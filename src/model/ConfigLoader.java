@@ -63,6 +63,19 @@ public final class ConfigLoader {
 		}
 	}
 
+	public static double getDouble(String key, double fallback) {
+		String value = PROPERTIES.getProperty(key);
+		if (value == null || value.isBlank()) {
+			return fallback;
+		}
+		try {
+			return Double.parseDouble(value.trim());
+		} catch (NumberFormatException exception) {
+			System.err.println("Invalid double for config key " + key + ": " + value);
+			return fallback;
+		}
+	}
+
 	public static String[] getCommaSeparated(String key, String fallback) {
 		String raw = getString(key, fallback);
 		if (raw.isEmpty()) {

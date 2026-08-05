@@ -21,10 +21,11 @@ public class StatBar extends JComponent {
 	private static final int CORNER_ARC = 10;
 
 	private final Component context;
-	private int minimum;
-	private int maximum;
-	private int value;
+	private double minimum;
+	private double maximum;
+	private double value;
 	private String label;
+	private String valueSuffix = "";
 
 	public StatBar(Component context) {
 		this.context = context;
@@ -32,12 +33,21 @@ public class StatBar extends JComponent {
 	}
 
 	public void configure(String label, int minimum, int maximum) {
+		configure(label, minimum, maximum, "");
+	}
+
+	public void configure(String label, double minimum, double maximum, String valueSuffix) {
 		this.label = label;
 		this.minimum = minimum;
 		this.maximum = maximum;
+		this.valueSuffix = valueSuffix == null ? "" : valueSuffix;
 	}
 
 	public void setValue(int value) {
+		setValue((double) value);
+	}
+
+	public void setValue(double value) {
 		this.value = Math.max(minimum, Math.min(maximum, value));
 		repaint();
 	}
@@ -62,7 +72,7 @@ public class StatBar extends JComponent {
 		graphics2D.setColor(GameTheme.BACKGROUND_DARK);
 		graphics2D.fillRoundRect(0, barY, barWidth, barHeight, CORNER_ARC, CORNER_ARC);
 
-		double ratio = (value - minimum) / (double) (maximum - minimum);
+		double ratio = (value - minimum) / (maximum - minimum);
 		int fillWidth = Math.max(UiScale.scale(context, 6), (int) (barWidth * ratio));
 		graphics2D.setPaint(new GradientPaint(
 				0,
@@ -74,9 +84,16 @@ public class StatBar extends JComponent {
 		graphics2D.fillRoundRect(0, barY, fillWidth, barHeight, CORNER_ARC, CORNER_ARC);
 
 		graphics2D.setColor(GameTheme.TEXT_PRIMARY);
-		String valueText = Integer.toString(value);
+		String valueText = formatValue(value) + valueSuffix;
 		FontMetrics metrics = graphics2D.getFontMetrics();
 		graphics2D.drawString(valueText, barWidth - metrics.stringWidth(valueText), barY + barHeight - 4);
 		graphics2D.dispose();
+	}
+
+	private static String formatValue(double value) {
+		if (Math.rint(value) == value) {
+			return Integer.toString((int) value);
+		}
+		return String.format("%.1f", value);
 	}
 }

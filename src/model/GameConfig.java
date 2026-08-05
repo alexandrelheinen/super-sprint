@@ -13,6 +13,8 @@ public final class GameConfig {
 	private static final String KEY_LAP_COUNT_OPTIONS = "catalog.lap.options";
 	private static final String KEY_LAP_COUNT_DEFAULT = "catalog.lap.default";
 	private static final String KEY_HALL_DEFAULT_NAMES = "catalog.hall.default.names";
+	private static final String KEY_PIXELS_PER_METER = "world.pixelsPerMeter";
+	private static final String KEY_METERS_PER_TILE = "world.metersPerTile";
 
 	private static final String DEFAULT_GAME_TITLE = "Super Sprint Supelec";
 	private static final String DEFAULT_CAR_MODEL_NAMES = "A-Type,B-Type,Z-Type,T-Rex";
@@ -21,6 +23,8 @@ public final class GameConfig {
 	private static final int DEFAULT_LAP_COUNT_FALLBACK = 3;
 	private static final int DEFAULT_MAX_CARS = 4;
 	private static final int DEFAULT_MAX_HUMAN_PLAYERS = 2;
+	private static final double DEFAULT_PIXELS_PER_METER = 10.0;
+	private static final double DEFAULT_METERS_PER_TILE = 21.9;
 	private static final String DEFAULT_HALL_NAMES =
 			"Paul,Alexandre,Chloe,Nathan,Raphael,Louise,Arthur,Emma,Jules,Amelie";
 
@@ -33,6 +37,10 @@ public final class GameConfig {
 	public static final int MAX_HUMAN_PLAYERS = ConfigLoader.getInt(KEY_MAX_HUMAN_PLAYERS, DEFAULT_MAX_HUMAN_PLAYERS);
 	public static final String[] HALL_DEFAULT_NAMES =
 			ConfigLoader.getCommaSeparated(KEY_HALL_DEFAULT_NAMES, DEFAULT_HALL_NAMES);
+	public static final double PIXELS_PER_METER =
+			ConfigLoader.getDouble(KEY_PIXELS_PER_METER, DEFAULT_PIXELS_PER_METER);
+	public static final double METERS_PER_TILE =
+			ConfigLoader.getDouble(KEY_METERS_PER_TILE, DEFAULT_METERS_PER_TILE);
 
 	private GameConfig() {
 	}

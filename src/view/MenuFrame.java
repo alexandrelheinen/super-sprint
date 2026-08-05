@@ -98,11 +98,16 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String BUTTON_START_RACE = ConfigLoader.getString("messages.menu.button.start", "Start Race");
 	private static final String BUTTON_MAIN_MENU = ConfigLoader.getString("messages.menu.button.main", "Main Menu");
 	private static final String[] STAT_LABELS = {
-			ConfigLoader.getString("messages.menu.stat.acceleration", "Acceleration"),
-			ConfigLoader.getString("messages.menu.stat.top.speed", "Top Speed"),
+			ConfigLoader.getString("messages.menu.stat.acceleration", "Acceleration (m/s²)"),
+			ConfigLoader.getString("messages.menu.stat.top.speed", "Top Speed (m/s)"),
 			ConfigLoader.getString("messages.menu.stat.handling", "Handling")
 	};
-	private static final int[][] STAT_BAR_LIMITS = {{100, 250}, {200, 400}, {30, 60}};
+	private static final double[][] STAT_BAR_LIMITS = {
+			{8.0, 25.0},
+			{20.0, 40.0},
+			{30.0, 60.0}
+	};
+	private static final String[] STAT_VALUE_SUFFIXES = {" m/s²", " m/s", ""};
 
 	private static final String SPRITE_ICON = "icon.png";
 	private static final String TRACK_PREVIEW_PREFIX = "track_preview";
@@ -211,7 +216,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 				carStatBars[playerIndex][statIndex].configure(
 						STAT_LABELS[statIndex],
 						STAT_BAR_LIMITS[statIndex][0],
-						STAT_BAR_LIMITS[statIndex][1]);
+						STAT_BAR_LIMITS[statIndex][1],
+						STAT_VALUE_SUFFIXES[statIndex]);
 				statsPanel.add(carStatBars[playerIndex][statIndex]);
 				statsPanel.add(Box.createVerticalStrut(6));
 			}
@@ -379,9 +385,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private void updateCarPreview(int playerIndex, int modelIndex) {
 		carIcons[playerIndex].setIcon(
 				UiScale.scaledCarIcon(this, modelIndex + ONE_BASED_INDEX_OFFSET, CAR_PREVIEW_WIDTH, CAR_PREVIEW_HEIGHT));
-		int[] stats = Car.CAR_MODEL_STATS[modelIndex];
 		for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
-			carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
+			carStatBars[playerIndex][statIndex].setValue(Car.getModelStat(modelIndex, statIndex));
 		}
 		selectedCarModels[playerIndex] = modelIndex + ONE_BASED_INDEX_OFFSET;
 	}
