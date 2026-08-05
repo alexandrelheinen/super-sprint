@@ -34,9 +34,9 @@ public final class UiScale {
 	}
 
 	public static float scaleFactor(Component component) {
-		return Math.min(
-				component.getWidth() / (float) REFERENCE_WIDTH,
-				component.getHeight() / (float) REFERENCE_HEIGHT);
+		int width = component.getWidth() > 0 ? component.getWidth() : REFERENCE_WIDTH;
+		int height = component.getHeight() > 0 ? component.getHeight() : REFERENCE_HEIGHT;
+		return Math.min(width / (float) REFERENCE_WIDTH, height / (float) REFERENCE_HEIGHT);
 	}
 
 	public static int scale(Component component, int value) {
