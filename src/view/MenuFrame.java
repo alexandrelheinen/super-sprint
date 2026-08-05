@@ -269,7 +269,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		} else {
 			int trackIndex = box.getSelectedIndex();
 			selectedTrack = trackIndex + 1;
-			trackIcon.setIcon(new ImageIcon(ResourcePaths.bundledSprite("mini_circuit" + (trackIndex + 1) + ".png")));
+			trackIcon.setIcon(new ImageIcon(ResourcePaths.bundledSprite("track_preview" + (trackIndex + 1) + ".png")));
 		}
 	}
 }

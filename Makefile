@@ -3,7 +3,7 @@ BUILD_DIR := build
 MAIN_CLASS := controller.Main
 SMOKE_TIMEOUT_SEC := 5
 SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
-BUNDLED_CAR_SPRITES := src/sprites/voiture1.png src/sprites/voiture2.png src/sprites/voiture3.png src/sprites/voiture4.png
+BUNDLED_CAR_SPRITES := src/sprites/car1.png src/sprites/car2.png src/sprites/car3.png src/sprites/car4.png
 
 .PHONY: all compile run smoke-test clean help prepare-sprites
 
