@@ -9,6 +9,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
 import view.theme.GameTheme;
@@ -28,18 +29,15 @@ public class ThemedPanel extends JPanel {
 
 	public static Border sectionBorder(String title, Component context) {
 		TitledBorder border = BorderFactory.createTitledBorder(
-				BorderFactory.createEmptyBorder(
-						SECTION_TITLE_TOP_INSET,
-						SECTION_TITLE_SIDE_INSET,
-						4,
-						SECTION_TITLE_SIDE_INSET),
 				BorderFactory.createLineBorder(GameTheme.BORDER_SOFT, SECTION_BORDER_WIDTH),
 				title,
 				TitledBorder.LEFT,
 				TitledBorder.ABOVE_TOP,
 				GameTheme.scaled(GameTheme.FONT_SUBTITLE, context),
 				GameTheme.ACCENT_YELLOW);
-		return border;
+		return BorderFactory.createCompoundBorder(
+				new EmptyBorder(SECTION_TITLE_TOP_INSET, SECTION_TITLE_SIDE_INSET, 0, SECTION_TITLE_SIDE_INSET),
+				border);
 	}
 
 	public static JLabel createHeading(String text, Component context) {

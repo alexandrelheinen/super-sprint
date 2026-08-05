@@ -3,6 +3,7 @@ BUILD_DIR := build
 MAIN_CLASS := controller.Main
 SMOKE_TIMEOUT_SEC := 5
 SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
+TRACK_PREVIEW_SCRIPT := scripts/generate-track-previews.sh
 BUNDLED_CAR_SPRITES := src/sprites/car1.png src/sprites/car2.png src/sprites/car3.png src/sprites/car4.png
 CONFIG_FILES := $(wildcard src/data/config/*.properties)
 
@@ -23,6 +24,12 @@ $(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(BUNDLED_CAR_SPRITES)
 
 prepare-sprites: $(BUILD_DIR)/sprites/.sprites-stamp
 
+$(BUILD_DIR)/sprites/.track-previews-stamp: $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)/.stamp
+	@bash $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)
+	@touch $(BUILD_DIR)/sprites/.track-previews-stamp
+
+prepare-track-previews: $(BUILD_DIR)/sprites/.track-previews-stamp
+
 $(BUILD_DIR)/config/.stamp: $(CONFIG_FILES)
 	@mkdir -p $(BUILD_DIR)/config
 	@cp src/data/config/*.properties $(BUILD_DIR)/config/
@@ -32,6 +39,7 @@ $(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(CONFIG_FILES) $(BUILD_DIR)/sprites/.sprit
 	@mkdir -p $(BUILD_DIR)
 	@find src -name '*.java' > $(BUILD_DIR)/sources.txt
 	javac -d $(BUILD_DIR) -sourcepath src @$(BUILD_DIR)/sources.txt
+	@bash $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)
 	@touch $(BUILD_DIR)/.stamp
 
 compile: $(BUILD_DIR)/.stamp
