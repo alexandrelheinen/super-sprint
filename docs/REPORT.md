@@ -5,7 +5,6 @@
 > This file is an English translation and modernization of the original French project report submitted for the Supélec *Projet Logiciel* evaluation in February 2015. The original PDF was delivered to the course instructors but was **not kept in this Git repository**. This `REPORT.md` reproduces the report’s intent and structure, improves clarity where the source writing was idiomatic or imprecise, and adds notes about the current build system and CI workflow introduced in 2026.
 >
 > **Original submission:** French PDF report, Software Project Sequence 6, 2014/2015 academic year.  
-> **Authors:** Alexandre LOEBLEIN HEINEN, Gautier SHARPIN.  
 > **Reference implementation:** commit history through the 2015 evaluation; refactored source under `src/controller`, `src/model`, and `src/view`.
 
 ---

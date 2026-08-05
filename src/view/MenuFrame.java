@@ -221,7 +221,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 								+ "_______________________________________\n"
 								+ "GENERAL INFORMATION:\n\n"
 								+ "Software Project 2014/2015 - Sequence 6\n"
-								+ "Alexandre LOEBLEIN HEINEN & Gautier SHARPIN\n"
 								+ "Version from 14.01.14\n"
 								+ "_______________________________________\n"
 								+ "CONTROLS:\n\n"
