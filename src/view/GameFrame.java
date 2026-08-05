@@ -22,6 +22,7 @@ import model.Circuit;
 import model.GameCatalog;
 import model.ResourcePaths;
 import view.theme.GameTheme;
+import view.ui.UiPainter;
 
 public class GameFrame extends JFrame implements Observer {
 
@@ -34,43 +35,39 @@ public class GameFrame extends JFrame implements Observer {
 	private static final int FRAME_BOTTOM_MARGIN = 20;
 	private static final int BUFFER_STRATEGY_BUFFERS = 2;
 	private static final int TRACK_TOP_OFFSET = 10;
+	private static final int HUD_BAR_HEIGHT = 64;
+	private static final int HUD_BADGE_WIDTH = 156;
+	private static final int HUD_BADGE_HEIGHT = 30;
+	private static final int HUD_BADGE_GAP = 10;
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
 	private static final int START_MARKER_LEFT_OFFSET = 20;
 	private static final int START_MARKER_RIGHT_OFFSET = 17;
 	private static final int HUD_LEFT_OFFSET = 20;
-	private static final int HUD_BOTTOM_OFFSET = 50;
-	private static final int HUD_CAR_LABEL_BASE_X = 2 * TILE_SIZE;
-	private static final int HUD_CAR_LABEL_SPACING = 100;
+	private static final int HUD_TEXT_TOP_PADDING = 18;
 	private static final int SPRITE_CENTER_DIVISOR = 2;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 	private static final int MS_PER_SECOND = 1000;
 
-	private static final String SPRITE_TEXTURE = "texture.png";
 	private static final String SPRITE_ICON = "icon.png";
 	private static final String SPRITE_TRACK_PREFIX = "track";
 	private static final String SPRITE_TRACK_SUFFIX = ".png";
-	private static final String HUD_PLAYER_PREFIX = " [P";
-	private static final String HUD_PLAYER_SEPARATOR = ": ";
-	private static final String HUD_PLAYER_SUFFIX = "]";
-	private static final String HUD_RACE_TIME_PREFIX = "Race Time: ";
-	private static final String HUD_TIME_SEPARATOR = " s  |  ";
+	private static final String HUD_RACE_TIME_PREFIX = "TIME ";
+	private static final String HUD_TIME_SUFFIX = "s";
+	private static final String HUD_TRACK_SEPARATOR = "  •  ";
 	private static final String LOG_SPRITE_LOADED = "Sprite #";
 	private static final String LOG_SPRITE_LOADED_SUFFIX = " loaded";
 	private static final String LOG_SPRITE_SEPARATOR = " **************** \n";
 	private static final String ERROR_CAR_SPRITES = "Error loading car sprites: ";
-	private static final String ERROR_BACKGROUND = "Error loading background texture: ";
 	private static final String ERROR_TRACK_TILES = "Error loading track tile images: ";
 	private static final String OBSERVER_CAR_TOKEN = "Car";
 
 	private final BufferedImage[] carSprites;
 	private final BufferedImage[][] trackTiles;
-	private BufferedImage backgroundTexture;
 	private final int[][] trackMap;
 	private final boolean[] renderFlags;
 	private final int trackNumber;
 	private final int[] carModels;
 	private final int[] mapDimensions;
-	private final java.awt.Color hudColor;
 	private final java.awt.Font hudFont;
 	private volatile boolean renderingEnabled = true;
 
@@ -94,13 +91,7 @@ public class GameFrame extends JFrame implements Observer {
 		System.out.println(LOG_SPRITE_SEPARATOR);
 
 		trackTiles = loadTrackTiles(trackMap);
-		try {
-			backgroundTexture = ImageIO.read(new File(ResourcePaths.bundledSprite(SPRITE_TEXTURE)));
-		} catch (Exception exception) {
-			System.err.println(ERROR_BACKGROUND + exception.getMessage());
-		}
 
-		hudColor = GameTheme.ACCENT_BLUE;
 		hudFont = GameTheme.FONT_HUD;
 
 		setIconImage(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
@@ -108,7 +99,11 @@ public class GameFrame extends JFrame implements Observer {
 		pack();
 		setSize(
 				FRAME_HORIZONTAL_MARGIN + mapDimensions[1] * TILE_SIZE,
-				FRAME_TITLE_BAR_HEIGHT + FRAME_BOTTOM_MARGIN + mapDimensions[0] * TILE_SIZE);
+				FRAME_TITLE_BAR_HEIGHT
+						+ FRAME_BOTTOM_MARGIN
+						+ TRACK_TOP_OFFSET
+						+ mapDimensions[0] * TILE_SIZE
+						+ HUD_BAR_HEIGHT);
 		setVisible(true);
 		setResizable(false);
 		createBufferStrategy(BUFFER_STRATEGY_BUFFERS);
@@ -160,17 +155,20 @@ public class GameFrame extends JFrame implements Observer {
 						car.getName(),
 						car.getX() - CAR_RENDER_OFFSET[0] / SPRITE_CENTER_DIVISOR,
 						car.getY() - CAR_RENDER_OFFSET[1] / SPRITE_CENTER_DIVISOR);
-				graphics2D.setFont(hudFont);
-				graphics2D.setColor(hudColor);
-				graphics2D.drawString(
-						GameCatalog.carModelName(carModels[car.getSpriteIndex()])
-								+ HUD_PLAYER_PREFIX
-								+ car.getName()
-								+ HUD_PLAYER_SEPARATOR
-								+ car.getLapCount()
-								+ HUD_PLAYER_SUFFIX,
-						HUD_CAR_LABEL_BASE_X + HUD_CAR_LABEL_SPACING * car.getSpriteIndex(),
-						mapDimensions[0] * TILE_SIZE + HUD_BOTTOM_OFFSET);
+				int hudBarTop = TRACK_TOP_OFFSET + mapDimensions[0] * TILE_SIZE;
+				String badgeText = GameCatalog.carModelName(carModels[car.getSpriteIndex()])
+						+ "  P"
+						+ car.getName()
+						+ "  L"
+						+ car.getLapCount();
+				UiPainter.paintHudBadge(
+						graphics2D,
+						HUD_LEFT_OFFSET + car.getSpriteIndex() * (HUD_BADGE_WIDTH + HUD_BADGE_GAP),
+						hudBarTop + 26,
+						HUD_BADGE_WIDTH,
+						HUD_BADGE_HEIGHT,
+						badgeText,
+						hudFont);
 				renderFlags[car.getSpriteIndex()] = true;
 			} finally {
 				if (graphics != null) {
@@ -183,7 +181,12 @@ public class GameFrame extends JFrame implements Observer {
 				graphics = bufferStrategy.getDrawGraphics();
 				Graphics2D graphics2D = (Graphics2D) graphics;
 				AffineTransformOp identity = new AffineTransformOp(new AffineTransform(), AffineTransformOp.TYPE_BILINEAR);
-				graphics.drawImage(backgroundTexture, 0, 0, null);
+				int trackPixelWidth = mapDimensions[1] * TILE_SIZE;
+				int trackPixelHeight = mapDimensions[0] * TILE_SIZE;
+				int hudBarTop = TRACK_TOP_OFFSET + trackPixelHeight;
+
+				UiPainter.paintScreenBackdrop(graphics2D, getWidth(), getHeight());
+				UiPainter.paintRaceViewportFrame(graphics2D, 0, TRACK_TOP_OFFSET, trackPixelWidth, trackPixelHeight);
 
 				for (int column = 0; column < mapDimensions[1]; column++) {
 					for (int row = 0; row < mapDimensions[0]; row++) {
@@ -211,15 +214,16 @@ public class GameFrame extends JFrame implements Observer {
 						(int) circuit.getFinishLine().getY1(),
 						(int) circuit.getFinishLine().getX2(),
 						(int) circuit.getFinishLine().getY2());
+
+				UiPainter.paintHudStrip(graphics2D, 0, hudBarTop, getWidth(), HUD_BAR_HEIGHT);
 				graphics2D.setFont(hudFont);
-				graphics2D.setColor(hudColor);
-				graphics2D.drawString(
-						HUD_RACE_TIME_PREFIX
-								+ ((int) circuit.getRaceTimeMs() / MS_PER_SECOND)
-								+ HUD_TIME_SEPARATOR
-								+ GameCatalog.trackName(trackNumber),
-						HUD_LEFT_OFFSET,
-						mapDimensions[0] * TILE_SIZE + HUD_BOTTOM_OFFSET);
+				graphics2D.setColor(GameTheme.TEXT_PRIMARY);
+				String timerText = HUD_RACE_TIME_PREFIX
+						+ ((int) circuit.getRaceTimeMs() / MS_PER_SECOND)
+						+ HUD_TIME_SUFFIX
+						+ HUD_TRACK_SEPARATOR
+						+ GameCatalog.trackName(trackNumber);
+				graphics2D.drawString(timerText, HUD_LEFT_OFFSET, hudBarTop + HUD_TEXT_TOP_PADDING);
 				renderFlags[renderFlags.length - ONE_BASED_INDEX_OFFSET] = true;
 			} finally {
 				if (graphics != null) {

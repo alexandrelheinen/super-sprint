@@ -17,6 +17,10 @@ public final class GameTheme {
 	private static final String KEY_COLOR_TEXT_PRIMARY = "theme.color.text.primary";
 	private static final String KEY_COLOR_TEXT_MUTED = "theme.color.text.muted";
 	private static final String KEY_COLOR_BORDER_SOFT = "theme.color.border.soft";
+	private static final String KEY_COLOR_BACKGROUND_TOP = "theme.color.background.top";
+	private static final String KEY_COLOR_GLASS_FILL = "theme.color.glass.fill";
+	private static final String KEY_COLOR_GLASS_BORDER = "theme.color.glass.border";
+	private static final String KEY_COLOR_HUD_BACKGROUND = "theme.color.hud.background";
 	private static final String KEY_FONT_FAMILY = "theme.font.family";
 	private static final String KEY_FONT_SIZE_TITLE = "theme.font.size.title";
 	private static final String KEY_FONT_SIZE_SUBTITLE = "theme.font.size.subtitle";
@@ -40,6 +44,10 @@ public final class GameTheme {
 	public static final Color TEXT_PRIMARY = ConfigLoader.getColor(KEY_COLOR_TEXT_PRIMARY, "245,247,250");
 	public static final Color TEXT_MUTED = ConfigLoader.getColor(KEY_COLOR_TEXT_MUTED, "170,180,196");
 	public static final Color BORDER_SOFT = ConfigLoader.getColor(KEY_COLOR_BORDER_SOFT, "54,68,92");
+	public static final Color BACKGROUND_TOP = ConfigLoader.getColor(KEY_COLOR_BACKGROUND_TOP, "16,28,52");
+	public static final Color GLASS_FILL = ConfigLoader.getColor(KEY_COLOR_GLASS_FILL, "24,34,54");
+	public static final Color GLASS_BORDER = ConfigLoader.getColor(KEY_COLOR_GLASS_BORDER, "70,96,140");
+	public static final Color HUD_BACKGROUND = ConfigLoader.getColor(KEY_COLOR_HUD_BACKGROUND, "8,14,28");
 
 	private static final String FONT_FAMILY = ConfigLoader.getString(KEY_FONT_FAMILY, DEFAULT_FONT_FAMILY);
 	private static final int FONT_SIZE_TITLE = ConfigLoader.getInt(KEY_FONT_SIZE_TITLE, DEFAULT_FONT_SIZE_TITLE);

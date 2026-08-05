@@ -1,7 +1,6 @@
 package view;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,24 +15,27 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.SwingUtilities;
 
 import controller.Game;
 import model.Car;
-import model.Circuit;
-import model.GameCatalog;
 import model.ConfigLoader;
+import model.GameCatalog;
 import model.GameConfig;
 import model.HallOfFame;
 import model.ResourcePaths;
 import view.components.ArcadeButton;
+import view.components.GlassCard;
+import view.components.HeroBanner;
+import view.components.StatBar;
+import view.components.StyledComboBox;
 import view.components.ThemedPanel;
+import view.dialogs.HelpDialog;
 import view.theme.GameTheme;
+import view.ui.BackgroundPanel;
 
 public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
@@ -48,31 +50,26 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 	private static final int SINGLE_PLAYER_COUNT = 1;
 
-	private static final int PANEL_INSET = 18;
+	private static final int PANEL_INSET = 22;
 	private static final int MAIN_PANEL_VERTICAL_GAP = 18;
 	private static final int BUTTON_GRID_COLUMNS = 2;
 	private static final int BUTTON_GRID_GAP = 14;
-	private static final int RACE_PANEL_GAP = 16;
+	private static final int RACE_PANEL_GAP = 18;
 	private static final int SETUP_COLUMN_COUNT = 4;
-	private static final int SETUP_COLUMN_GAP = 18;
+	private static final int SETUP_COLUMN_GAP = 16;
 	private static final int VERTICAL_STRUT_SMALL = 8;
 	private static final int VERTICAL_STRUT_MEDIUM = 12;
-	private static final int STATS_GRID_ROWS = 3;
-	private static final int STATS_GRID_COLUMNS = 2;
-	private static final int STATS_GRID_GAP = 8;
 	private static final int ACTION_BUTTON_COLUMNS = 2;
 	private static final int ACTION_BUTTON_GAP = 14;
 
-	private static final int MENU_IMAGE_WIDTH = 700;
-	private static final int MENU_IMAGE_HEIGHT = 300;
-	private static final int MAIN_BUTTON_WIDTH = 190;
-	private static final int MAIN_BUTTON_HEIGHT = 52;
-	private static final int ACTION_BUTTON_WIDTH = 180;
+	private static final int MAIN_BUTTON_WIDTH = 210;
+	private static final int MAIN_BUTTON_HEIGHT = 54;
+	private static final int ACTION_BUTTON_WIDTH = 190;
 	private static final int ACTION_BUTTON_HEIGHT = 52;
-	private static final int CAR_PREVIEW_WIDTH = 96;
-	private static final int CAR_PREVIEW_HEIGHT = 56;
-	private static final int TRACK_PREVIEW_WIDTH = 140;
-	private static final int TRACK_PREVIEW_HEIGHT = 96;
+	private static final int CAR_PREVIEW_WIDTH = 110;
+	private static final int CAR_PREVIEW_HEIGHT = 64;
+	private static final int TRACK_PREVIEW_WIDTH = 150;
+	private static final int TRACK_PREVIEW_HEIGHT = 100;
 
 	private static final int MNEMONIC_ONE_PLAYER = 0;
 	private static final int MNEMONIC_TWO_PLAYERS = 1;
@@ -109,33 +106,29 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final int[][] STAT_BAR_LIMITS = {{100, 250}, {200, 400}, {30, 60}};
 
 	private static final String SPRITE_ICON = "icon.png";
-	private static final String SPRITE_MENU = "menu.png";
 	private static final String TRACK_PREVIEW_PREFIX = "track_preview";
 	private static final String TRACK_PREVIEW_SUFFIX = ".png";
-
-	private static final String HELP_MESSAGE = ConfigLoader.getMessage("messages.help", "");
 
 	private final HallFrame hallFrame;
 	private final HallOfFame hallOfFame;
 
-	private final JPanel mainPanel;
-	private final JLabel menuImageLabel;
+	private final BackgroundPanel mainPanel;
 	private final JPanel buttonPanel;
 	private final ArcadeButton[] mainButtons;
 
-	private final JPanel racePanel;
-	private final ThemedPanel[] carPanels;
+	private final BackgroundPanel racePanel;
+	private final GlassCard[] carPanels;
 	@SuppressWarnings("rawtypes")
 	private final JComboBox[] carMenus;
 	private final JLabel[] carIcons;
-	private final JProgressBar[][] carStatBars;
+	private final StatBar[][] carStatBars;
 
-	private final ThemedPanel trackPanel;
+	private final GlassCard trackPanel;
 	@SuppressWarnings("rawtypes")
 	private final JComboBox trackMenu;
 	private final JLabel trackIcon;
 
-	private final ThemedPanel lapsPanel;
+	private final GlassCard lapsPanel;
 	@SuppressWarnings("rawtypes")
 	private final JComboBox lapMenu;
 
@@ -154,17 +147,13 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		hallFrame = new HallFrame(this);
 		hallOfFame = new HallOfFame(hallFrame);
 
-		mainPanel = new ThemedPanel();
+		mainPanel = new BackgroundPanel(BackgroundPanel.Style.MENU);
 		mainPanel.setLayout(new BorderLayout(0, MAIN_PANEL_VERTICAL_GAP));
 		mainPanel.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
-		((ThemedPanel) mainPanel).styleSurface(GameTheme.BACKGROUND_DARK);
 
-		menuImageLabel = new JLabel("", JLabel.CENTER);
-		JPanel heroPanel = new ThemedPanel();
-		heroPanel.setLayout(new BorderLayout());
+		JPanel heroPanel = new JPanel(new BorderLayout());
 		heroPanel.setOpaque(false);
-		heroPanel.add(ThemedPanel.createHeader(HERO_TITLE, HERO_SUBTITLE, this), BorderLayout.NORTH);
-		heroPanel.add(menuImageLabel, BorderLayout.CENTER);
+		heroPanel.add(new HeroBanner(this, HERO_TITLE, HERO_SUBTITLE), BorderLayout.CENTER);
 
 		buttonPanel = new JPanel(new GridLayout(BUTTON_GRID_COLUMNS, BUTTON_GRID_COLUMNS, BUTTON_GRID_GAP, BUTTON_GRID_GAP));
 		buttonPanel.setOpaque(false);
@@ -183,10 +172,9 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		mainPanel.add(heroPanel, BorderLayout.CENTER);
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-		racePanel = new ThemedPanel();
+		racePanel = new BackgroundPanel(BackgroundPanel.Style.SCREEN);
 		racePanel.setLayout(new BorderLayout(RACE_PANEL_GAP, RACE_PANEL_GAP));
 		racePanel.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
-		((ThemedPanel) racePanel).styleSurface(GameTheme.BACKGROUND_LIGHT);
 
 		JPanel raceHeader = ThemedPanel.createHeader(RACE_SETUP_TITLE, RACE_SETUP_SUBTITLE, this);
 		racePanel.add(raceHeader, BorderLayout.NORTH);
@@ -194,15 +182,15 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		JPanel setupBody = new JPanel(new GridLayout(1, SETUP_COLUMN_COUNT, SETUP_COLUMN_GAP, 0));
 		setupBody.setOpaque(false);
 
-		carPanels = new ThemedPanel[MAX_HUMAN_PLAYERS];
+		carPanels = new GlassCard[MAX_HUMAN_PLAYERS];
 		carMenus = new JComboBox[MAX_HUMAN_PLAYERS];
-		carStatBars = new JProgressBar[MAX_HUMAN_PLAYERS][STAT_COUNT];
+		carStatBars = new StatBar[MAX_HUMAN_PLAYERS][STAT_COUNT];
 		carIcons = new JLabel[MAX_HUMAN_PLAYERS];
 
 		for (int playerIndex = 0; playerIndex < MAX_HUMAN_PLAYERS; playerIndex++) {
-			carPanels[playerIndex] = new ThemedPanel();
+			String sectionTitle = PLAYER_SECTION_PREFIX + (playerIndex + ONE_BASED_INDEX_OFFSET);
+			carPanels[playerIndex] = new GlassCard(null, this, sectionTitle);
 			carPanels[playerIndex].setLayout(new BoxLayout(carPanels[playerIndex], BoxLayout.Y_AXIS));
-			carPanels[playerIndex].setBorder(ThemedPanel.sectionBorder(PLAYER_SECTION_PREFIX + (playerIndex + ONE_BASED_INDEX_OFFSET), this));
 
 			String[] carOptions = GameCatalog.carModelOptions();
 			carMenus[playerIndex] = new JComboBox(carOptions);
@@ -216,24 +204,24 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 			carPanels[playerIndex].add(carIcons[playerIndex]);
 			carPanels[playerIndex].add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
 
-			JPanel statsPanel = new JPanel(new GridLayout(STATS_GRID_ROWS, STATS_GRID_COLUMNS, STATS_GRID_GAP, STATS_GRID_GAP));
+			JPanel statsPanel = new JPanel();
+			statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
 			statsPanel.setOpaque(false);
 			for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
-				statsPanel.add(ThemedPanel.createLabel(STAT_LABELS[statIndex], this));
-				carStatBars[playerIndex][statIndex] = new JProgressBar();
-				carStatBars[playerIndex][statIndex].setMinimum(STAT_BAR_LIMITS[statIndex][0]);
-				carStatBars[playerIndex][statIndex].setMaximum(STAT_BAR_LIMITS[statIndex][1]);
-				carStatBars[playerIndex][statIndex].setStringPainted(true);
-				carStatBars[playerIndex][statIndex].setForeground(GameTheme.ACCENT_BLUE);
+				carStatBars[playerIndex][statIndex] = new StatBar(this);
+				carStatBars[playerIndex][statIndex].configure(
+						STAT_LABELS[statIndex],
+						STAT_BAR_LIMITS[statIndex][0],
+						STAT_BAR_LIMITS[statIndex][1]);
 				statsPanel.add(carStatBars[playerIndex][statIndex]);
+				statsPanel.add(Box.createVerticalStrut(6));
 			}
 			carPanels[playerIndex].add(statsPanel);
 			setupBody.add(carPanels[playerIndex]);
 		}
 
-		trackPanel = new ThemedPanel();
+		trackPanel = new GlassCard(null, this, TRACK_SECTION_TITLE);
 		trackPanel.setLayout(new BoxLayout(trackPanel, BoxLayout.Y_AXIS));
-		trackPanel.setBorder(ThemedPanel.sectionBorder(TRACK_SECTION_TITLE, this));
 		String[] trackOptions = GameCatalog.trackOptions();
 		trackMenu = new JComboBox(trackOptions);
 		trackMenu.addItemListener(this);
@@ -245,9 +233,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		trackPanel.add(trackIcon);
 		setupBody.add(trackPanel);
 
-		lapsPanel = new ThemedPanel();
+		lapsPanel = new GlassCard(null, this, LAPS_SECTION_TITLE);
 		lapsPanel.setLayout(new BoxLayout(lapsPanel, BoxLayout.Y_AXIS));
-		lapsPanel.setBorder(ThemedPanel.sectionBorder(LAPS_SECTION_TITLE, this));
 		lapMenu = new JComboBox(GameCatalog.lapCountOptions());
 		lapMenu.addItemListener(this);
 		lapMenu.setName(COMBO_NAME_LAPS);
@@ -308,16 +295,14 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	}
 
 	private void applyScaledMetrics() {
-		UiScale.fitLabelIcon(menuImageLabel, this, ResourcePaths.bundledSprite(SPRITE_MENU), MENU_IMAGE_WIDTH, MENU_IMAGE_HEIGHT);
 		for (ArcadeButton button : mainButtons) {
 			button.applyScaledSize(this, MAIN_BUTTON_WIDTH, MAIN_BUTTON_HEIGHT);
 		}
 		for (int playerIndex = 0; playerIndex < MAX_HUMAN_PLAYERS; playerIndex++) {
-			styleComboBox(carMenus[playerIndex]);
-			styleProgressBars(playerIndex);
+			StyledComboBox.apply(carMenus[playerIndex], this);
 		}
-		styleComboBox(trackMenu);
-		styleComboBox(lapMenu);
+		StyledComboBox.apply(trackMenu, this);
+		StyledComboBox.apply(lapMenu, this);
 		if (racePanel.isShowing()) {
 			refreshRaceSetupPreviews();
 		}
@@ -325,17 +310,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		backToMenuButton.applyScaledSize(this, ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
 		revalidate();
 		repaint();
-	}
-
-	private void styleComboBox(JComboBox<?> comboBox) {
-		comboBox.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
-		comboBox.setBackground(Color.WHITE);
-	}
-
-	private void styleProgressBars(int playerIndex) {
-		for (JProgressBar bar : carStatBars[playerIndex]) {
-			bar.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
-		}
 	}
 
 	private void showMainMenu() {
@@ -381,7 +355,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 				hallFrame.showHall();
 				break;
 			case MNEMONIC_HELP:
-				JOptionPane.showMessageDialog(this, HELP_MESSAGE);
+				new HelpDialog(this).showDialog();
 				break;
 			case MNEMONIC_START_RACE:
 				setVisible(false);
@@ -409,7 +383,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		int[] stats = Car.CAR_MODEL_STATS[modelIndex];
 		for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
 			carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
-			carStatBars[playerIndex][statIndex].setString(Integer.toString(stats[statIndex]));
 		}
 		selectedCarModels[playerIndex] = modelIndex + ONE_BASED_INDEX_OFFSET;
 	}

@@ -59,6 +59,15 @@ public class ArcadeButton extends JButton {
 			top = top.brighter();
 		}
 
+		if (primary && !getModel().isPressed()) {
+			graphics2D.setColor(new Color(
+					GameTheme.ACCENT_BLUE_BRIGHT.getRed(),
+					GameTheme.ACCENT_BLUE_BRIGHT.getGreen(),
+					GameTheme.ACCENT_BLUE_BRIGHT.getBlue(),
+					60));
+			graphics2D.fillRoundRect(-2, -2, getWidth() + 4, getHeight() + 6, CORNER_ARC + 4, CORNER_ARC + 4);
+		}
+
 		graphics2D.setColor(bottom);
 		graphics2D.fillRoundRect(0, 0, getWidth(), getHeight(), CORNER_ARC, CORNER_ARC);
 		graphics2D.setColor(top);
