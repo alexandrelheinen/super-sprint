@@ -23,40 +23,8 @@ public class Game {
 
 	private static final String GAME_TITLE_PREFIX = GameConfig.GAME_TITLE + " — ";
 
-	public static final int[][][] TRACK_MAPS = {
-			{
-					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
-							Circuit.TILE_CORNER_BOTTOM_RIGHT},
-					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_OPEN, Circuit.TILE_OPEN,
-							Circuit.TILE_STRAIGHT_HORIZONTAL},
-					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
-							Circuit.TILE_CORNER_BOTTOM_LEFT}
-			},
-			{
-					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_CORNER_BOTTOM_RIGHT, Circuit.TILE_OPEN,
-							Circuit.TILE_OPEN},
-					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL,
-							Circuit.TILE_CORNER_BOTTOM_RIGHT},
-					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
-							Circuit.TILE_CORNER_BOTTOM_LEFT}
-			},
-			{
-					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
-							Circuit.TILE_CORNER_BOTTOM_RIGHT},
-					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_OPEN, Circuit.TILE_CORNER_TOP_RIGHT,
-							Circuit.TILE_CORNER_BOTTOM_LEFT},
-					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_CORNER_BOTTOM_LEFT,
-							Circuit.TILE_OPEN}
-			},
-			{
-					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_CORNER_BOTTOM_RIGHT, Circuit.TILE_CORNER_TOP_RIGHT,
-							Circuit.TILE_CORNER_BOTTOM_RIGHT},
-					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_CORNER_BOTTOM_LEFT,
-							Circuit.TILE_STRAIGHT_HORIZONTAL},
-					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
-							Circuit.TILE_CORNER_BOTTOM_LEFT}
-			}
-	};
+	/** Track tile maps loaded from {@code tracks.properties}. */
+	public static final int[][][] TRACK_MAPS = GameConfig.TRACK_MAPS;
 
 	private final HallOfFame hallOfFame;
 	private final AppShell appShell;
@@ -82,7 +50,7 @@ public class Game {
 		Controller.resetPlayerCount();
 		GameCatalog.validateLapCount(laps);
 		this.trackIndex = trackNumber;
-		trackMap = Game.TRACK_MAPS[trackNumber];
+		trackMap = GameCatalog.trackMap(trackNumber);
 		this.lapCount = laps;
 		this.hallOfFame = hallOfFame;
 		this.appShell = appShell;

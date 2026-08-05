@@ -13,6 +13,7 @@ public final class GameCatalog {
 	public static final Color[] CAR_MODEL_COLORS = GameConfig.CAR_MODEL_COLORS;
 	public static final String[] TRACK_NAMES = GameConfig.TRACK_NAMES;
 	public static final Terrain[] TRACK_TERRAINS = GameConfig.TRACK_TERRAINS;
+	public static final int[][][] TRACK_MAPS = GameConfig.TRACK_MAPS;
 	public static final int[] LAP_COUNT_OPTIONS = GameConfig.LAP_COUNT_OPTIONS;
 	public static final int DEFAULT_LAP_COUNT = GameConfig.DEFAULT_LAP_COUNT;
 
@@ -47,6 +48,12 @@ public final class GameCatalog {
 	public static Terrain trackTerrain(int trackIndex) {
 		validateIndex(trackIndex, Circuit.TRACK_COUNT, "track");
 		return TRACK_TERRAINS[trackIndex];
+	}
+
+	/** Zero-based track index → tile map ({@code track_XX.png} ids). */
+	public static int[][] trackMap(int trackIndex) {
+		validateIndex(trackIndex, Circuit.TRACK_COUNT, "track");
+		return TRACK_MAPS[trackIndex];
 	}
 
 	/** Dropdown label: {@code 12 - Vintage Yellow Hot Rod}. */

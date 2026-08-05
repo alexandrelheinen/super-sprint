@@ -1,6 +1,8 @@
 package model;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Typed accessors for game and catalog settings loaded from {@code src/data/config/}.
@@ -12,7 +14,6 @@ public final class GameConfig {
 	private static final String KEY_MAX_HUMAN_PLAYERS = "game.race.max.human.players";
 	private static final String KEY_CAR_MODEL_NAMES = "catalog.car.names";
 	private static final String KEY_TRACK_NAMES = "catalog.track.names";
-	private static final String KEY_TRACK_TERRAINS = "catalog.track.terrains";
 	private static final String KEY_LAP_COUNT_OPTIONS = "catalog.lap.options";
 	private static final String KEY_LAP_COUNT_DEFAULT = "catalog.lap.default";
 	private static final String KEY_HALL_DEFAULT_NAMES = "catalog.hall.default.names";
@@ -24,8 +25,8 @@ public final class GameConfig {
 			"Vintage Yellow Hot Rod,Classic Green Formula,Blue GT Coupe,Red Flame Muscle,"
 					+ "Silver Open-Wheel Racer,Brown Vintage Wagon,Orange Classic Roadster,"
 					+ "Purple Retro Grand Prix,Teal Vintage Sports";
-	private static final String DEFAULT_TRACK_NAMES = "Campus Loop,Foundry Eight,Serpent Pass,Metro Chicane";
-	private static final String DEFAULT_TRACK_TERRAINS = "grass,sand,grass,sand";
+	private static final String DEFAULT_TRACK_NAMES = "Meadow Oval,Desert Elbow,Lakeside Cove,Dune Horseshoe";
+	private static final String[] DEFAULT_TRACK_TERRAINS = {"grass", "sand", "grass", "sand"};
 	private static final String DEFAULT_LAP_COUNT_OPTIONS = "1,2,3,5,7,10";
 	private static final int DEFAULT_LAP_COUNT_FALLBACK = 3;
 	private static final int DEFAULT_MAX_CARS = 4;
@@ -60,6 +61,29 @@ public final class GameConfig {
 			{20.0, 36.5, 36.0},
 			{13.5, 31.0, 52.0}
 	};
+	/** Fallback tile maps when {@code tracks.properties} rows are missing. */
+	private static final int[][][] DEFAULT_TRACK_MAPS = {
+			{
+					{3, 1, 1, 2},
+					{0, 6, 6, 0},
+					{4, 1, 1, 5}
+			},
+			{
+					{3, 2, 6, 6},
+					{0, 4, 1, 2},
+					{4, 1, 1, 5}
+			},
+			{
+					{3, 1, 1, 2},
+					{0, 6, 3, 5},
+					{4, 1, 5, 6}
+			},
+			{
+					{3, 2, 3, 2},
+					{0, 4, 5, 0},
+					{4, 1, 1, 5}
+			}
+	};
 
 	public static final String GAME_TITLE = ConfigLoader.getString(KEY_GAME_TITLE, DEFAULT_GAME_TITLE);
 	public static final String[] CAR_MODEL_NAMES = loadCarModelNames();
@@ -67,8 +91,9 @@ public final class GameConfig {
 	public static final Color[] CAR_MODEL_COLORS = loadCarModelColors(CAR_MODEL_NAMES.length);
 	public static final int[][] CAR_MODEL_SPRITE_DIMENSIONS = loadCarSpriteDimensions(CAR_MODEL_NAMES.length);
 	public static final double[][] CAR_MODEL_STATS = loadCarModelStats(CAR_MODEL_NAMES.length);
-	public static final String[] TRACK_NAMES = ConfigLoader.getCommaSeparated(KEY_TRACK_NAMES, DEFAULT_TRACK_NAMES);
-	public static final Terrain[] TRACK_TERRAINS = loadTrackTerrains();
+	public static final String[] TRACK_NAMES = loadTrackNames();
+	public static final Terrain[] TRACK_TERRAINS = loadTrackTerrains(TRACK_NAMES.length);
+	public static final int[][][] TRACK_MAPS = loadTrackMaps(TRACK_NAMES.length);
 	public static final int[] LAP_COUNT_OPTIONS = ConfigLoader.getIntList(KEY_LAP_COUNT_OPTIONS, DEFAULT_LAP_COUNT_OPTIONS);
 	public static final int DEFAULT_LAP_COUNT = ConfigLoader.getInt(KEY_LAP_COUNT_DEFAULT, DEFAULT_LAP_COUNT_FALLBACK);
 	public static final int MAX_CARS = ConfigLoader.getInt(KEY_MAX_CARS, DEFAULT_MAX_CARS);
@@ -136,13 +161,94 @@ public final class GameConfig {
 		return stats;
 	}
 
-	private static Terrain[] loadTrackTerrains() {
-		String[] ids = ConfigLoader.getCommaSeparated(KEY_TRACK_TERRAINS, DEFAULT_TRACK_TERRAINS);
-		Terrain[] terrains = new Terrain[TRACK_NAMES.length];
-		for (int index = 0; index < terrains.length; index++) {
-			String id = index < ids.length ? ids[index] : Terrain.GRASS.id();
+	private static String[] loadTrackNames() {
+		String[] fromCatalog = ConfigLoader.getCommaSeparated(KEY_TRACK_NAMES, "");
+		if (fromCatalog.length > 0) {
+			return fromCatalog;
+		}
+		List<String> names = new ArrayList<>();
+		for (int index = 0; ; index++) {
+			String fallback = index < DEFAULT_TRACK_MAPS.length
+					? DEFAULT_TRACK_NAMES.split(",")[index].trim()
+					: "";
+			String name = ConfigLoader.getString("track." + index + ".name", fallback);
+			if (name.isEmpty()) {
+				break;
+			}
+			names.add(name);
+		}
+		if (names.isEmpty()) {
+			return DEFAULT_TRACK_NAMES.split(",");
+		}
+		return names.toArray(String[]::new);
+	}
+
+	private static Terrain[] loadTrackTerrains(int count) {
+		Terrain[] terrains = new Terrain[count];
+		for (int index = 0; index < count; index++) {
+			String fallback = index < DEFAULT_TRACK_TERRAINS.length
+					? DEFAULT_TRACK_TERRAINS[index]
+					: Terrain.GRASS.id();
+			String id = ConfigLoader.getString("track." + index + ".terrain", fallback);
 			terrains[index] = Terrain.fromId(id);
 		}
 		return terrains;
+	}
+
+	private static int[][][] loadTrackMaps(int count) {
+		int[][][] maps = new int[count][][];
+		for (int trackIndex = 0; trackIndex < count; trackIndex++) {
+			maps[trackIndex] = loadTrackMap(trackIndex);
+		}
+		return maps;
+	}
+
+	private static int[][] loadTrackMap(int trackIndex) {
+		List<int[]> rows = new ArrayList<>();
+		for (int rowIndex = 0; ; rowIndex++) {
+			String key = "track." + trackIndex + ".map." + rowIndex;
+			String[] tokens = ConfigLoader.getCommaSeparated(key, "");
+			if (tokens.length == 0 || (tokens.length == 1 && tokens[0].isEmpty())) {
+				break;
+			}
+			int[] row = new int[tokens.length];
+			for (int col = 0; col < tokens.length; col++) {
+				try {
+					row[col] = Integer.parseInt(tokens[col]);
+				} catch (NumberFormatException exception) {
+					throw new IllegalStateException(
+							"Invalid tile id for " + key + " at column " + col + ": " + tokens[col],
+							exception);
+				}
+				// Tile ids 0–6 match Circuit / track_XX.png (avoid referencing Circuit here).
+				if (row[col] < 0 || row[col] > 6) {
+					throw new IllegalStateException(
+							"Tile id out of range for " + key + " at column " + col + ": " + row[col]);
+				}
+			}
+			rows.add(row);
+		}
+		if (rows.isEmpty()) {
+			if (trackIndex < DEFAULT_TRACK_MAPS.length) {
+				return copyMap(DEFAULT_TRACK_MAPS[trackIndex]);
+			}
+			throw new IllegalStateException("Missing track map for track." + trackIndex);
+		}
+		int width = rows.get(0).length;
+		for (int rowIndex = 1; rowIndex < rows.size(); rowIndex++) {
+			if (rows.get(rowIndex).length != width) {
+				throw new IllegalStateException(
+						"Track " + trackIndex + " map rows must share the same width");
+			}
+		}
+		return rows.toArray(int[][]::new);
+	}
+
+	private static int[][] copyMap(int[][] source) {
+		int[][] copy = new int[source.length][];
+		for (int row = 0; row < source.length; row++) {
+			copy[row] = source[row].clone();
+		}
+		return copy;
 	}
 }

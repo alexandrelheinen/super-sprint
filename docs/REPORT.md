@@ -74,7 +74,7 @@ Higher handling increases turn rate; top speed is enforced each physics step.
 
 ### 2.4 Tracks
 
-Each track is a grid of **tile types** (values 0–6) mapped to PNG assets under `src/sprites/` (`track_XX.png`). Types represent straights, corners, and open cells. Four predefined layouts are stored in `Game.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
+Each track is a grid of **tile types** (values 0–6) mapped to PNG assets under `src/sprites/` (`track_XX.png`). Types represent straights, corners, and open cells. Layouts, names, and terrains are defined per track in `src/data/config/tracks.properties` and loaded into `GameConfig.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
 
 The finish line is a geometric segment near the first grid slot; crossing direction determines valid lap increments.
 
@@ -257,7 +257,7 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 | `Car` | model | Physics and rendering notifications |
 | `Circuit` | model | Track grid, boundaries, timing |
 | `TrackGeometry` / `ReferencePath` | model | Centerline samples for AI / previews |
-| `Terrain` / `GameCatalog` | model | Catalog names, terrains, lap options |
+| `Terrain` / `GameCatalog` | model | Cars, tracks (from properties), lap options |
 | `HallOfFame` / `Result` | model | Leaderboard persistence |
 | `AppShell` | view | Single application window |
 | `GameFrame` | view | Race canvas rendering |
