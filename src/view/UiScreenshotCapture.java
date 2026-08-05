@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import javax.imageio.ImageIO;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -33,26 +32,19 @@ public final class UiScreenshotCapture {
 	}
 
 	private static void captureScreens(Path outputDirectory) throws IOException {
-		MenuFrame menuFrame = new MenuFrame();
-		paintToFile(menuFrame, outputDirectory.resolve("01-main-menu.png"));
+		AppShell shell = new AppShell();
+		paintToFile(shell, outputDirectory.resolve("01-main-menu.png"));
 
-		menuFrame.openRaceSetupForScreenshot();
-		paintToFile(menuFrame, outputDirectory.resolve("02-race-setup.png"));
+		shell.openRaceSetupForScreenshot();
+		paintToFile(shell, outputDirectory.resolve("02-race-setup.png"));
 
-		HelpDialogHolder helpDialog = new HelpDialogHolder(menuFrame);
-		helpDialog.show();
-		paintToFile(helpDialog.dialog(), outputDirectory.resolve("03-help.png"));
-		helpDialog.dispose();
+		shell.openHelpForScreenshot();
+		paintToFile(shell, outputDirectory.resolve("03-help.png"));
 
-		menuFrame.setVisible(true);
-		menuFrame.openHallOfFameForScreenshot();
-		JFrame hallFrame = findVisibleFrame("Hall");
-		if (hallFrame != null) {
-			paintToFile(hallFrame, outputDirectory.resolve("04-hall-of-fame.png"));
-			hallFrame.dispose();
-		}
+		shell.openHallOfFameForScreenshot();
+		paintToFile(shell, outputDirectory.resolve("04-hall-of-fame.png"));
 
-		menuFrame.dispose();
+		shell.dispose();
 		System.out.println("Screenshots saved to " + outputDirectory.toAbsolutePath());
 	}
 
@@ -60,13 +52,6 @@ public final class UiScreenshotCapture {
 		frame.validate();
 		frame.repaint();
 		writeImage(outputFile, renderComponent(frame));
-		System.out.println("Saved " + outputFile);
-	}
-
-	private static void paintToFile(JDialog dialog, Path outputFile) throws IOException {
-		dialog.validate();
-		dialog.repaint();
-		writeImage(outputFile, renderComponent(dialog));
 		System.out.println("Saved " + outputFile);
 	}
 
@@ -82,40 +67,5 @@ public final class UiScreenshotCapture {
 
 	private static void writeImage(Path outputFile, BufferedImage image) throws IOException {
 		ImageIO.write(image, "png", outputFile.toFile());
-	}
-
-	private static JFrame findVisibleFrame(String titleFragment) {
-		for (java.awt.Window window : java.awt.Window.getWindows()) {
-			if (window instanceof JFrame frame
-					&& frame.isShowing()
-					&& frame.getTitle() != null
-					&& frame.getTitle().contains(titleFragment)) {
-				return frame;
-			}
-		}
-		return null;
-	}
-
-	private static final class HelpDialogHolder {
-		private final view.dialogs.HelpDialog dialog;
-
-		private HelpDialogHolder(MenuFrame menuFrame) {
-			dialog = new view.dialogs.HelpDialog(menuFrame);
-			dialog.setModalityType(java.awt.Dialog.ModalityType.MODELESS);
-		}
-
-		private void show() {
-			dialog.pack();
-			dialog.setLocationRelativeTo(null);
-			dialog.setVisible(true);
-		}
-
-		private JDialog dialog() {
-			return dialog;
-		}
-
-		private void dispose() {
-			dialog.dispose();
-		}
 	}
 }

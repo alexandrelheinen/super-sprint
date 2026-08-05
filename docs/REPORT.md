@@ -89,14 +89,14 @@ The codebase follows **Model–View–Controller**:
 | Layer | Responsibility | Main classes |
 |-------|----------------|--------------|
 | **Model** | Game state, rules, persistence | `Car`, `Circuit`, `HallOfFame`, `Result` |
-| **View** | Swing UI and rendering | `MenuFrame`, `GameFrame`, `HallFrame` |
+| **View** | Single-window Swing UI | `AppShell`, `GameFrame`, screen panels |
 | **Controller** | Loop, input, AI | `Game`, `Controller`, `HumanController`, `AiController`, `GameTickTask`, `Main` |
 
 The UML class diagram is maintained in `diagram/classes.ucls` (ObjectAid) with PNG export `diagram/classes.png`.
 
 ### 3.2 Observer pattern
 
-`Car` and `Circuit` extend `java.util.Observable` and notify `GameFrame` when state changes. `HallOfFame` notifies `HallFrame` when rankings change. This was a standard Swing-era pattern taught in the course; it is deprecated in modern Java but preserved for historical fidelity until a listener-based refactor is undertaken.
+`Car` and `Circuit` extend `java.util.Observable` and notify `GameFrame` when state changes. `HallOfFame` notifies `HallPanel` when rankings change. This was a standard Swing-era pattern taught in the course; it is deprecated in modern Java but preserved for historical fidelity until a listener-based refactor is undertaken.
 
 ### 3.3 Game loop
 
@@ -106,7 +106,7 @@ The UML class diagram is maintained in `diagram/classes.ucls` (ObjectAid) with P
 2. Checks whether any car exceeded the lap count (race end).
 3. For each controller: enforce track boundaries, update car physics, resolve pairwise collisions.
 
-Human input is handled on the EDT via `KeyListener` on `GameFrame`. AI logic runs inside the timer callback.
+Human input is handled on the EDT via `KeyListener` on the race `GameFrame` canvas. AI logic runs inside the timer callback.
 
 ---
 
@@ -149,13 +149,13 @@ This approach was chosen as a lightweight alternative to full path planning, suf
 
 Each track keeps ten best results ranked by **mean lap time** (total duration ÷ lap count), so races with different lap counts stay comparable. `Result` stores player name, total duration in milliseconds, lap count, and timestamp. On Linux, data is serialized to `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from `src/data/hall_of_fame.dat` on first run. On first run failure (or corrupt / incompatible file — `Result` `serialVersionUID` is `2`), default placeholder entries are created.
 
-When a race ends, `Game` opens `RaceCompletionDialog`. Human winners who place may save via `HallOfFame.addResult`; computer wins are shown but never written to the board.
+When a race ends, `Game` asks `AppShell` to show the race-complete screen. Human winners who place may save via `HallOfFame.addResult`; computer wins are shown but never written to the board.
 
 ### 4.5 View layer
 
-- **`MenuFrame`** — main and pre-race menus, car/track selectors, launches `Game`.
-- **`GameFrame`** — double-buffered rendering of track tiles, cars, HUD (lap counts, race timer, finish line).
-- **`HallFrame`** — tabular leaderboard with per-track selection.
+- **`AppShell`** — the sole application window; navigates between main menu, race setup, Hall of Fame, help, race complete, and race.
+- **`GameFrame`** — race canvas with buffer-strategy rendering of track tiles, cars, and HUD.
+- **`HallPanel` / `HelpPanel` / `RaceCompletePanel`** — in-window screens swapped by `AppShell`.
 
 All user-visible strings were translated to English during the 2026 refactor; the original UI was French.
 
@@ -188,7 +188,7 @@ make run
 # equivalent: java -cp build controller.Main
 ```
 
-`Main` constructs `MenuFrame`, which bootstraps the Hall of Fame and menu UI.
+`Main` constructs `AppShell`, which bootstraps the Hall of Fame and menu UI in one window.
 
 ---
 
@@ -258,9 +258,9 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 | `Circuit` | model | Track grid, boundaries, timing |
 | `HallOfFame` | model | Leaderboard persistence |
 | `Result` | model | Serializable score entry |
-| `MenuFrame` | view | Menus |
-| `GameFrame` | view | Race rendering |
-| `HallFrame` | view | Leaderboard UI |
+| `AppShell` | view | Single application window |
+| `GameFrame` | view | Race canvas rendering |
+| `HallPanel` | view | Leaderboard UI |
 
 ## Appendix B — Glossary (French → English)
 

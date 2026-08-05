@@ -12,10 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.JOptionPane;
-
-import view.HallFrame;
 
 public class HallOfFame extends Observable {
 
@@ -32,13 +31,13 @@ public class HallOfFame extends Observable {
 
 	private final Result[][] results;
 	private final Path hallOfFameFile;
-	private final HallFrame hallFrame;
+	private final Runnable showHallAction;
 	private int lastUpdatedTrackIndex;
 
-	public HallOfFame(HallFrame frame) throws FileNotFoundException {
+	public HallOfFame(Observer hallView, Runnable showHallAction) throws FileNotFoundException {
 		results = new Result[Circuit.TRACK_COUNT][MAX_RESULTS];
 		hallOfFameFile = initializeUserHallOfFameFile();
-		hallFrame = frame;
+		this.showHallAction = showHallAction;
 
 		try (InputStream fileStream = new FileInputStream(hallOfFameFile.toFile());
 				ObjectInputStream input = new ObjectInputStream(fileStream)) {
@@ -55,7 +54,7 @@ public class HallOfFame extends Observable {
 			initializeDefaultRecords();
 		}
 
-		addObserver(frame);
+		addObserver(hallView);
 		lastUpdatedTrackIndex = 0;
 		setChanged();
 		notifyObservers();
@@ -148,7 +147,7 @@ public class HallOfFame extends Observable {
 		persistResults();
 		setChanged();
 		notifyObservers();
-		hallFrame.showHall();
+		showHallAction.run();
 	}
 
 	public int getLastUpdatedTrackIndex() {

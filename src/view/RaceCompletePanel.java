@@ -1,11 +1,10 @@
-package view.dialogs;
+package view;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -20,10 +19,9 @@ import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
 /**
- * Modal race-finish screen: winner, total time, and leaderboard placement by
- * mean lap time. Human winners who place can enter a name before saving.
+ * Race-finish screen hosted inside {@link AppShell}.
  */
-public class RaceCompletionDialog extends JDialog {
+public class RaceCompletePanel extends BackgroundPanel {
 
 	private static final long serialVersionUID = 1L;
 
@@ -61,25 +59,27 @@ public class RaceCompletionDialog extends JDialog {
 	private static final int MS_PER_SECOND = 1000;
 
 	private final HallOfFame hallOfFame;
+	private final Runnable onContinueWithoutSave;
 	private final double durationMs;
 	private final int lapCount;
 	private final int trackIndex;
 	private final boolean humanWinner;
 	private final int placementRank;
 	private final JTextField nameField;
+	private final ArcadeButton continueButton;
 
-	public RaceCompletionDialog(
-			Component owner,
+	public RaceCompletePanel(
+			Component scaleContext,
 			HallOfFame hallOfFame,
 			int winnerIndex,
 			int humanPlayerCount,
 			double durationMs,
 			int lapCount,
-			int trackIndex) {
-		super(javax.swing.SwingUtilities.getWindowAncestor(owner), TITLE, ModalityType.APPLICATION_MODAL);
-		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
+			int trackIndex,
+			Runnable onContinueWithoutSave) {
+		super(BackgroundPanel.Style.SCREEN);
 		this.hallOfFame = hallOfFame;
+		this.onContinueWithoutSave = onContinueWithoutSave;
 		this.durationMs = durationMs;
 		this.lapCount = lapCount;
 		this.trackIndex = trackIndex;
@@ -91,34 +91,36 @@ public class RaceCompletionDialog extends JDialog {
 				: COMPUTER_NAME;
 		boolean canSave = humanWinner && placementRank != HallOfFame.NO_PLACEMENT;
 
-		BackgroundPanel root = new BackgroundPanel(BackgroundPanel.Style.SCREEN);
-		root.setLayout(new BorderLayout(0, SECTION_GAP));
-		root.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
-		root.add(ThemedPanel.createHeader(TITLE, null, owner), BorderLayout.NORTH);
+		setLayout(new BorderLayout(0, SECTION_GAP));
+		setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
+		add(ThemedPanel.createHeader(TITLE, null, scaleContext), BorderLayout.NORTH);
 
-		GlassCard summaryCard = new GlassCard(new BorderLayout(0, SECTION_GAP), owner, null);
+		GlassCard summaryCard = new GlassCard(new BorderLayout(0, SECTION_GAP), scaleContext, null);
 		JPanel summary = new JPanel(new GridLayout(0, 1, 0, ROW_GAP));
 		summary.setOpaque(false);
-		summary.add(buildInfoRow(owner, WINNER_LABEL, winnerName));
-		summary.add(buildInfoRow(owner, TIME_LABEL, formatSeconds(durationMs) + TIME_SUFFIX));
-		summary.add(buildInfoRow(owner, LAPS_LABEL, Integer.toString(lapCount)));
-		summary.add(buildInfoRow(owner, MEAN_LABEL, formatSeconds(durationMs / lapCount) + TIME_SUFFIX + "/lap"));
+		summary.add(buildInfoRow(scaleContext, WINNER_LABEL, winnerName));
+		summary.add(buildInfoRow(scaleContext, TIME_LABEL, formatSeconds(durationMs) + TIME_SUFFIX));
+		summary.add(buildInfoRow(scaleContext, LAPS_LABEL, Integer.toString(lapCount)));
+		summary.add(buildInfoRow(
+				scaleContext,
+				MEAN_LABEL,
+				formatSeconds(durationMs / lapCount) + TIME_SUFFIX + "/lap"));
 
-		JLabel placementLabel = ThemedPanel.createLabel(buildPlacementText(), owner);
+		JLabel placementLabel = ThemedPanel.createLabel(buildPlacementText(), scaleContext);
 		placementLabel.setForeground(
 				placementRank != HallOfFame.NO_PLACEMENT ? GameTheme.ACCENT_YELLOW : GameTheme.TEXT_MUTED);
 		placementLabel.setHorizontalAlignment(JLabel.CENTER);
 		summary.add(placementLabel);
 		summaryCard.add(summary, BorderLayout.CENTER);
-		root.add(summaryCard, BorderLayout.CENTER);
+		add(summaryCard, BorderLayout.CENTER);
 
 		JPanel south = new JPanel(new BorderLayout(0, SECTION_GAP));
 		south.setOpaque(false);
 
 		if (canSave) {
-			GlassCard nameCard = new GlassCard(new BorderLayout(0, ROW_GAP), owner, NAME_PROMPT);
+			GlassCard nameCard = new GlassCard(new BorderLayout(0, ROW_GAP), scaleContext, NAME_PROMPT);
 			nameField = new JTextField(DEFAULT_PLAYER);
-			nameField.setFont(GameTheme.scaled(GameTheme.FONT_BODY, owner));
+			nameField.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
 			nameField.setForeground(GameTheme.TEXT_PRIMARY);
 			nameField.setBackground(GameTheme.PANEL_SURFACE);
 			nameField.setCaretColor(GameTheme.TEXT_PRIMARY);
@@ -129,25 +131,24 @@ public class RaceCompletionDialog extends JDialog {
 			nameField = null;
 		}
 
-		ArcadeButton continueButton = new ArcadeButton(CONTINUE_LABEL);
-		continueButton.applyScaledSize(owner, BUTTON_WIDTH, BUTTON_HEIGHT);
+		continueButton = new ArcadeButton(CONTINUE_LABEL);
 		continueButton.addActionListener(event -> onContinue());
 		JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
 		footer.setOpaque(false);
 		footer.add(continueButton);
 		south.add(footer, BorderLayout.SOUTH);
-		root.add(south, BorderLayout.SOUTH);
+		add(south, BorderLayout.SOUTH);
 
-		setContentPane(root);
-		pack();
-		java.awt.Dimension packed = getSize();
-		java.awt.Dimension baseline = view.UiScale.quarterScreenSize();
-		setSize(
-				Math.max(packed.width, (int) (baseline.width * 0.55)),
-				Math.max(packed.height, (int) (baseline.height * 0.55)));
-		setMinimumSize(new java.awt.Dimension(packed.width, packed.height));
-		setLocationRelativeTo(owner);
-		getRootPane().setDefaultButton(continueButton);
+		applyScaledMetrics(scaleContext);
+	}
+
+	public void applyScaledMetrics(Component context) {
+		continueButton.applyScaledSize(context, BUTTON_WIDTH, BUTTON_HEIGHT);
+		if (nameField != null) {
+			nameField.setFont(GameTheme.scaled(GameTheme.FONT_BODY, context));
+		}
+		revalidate();
+		repaint();
 	}
 
 	private String buildPlacementText() {
@@ -186,11 +187,8 @@ public class RaceCompletionDialog extends JDialog {
 				playerName = DEFAULT_PLAYER;
 			}
 			hallOfFame.addResult(playerName.trim(), durationMs, lapCount, trackIndex);
+			return;
 		}
-		dispose();
-	}
-
-	public void showDialog() {
-		setVisible(true);
+		onContinueWithoutSave.run();
 	}
 }

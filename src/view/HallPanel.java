@@ -7,18 +7,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -35,11 +31,13 @@ import view.components.ThemedPanel;
 import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
-public class HallFrame extends JFrame implements Observer, ActionListener, ItemListener {
+/**
+ * Hall of Fame screen content hosted inside {@link AppShell}.
+ */
+public class HallPanel extends BackgroundPanel implements Observer, ActionListener, ItemListener {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String WINDOW_TITLE = ConfigLoader.getString("messages.hall.window.title", "Hall Of Fame");
 	private static final String[] COLUMN_NAMES = {
 			ConfigLoader.getString("messages.hall.table.rank", "Rank"),
 			ConfigLoader.getString("messages.hall.table.name", "Name"),
@@ -61,7 +59,6 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 
 	private static final int PANEL_INSET = 22;
 	private static final int BODY_VERTICAL_GAP = 14;
-	private static final int SELECTOR_GAP = 12;
 	private static final int TABLE_ROW_HEIGHT = 28;
 	private static final int MIN_ROW_HEIGHT = 22;
 	private static final int COMBO_HEIGHT = 44;
@@ -73,30 +70,29 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 	private final JComboBox trackMenu;
 	private final DefaultTableModel tableModel;
 	private final JTable resultsTable;
-	private final MenuFrame menuFrame;
 	private final ArcadeButton closeButton;
+	private final Runnable onClose;
 	private HallOfFame hallOfFame;
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public HallFrame(MenuFrame menuFrame) {
-		super(WINDOW_TITLE);
-		this.menuFrame = menuFrame;
+	public HallPanel(Component scaleContext, Runnable onClose) {
+		super(BackgroundPanel.Style.SCREEN);
+		this.onClose = onClose;
 
-		BackgroundPanel root = new BackgroundPanel(BackgroundPanel.Style.SCREEN);
-		root.setLayout(new BorderLayout(0, BODY_VERTICAL_GAP));
-		root.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
+		setLayout(new BorderLayout(0, BODY_VERTICAL_GAP));
+		setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
 
-		root.add(ThemedPanel.createHeader(HEADER_TITLE, HEADER_SUBTITLE, this), BorderLayout.NORTH);
+		add(ThemedPanel.createHeader(HEADER_TITLE, HEADER_SUBTITLE, scaleContext), BorderLayout.NORTH);
 
 		JPanel body = new JPanel(new BorderLayout(0, BODY_VERTICAL_GAP));
 		body.setOpaque(false);
 
-		GlassCard selectorCard = new GlassCard(new BorderLayout(), this, TRACK_LABEL);
+		GlassCard selectorCard = new GlassCard(new BorderLayout(), scaleContext, TRACK_LABEL);
 		String[] trackOptions = GameCatalog.trackOptions();
 		trackMenu = new JComboBox(trackOptions);
 		trackMenu.addItemListener(this);
-		StyledComboBox.apply(trackMenu, this);
-		layoutTrackSelector(trackMenu);
+		StyledComboBox.apply(trackMenu, scaleContext);
+		layoutTrackSelector(trackMenu, scaleContext);
 		selectorCard.add(trackMenu, BorderLayout.CENTER);
 		body.add(selectorCard, BorderLayout.NORTH);
 
@@ -110,16 +106,16 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		resultsTable.setBackground(GameTheme.PANEL_SURFACE);
 		resultsTable.setFillsViewportHeight(true);
 		resultsTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		resultsTable.getColumnModel().getColumn(0).setPreferredWidth(UiScale.scale(this, 52));
-		resultsTable.getColumnModel().getColumn(1).setPreferredWidth(UiScale.scale(this, 100));
-		resultsTable.getColumnModel().getColumn(2).setPreferredWidth(UiScale.scale(this, 80));
-		resultsTable.getColumnModel().getColumn(3).setPreferredWidth(UiScale.scale(this, 52));
-		resultsTable.getColumnModel().getColumn(4).setPreferredWidth(UiScale.scale(this, 90));
-		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(this, TABLE_ROW_HEIGHT)));
-		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
+		resultsTable.getColumnModel().getColumn(0).setPreferredWidth(UiScale.scale(scaleContext, 52));
+		resultsTable.getColumnModel().getColumn(1).setPreferredWidth(UiScale.scale(scaleContext, 100));
+		resultsTable.getColumnModel().getColumn(2).setPreferredWidth(UiScale.scale(scaleContext, 80));
+		resultsTable.getColumnModel().getColumn(3).setPreferredWidth(UiScale.scale(scaleContext, 52));
+		resultsTable.getColumnModel().getColumn(4).setPreferredWidth(UiScale.scale(scaleContext, 90));
+		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(scaleContext, TABLE_ROW_HEIGHT)));
+		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
 		resultsTable.setDefaultRenderer(Object.class, new ThemedCellRenderer());
 		JTableHeader header = resultsTable.getTableHeader();
-		header.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
+		header.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, scaleContext));
 		header.setBackground(GameTheme.ACCENT_BLUE);
 		header.setForeground(GameTheme.TEXT_PRIMARY);
 		header.setOpaque(true);
@@ -145,8 +141,6 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 
 		JScrollPane scrollPane = new JScrollPane(resultsTable);
 		scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
-		// Extra columns (duration / laps / mean) need vertical scrolling when the
-		// window is shorter than ten rows plus the header.
 		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		int tableViewportHeight = resultsTable.getRowHeight() * (HallOfFame.MAX_RESULTS + 1);
@@ -156,44 +150,36 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		scrollPane.setOpaque(true);
 		scrollPane.setBackground(GameTheme.PANEL_SURFACE);
 
-		GlassCard tableCard = new GlassCard(new BorderLayout(), this, LEADERBOARD_TITLE);
+		GlassCard tableCard = new GlassCard(new BorderLayout(), scaleContext, LEADERBOARD_TITLE);
 		tableCard.add(scrollPane, BorderLayout.CENTER);
 		body.add(tableCard, BorderLayout.CENTER);
-		root.add(body, BorderLayout.CENTER);
+		add(body, BorderLayout.CENTER);
 
 		closeButton = new ArcadeButton(CLOSE_BUTTON_LABEL, false);
 		closeButton.addActionListener(this);
 		JPanel footer = new JPanel(new BorderLayout());
 		footer.setOpaque(false);
 		footer.add(closeButton, BorderLayout.EAST);
-		root.add(footer, BorderLayout.SOUTH);
-
-		setContentPane(root);
-		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-		addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent event) {
-				hideHall();
-			}
-		});
-		// Wider/taller than the default menu so duration/laps/mean columns fit.
-		UiScale.applyRaceSetupSize(this);
-		applyScaledMetrics();
-		UiScale.enableDelayedResize(this, this::applyScaledMetrics);
-		setVisible(false);
+		add(footer, BorderLayout.SOUTH);
 	}
 
-	private void applyScaledMetrics() {
-		closeButton.applyScaledSize(this, CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT);
-		StyledComboBox.apply(trackMenu, this);
-		layoutTrackSelector(trackMenu);
-		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(this, TABLE_ROW_HEIGHT)));
+	public void applyScaledMetrics(Component scaleContext) {
+		closeButton.applyScaledSize(scaleContext, CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT);
+		StyledComboBox.apply(trackMenu, scaleContext);
+		layoutTrackSelector(trackMenu, scaleContext);
+		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(scaleContext, TABLE_ROW_HEIGHT)));
 		int tableViewportHeight = resultsTable.getRowHeight() * (HallOfFame.MAX_RESULTS + 1);
 		resultsTable.setPreferredScrollableViewportSize(new Dimension(0, tableViewportHeight));
-		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
-		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
+		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
+		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, scaleContext));
 		revalidate();
 		repaint();
+	}
+
+	public void refreshOnShow() {
+		if (hallOfFame != null) {
+			populateTable(trackMenu.getSelectedIndex());
+		}
 	}
 
 	@Override
@@ -236,22 +222,7 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 
 	@Override
 	public void actionPerformed(ActionEvent event) {
-		hideHall();
-	}
-
-	public void showHall() {
-		if (hallOfFame != null) {
-			populateTable(trackMenu.getSelectedIndex());
-		}
-		UiScale.applyRaceSetupSize(this);
-		applyScaledMetrics();
-		setVisible(true);
-		toFront();
-	}
-
-	public void hideHall() {
-		setVisible(false);
-		menuFrame.showMenu();
+		onClose.run();
 	}
 
 	@Override
@@ -264,8 +235,8 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		populateTable(box.getSelectedIndex());
 	}
 
-	private void layoutTrackSelector(JComboBox<?> comboBox) {
-		int comboHeight = UiScale.scale(this, COMBO_HEIGHT);
+	private void layoutTrackSelector(JComboBox<?> comboBox, Component scaleContext) {
+		int comboHeight = UiScale.scale(scaleContext, COMBO_HEIGHT);
 		Dimension comboSize = new Dimension(comboBox.getPreferredSize().width, comboHeight);
 		comboBox.setPreferredSize(comboSize);
 		comboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, comboHeight));
