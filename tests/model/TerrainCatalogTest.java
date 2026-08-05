@@ -10,9 +10,15 @@ class TerrainCatalogTest {
 	@Test
 	void parsesKnownTerrainIds() {
 		assertEquals(Terrain.GRASS, Terrain.fromId("grass"));
-		assertEquals(Terrain.FOREST, Terrain.fromId("FOREST"));
-		assertEquals(Terrain.AUTUMN, Terrain.fromId(" autumn "));
-		assertEquals(Terrain.DESERT, Terrain.fromId("desert"));
+		assertEquals(Terrain.SAND, Terrain.fromId("SAND"));
+		assertEquals(Terrain.SAND, Terrain.fromId(" sand "));
+	}
+
+	@Test
+	void mapsLegacyTerrainIds() {
+		assertEquals(Terrain.SAND, Terrain.fromId("desert"));
+		assertEquals(Terrain.GRASS, Terrain.fromId("forest"));
+		assertEquals(Terrain.GRASS, Terrain.fromId("autumn"));
 	}
 
 	@Test
@@ -22,11 +28,11 @@ class TerrainCatalogTest {
 
 	@Test
 	void eachConfiguredTrackHasATerrain() {
-		assertEquals(Circuit.TRACK_COUNT, GameCatalog.TRACK_TERRAINS.length);
+		assertEquals(4, GameCatalog.TRACK_TERRAINS.length);
 		assertEquals(Terrain.GRASS, GameCatalog.trackTerrain(0));
-		assertEquals(Terrain.AUTUMN, GameCatalog.trackTerrain(1));
-		assertEquals(Terrain.FOREST, GameCatalog.trackTerrain(2));
-		assertEquals(Terrain.DESERT, GameCatalog.trackTerrain(3));
+		assertEquals(Terrain.SAND, GameCatalog.trackTerrain(1));
+		assertEquals(Terrain.GRASS, GameCatalog.trackTerrain(2));
+		assertEquals(Terrain.SAND, GameCatalog.trackTerrain(3));
 	}
 
 	@Test

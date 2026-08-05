@@ -1,15 +1,13 @@
 package model;
 
 /**
- * Visual biome for a track: selects ground fill style and flora sprite set.
+ * Visual biome for a track: selects Kenney ground tiles and flora sprites.
  * Configured per track via {@code catalog.track.terrains}.
  */
 public enum Terrain {
 
 	GRASS("grass"),
-	FOREST("forest"),
-	AUTUMN("autumn"),
-	DESERT("desert");
+	SAND("sand");
 
 	private final String id;
 
@@ -23,13 +21,20 @@ public enum Terrain {
 
 	/**
 	 * Parses a terrain id (case-insensitive). Unknown values fall back to
-	 * {@link #GRASS}.
+	 * {@link #GRASS}. Legacy ids {@code desert} → sand and
+	 * {@code forest}/{@code autumn} → grass.
 	 */
 	public static Terrain fromId(String rawId) {
 		if (rawId == null || rawId.isBlank()) {
 			return GRASS;
 		}
 		String normalized = rawId.trim().toLowerCase();
+		if ("desert".equals(normalized)) {
+			return SAND;
+		}
+		if ("forest".equals(normalized) || "autumn".equals(normalized)) {
+			return GRASS;
+		}
 		for (Terrain terrain : values()) {
 			if (terrain.id.equals(normalized)) {
 				return terrain;

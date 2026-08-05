@@ -124,7 +124,8 @@ Unit tests live under `tests/`, mirroring the main package structure (`tests/mod
 
 | Path                        | Purpose                                      |
 |-----------------------------|----------------------------------------------|
-| `src/sprites/`              | PNG sprites, track tiles, terrain flora      |
+| `src/sprites/`              | PNG sprites and track tiles                  |
+| `third_party/kenney-…/`     | Kenney zip + license (extracted at build)    |
 | `src/data/hall_of_fame.dat` | Seed leaderboard copied on first run         |
 | `docs/REPORT.md`            | English project report                       |
 | `README.md` (repo root)     | User-facing quick start                      |

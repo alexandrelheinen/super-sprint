@@ -175,7 +175,7 @@ Graphics are static PNG files under `src/sprites/`:
 
 - Car sprites: `car_00.png` … `car_03.png` (zero-based, two-digit snake_case)
 - Track tiles: `track_00.png` … `track_06.png` (same naming; wide Super Sprint lane geometry; Kenney-inspired asphalt from `scripts/generate-track-tiles.py`)
-- Terrain flora: `trees/<terrain>/…` (Kenney CC0 derivatives)
+- Terrain scenery: Kenney Top-down Tanks Redux grass/sand tiles + green/brown trees (CC0; zip vendored under `third_party/`, extracted to `build/sprites/kenney/` at build)
 - UI: `icon.png`, splash, generated `track_preview_XX.png`
 
 Tile size in pixels is `GameFrame.TILE_SIZE` (219 px). Physics radii (`INNER_RADIUS` / `OUTER_RADIUS`) stay tied to these wide tiles; narrower third-party road packs are not drop-in replacements. A future art pass could unify background, track, and cars under one sprite set or original designs.
