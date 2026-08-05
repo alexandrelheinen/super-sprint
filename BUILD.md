@@ -6,6 +6,7 @@ This project is a plain Java application (no Maven/Gradle). All build steps run 
 
 - **JDK 17+** with `javac` and `java` on your `PATH`
 - **GNU Make**
+- **curl** and **ffmpeg** (download and prepare car sprites at build time; bundled sprites are used if preparation fails)
 - **Xvfb** (optional, only for headless smoke testing on Linux CI or servers)
 
 Check your setup:
@@ -33,6 +34,8 @@ make compile
 ```
 
 Sources live under `src/` in packages `controller`, `model`, and `view`. Class files are written to `build/` mirroring the package structure.
+
+During compilation, `scripts/prepare-car-sprites.sh` downloads GTA 2 car artwork (A-Type, B-Type, Z-Type, T-Rex) from the GTA Wiki, horizontally flips each image so it faces right in-game, and writes PNGs to `build/images/voitureN.png`. If a download or conversion fails, a warning is printed and the bundled `images/voitureN.png` fallback is copied instead.
 
 Equivalent manual command:
 
@@ -83,6 +86,7 @@ Older revisions used a hand-maintained `java-files.txt` source list. That workfl
 |---------|--------------|-----|
 | `Could not find or load main class controller.Main` | Not compiled or wrong directory | Run `make compile` from repo root |
 | Missing images / file not found | Wrong working directory | Always run from repository root |
+| Car sprite download failed | Network blocked or missing ffmpeg | Warnings appear during `make compile`; bundled `images/voiture*.png` are copied to `build/images/` |
 | HeadlessException on CI | No display | Use `make smoke-test` (includes Xvfb) |
 | Deprecation warnings for Observer | Legacy observer pattern | Warnings are expected; see CONTRIBUTING.md |
 

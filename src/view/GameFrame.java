@@ -46,7 +46,7 @@ public class GameFrame extends JFrame implements Observer {
 		carSprites = new BufferedImage[carModels.length];
 		for (int index = 0; index < carModels.length; index++) {
 			try {
-				carSprites[index] = ImageIO.read(new File("images/voiture" + carModels[index] + ".png"));
+				carSprites[index] = ImageIO.read(new File(AssetPaths.carSpritePath(carModels[index])));
 				System.out.println("Sprite #" + (index + 1) + " loaded");
 			} catch (Exception exception) {
 				System.err.println("Error loading car sprites: " + exception.getMessage());

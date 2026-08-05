@@ -258,7 +258,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		if (name.contains("car")) {
 			int playerIndex = name.contains("1") ? 0 : 1;
 			int modelIndex = box.getSelectedIndex();
-			carIcons[playerIndex].setIcon(new ImageIcon("images/voiture" + (modelIndex + 1) + ".png"));
+			carIcons[playerIndex].setIcon(new ImageIcon(AssetPaths.carSpritePath(modelIndex + 1)));
 			int[] stats = Car.CAR_MODEL_STATS[modelIndex];
 			for (int statIndex = 0; statIndex < 3; statIndex++) {
 				carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
