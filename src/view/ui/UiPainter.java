@@ -140,8 +140,7 @@ public final class UiPainter {
 
 	public static void paintRaceViewportFrame(Graphics2D graphics, int x, int y, int width, int height) {
 		enableQuality(graphics);
-		graphics.setColor(GameTheme.BACKGROUND_DARK);
-		graphics.fillRect(x - 8, y - 8, width + 16, height + 16);
+		// Border only — infield/open tiles should show the grass scenery underneath.
 		graphics.setColor(GameTheme.GLASS_BORDER);
 		graphics.setStroke(new BasicStroke(2f));
 		graphics.drawRect(x - 6, y - 6, width + 12, height + 12);
