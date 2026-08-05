@@ -74,4 +74,4 @@ smoke-test: compile
 	@echo "Smoke test passed (process started successfully)"
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) bin

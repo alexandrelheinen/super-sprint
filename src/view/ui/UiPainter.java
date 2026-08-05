@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.geom.Path2D;
 
 import view.theme.GameTheme;
 
@@ -118,34 +117,6 @@ public final class UiPainter {
 		graphics.fillRect(x, y, width, 2);
 		graphics.setColor(GameTheme.GLASS_BORDER);
 		graphics.drawLine(x, y, x + width, y);
-	}
-
-	public static void paintHudBadge(
-			Graphics2D graphics,
-			int x,
-			int y,
-			int width,
-			int height,
-			String text,
-			java.awt.Font font) {
-		enableQuality(graphics);
-		paintGlassSurface(graphics, x, y, width, height, 14);
-		graphics.setFont(font);
-		graphics.setColor(GameTheme.TEXT_PRIMARY);
-		var metrics = graphics.getFontMetrics();
-		int textX = x + (width - metrics.stringWidth(text)) / 2;
-		int textY = y + (height - metrics.getHeight()) / 2 + metrics.getAscent();
-		graphics.drawString(text, textX, textY);
-	}
-
-	public static void paintRaceViewportFrame(Graphics2D graphics, int x, int y, int width, int height) {
-		enableQuality(graphics);
-		// Border only — infield/open tiles should show the grass scenery underneath.
-		graphics.setColor(GameTheme.GLASS_BORDER);
-		graphics.setStroke(new BasicStroke(2f));
-		graphics.drawRect(x - 6, y - 6, width + 12, height + 12);
-		graphics.setColor(GameTheme.ACCENT_BLUE);
-		graphics.drawRect(x - 2, y - 2, width + 4, height + 4);
 	}
 
 	private static void paintDiagonalStripes(Graphics2D graphics, int width, int height) {

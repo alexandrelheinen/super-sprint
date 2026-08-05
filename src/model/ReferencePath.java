@@ -37,10 +37,6 @@ public final class ReferencePath {
 		return headings[index];
 	}
 
-	public double curvatureAt(int index) {
-		return curvatures[index];
-	}
-
 	static ReferencePath fromSamples(List<SampleBuilder> builders) {
 		if (builders.isEmpty()) {
 			return empty();

@@ -37,10 +37,6 @@ public abstract class Controller {
 		return car;
 	}
 
-	public static int getPlayerCount() {
-		return playerCount;
-	}
-
 	public static void resetPlayerCount() {
 		playerCount = 0;
 	}

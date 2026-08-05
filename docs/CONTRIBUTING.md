@@ -12,7 +12,7 @@ Super Sprint Supélec is a desktop Java Swing game inspired by [Super Sprint](ht
 | `view`      | Swing UI (single AppShell window)         |
 | `controller`| Game loop, input handling, AI logic       |
 
-Assets live under `src/sprites/` and `src/data/`. Documentation and UML diagrams live under `docs/`. Runtime Hall of Fame data is stored in the Linux user data directory (see `model.ResourcePaths`).
+Assets live under `src/sprites/` and `src/data/`. Documentation lives under `docs/`. Runtime Hall of Fame data is stored in the Linux user data directory (see `model.ResourcePaths`).
 
 ## General principles
 
@@ -56,7 +56,7 @@ src/
   view/         # AppShell, GameFrame (race canvas), screen panels
   sprites/      # Bundled PNG assets
   data/         # Seed Hall of Fame serialization file
-docs/           # Markdown documentation and UML diagrams
+docs/           # Markdown documentation
 ```
 
 Each public class belongs in its own file named after the class. The entry point is `controller.Main`.
@@ -124,9 +124,8 @@ Unit tests live under `tests/`, mirroring the main package structure (`tests/mod
 
 | Path                        | Purpose                                      |
 |-----------------------------|----------------------------------------------|
-| `src/sprites/`              | PNG sprites, menus, track tiles              |
+| `src/sprites/`              | PNG sprites, track tiles, terrain flora      |
 | `src/data/hall_of_fame.dat` | Seed leaderboard copied on first run         |
-| `docs/diagram/`             | UML class diagram (`classes.ucls`, PNG export)|
 | `docs/REPORT.md`            | English project report                       |
 | `README.md` (repo root)     | User-facing quick start                      |
 | `docs/BUILD.md`             | Build and run instructions                   |

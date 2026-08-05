@@ -9,6 +9,7 @@ without changing Java source code.
 | `game.properties` | Window title and race rules (max cars, human players) |
 | `theme.properties` | UI colors (RGB), glass surfaces, HUD strip, and font family/sizes |
 | `ui.properties` | Reference resolution and minimum window/font sizes |
+| `world.properties` | Pixels-per-meter and meters-per-tile world scale |
 | `messages.properties` | Menu labels, help text, and dialog copy |
 
 Files are loaded in alphabetical order; a key defined in multiple files uses the

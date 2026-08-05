@@ -126,10 +126,6 @@ public class GameFrame extends Canvas implements Observer {
 		setIgnoreRepaint(true);
 	}
 
-	public Dimension getPreferredRaceSize() {
-		return new Dimension(preferredRaceSize);
-	}
-
 	/**
 	 * Baseline race content size used to size the shell. Live races contain-fit
 	 * the asphalt ribbon into whatever canvas they receive.

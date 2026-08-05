@@ -58,14 +58,6 @@ public class DubinsVehicle {
 		return speed;
 	}
 
-	public double getTurnRate() {
-		return turnRate;
-	}
-
-	public double getMaxTurnRate() {
-		return maxTurnRate;
-	}
-
 	public void syncPose(double x, double y, double heading, double speed) {
 		this.x = x;
 		this.y = y;

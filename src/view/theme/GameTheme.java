@@ -9,7 +9,6 @@ import view.UiScale;
 public final class GameTheme {
 
 	private static final String KEY_COLOR_BACKGROUND_DARK = "theme.color.background.dark";
-	private static final String KEY_COLOR_BACKGROUND_LIGHT = "theme.color.background.light";
 	private static final String KEY_COLOR_PANEL_SURFACE = "theme.color.panel.surface";
 	private static final String KEY_COLOR_ACCENT_BLUE = "theme.color.accent.blue";
 	private static final String KEY_COLOR_ACCENT_BLUE_BRIGHT = "theme.color.accent.blue.bright";
@@ -36,7 +35,6 @@ public final class GameTheme {
 	private static final int DEFAULT_FONT_SIZE_HUD = 32;
 
 	public static final Color BACKGROUND_DARK = ConfigLoader.getColor(KEY_COLOR_BACKGROUND_DARK, "12,12,18");
-	public static final Color BACKGROUND_LIGHT = ConfigLoader.getColor(KEY_COLOR_BACKGROUND_LIGHT, "228,232,240");
 	public static final Color PANEL_SURFACE = ConfigLoader.getColor(KEY_COLOR_PANEL_SURFACE, "18,24,36");
 	public static final Color ACCENT_BLUE = ConfigLoader.getColor(KEY_COLOR_ACCENT_BLUE, "0,90,180");
 	public static final Color ACCENT_BLUE_BRIGHT = ConfigLoader.getColor(KEY_COLOR_ACCENT_BLUE_BRIGHT, "30,130,230");

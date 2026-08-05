@@ -212,11 +212,6 @@ public class Circuit extends Observable {
 		return radius > Circuit.INNER_RADIUS && radius < Circuit.OUTER_RADIUS;
 	}
 
-	public int getTileType(Car car) {
-		int[] gridCell = getGridCoordinates(car);
-		return trackMap[gridCell[0]][gridCell[1]];
-	}
-
 	public int[] getGridCoordinates(Car car) {
 		int row = (int) (1.0 * mapDimensions[0] * car.getY() / frameDimensions[1]);
 		int column = (int) (1.0 * mapDimensions[1] * car.getX() / frameDimensions[0]);

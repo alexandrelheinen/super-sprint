@@ -16,7 +16,6 @@ public class KeyboardPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	private static final int KEY_GAP = 8;
-	private static final int DEFAULT_KEY_SIZE = 56;
 
 	public enum Layout {
 		ARROWS,
@@ -25,10 +24,6 @@ public class KeyboardPanel extends JPanel {
 
 	private final int keySize;
 	private final int keyGap;
-
-	public KeyboardPanel(Component context, Layout layout) {
-		this(context, layout, DEFAULT_KEY_SIZE);
-	}
 
 	public KeyboardPanel(Component context, Layout layout, int unscaledKeySize) {
 		setOpaque(false);

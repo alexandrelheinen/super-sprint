@@ -1,10 +1,10 @@
 # Super Sprint Supélec
 
-<img src="src/sprites/icon2.png" alt="Super Sprint" width="120" align="left" style="margin-right: 15px; margin-bottom: 15px;">
+<img src="src/sprites/icon.png" alt="Super Sprint" width="120" align="left" style="margin-right: 15px; margin-bottom: 15px;">
 
 This project was carried out as part of the Supélec engineering curriculum (*Projet Logiciel*, Sequence 6) between November 2014 and February 2015.
 
-The goal was to design and implement a complete desktop application in Java, from requirements analysis through to a playable prototype with documentation and UML models.
+The goal was to design and implement a complete desktop application in Java, from requirements analysis through to a playable prototype with documentation.
 
 The chosen theme is a simplified clone of the arcade game [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/), a top-down car race on modular tracks, with lap counting, collisions, and a persistent leaderboard.
 
@@ -12,9 +12,9 @@ The chosen theme is a simplified clone of the arcade game [Super Sprint](http://
 
 - Top-down arcade racing with four car models and four track layouts
 - One- or two-player local multiplayer (remaining slots filled by AI opponents)
-- Fixed three-lap races with lap counting and race timer
+- Configurable lap counts with race timer
 - Hall of Fame leaderboard stored in the Linux user data directory
-- Simple proportional–derivative (PD) controller for AI drivers
+- Path-following PD controller for AI drivers
 
 ## Requirements
 
@@ -51,7 +51,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and troublesh
 | 1      | ↑ / ↓ arrow keys  | ← / → arrow keys |
 | 2      | W / S             | A / D |
 
-Each race runs for **3 laps**. The first car to complete the lap count wins.
+Choose the lap count in Race Setup (default **3**). The first car to finish wins.
 
 ## Project layout
 
@@ -62,7 +62,7 @@ src/
   view/         Swing menus and race rendering
   sprites/      Bundled PNG assets (cars, tracks, UI, Kenney trees)
   data/         Seed Hall of Fame file copied on first run
-docs/           Markdown documentation and UML diagrams
+docs/           Markdown documentation
 build/          Compiled classes and prepared car sprites (generated)
 ```
 

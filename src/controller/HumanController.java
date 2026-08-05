@@ -3,7 +3,6 @@ package controller;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-import model.Car;
 import model.Circuit;
 import view.GameFrame;
 
@@ -23,10 +22,6 @@ public class HumanController extends Controller implements KeyListener {
 		super(modelIndex, startPosition, frame, circuit);
 		this.playerNumber = playerNumber;
 		frame.addKeyListener(this);
-	}
-
-	public int getPlayerNumber() {
-		return playerNumber;
 	}
 
 	@Override
