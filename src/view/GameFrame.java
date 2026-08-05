@@ -19,6 +19,7 @@ import javax.swing.JFrame;
 
 import model.Car;
 import model.Circuit;
+import model.ResourcePaths;
 
 public class GameFrame extends JFrame implements Observer {
 
@@ -46,7 +47,7 @@ public class GameFrame extends JFrame implements Observer {
 		carSprites = new BufferedImage[carModels.length];
 		for (int index = 0; index < carModels.length; index++) {
 			try {
-				carSprites[index] = ImageIO.read(new File(AssetPaths.carSpritePath(carModels[index])));
+				carSprites[index] = ImageIO.read(new File(ResourcePaths.carSpritePath(carModels[index])));
 				System.out.println("Sprite #" + (index + 1) + " loaded");
 			} catch (Exception exception) {
 				System.err.println("Error loading car sprites: " + exception.getMessage());
@@ -56,7 +57,7 @@ public class GameFrame extends JFrame implements Observer {
 
 		trackTiles = loadTrackTiles(trackMap);
 		try {
-			backgroundTexture = ImageIO.read(new File("images/texture.png"));
+			backgroundTexture = ImageIO.read(new File(ResourcePaths.bundledSprite("texture.png")));
 		} catch (Exception exception) {
 			System.err.println("Error loading background texture: " + exception.getMessage());
 		}
@@ -64,7 +65,7 @@ public class GameFrame extends JFrame implements Observer {
 		hudColor = new Color(0, 90, 180);
 		hudFont = new Font("Segoe UI", Font.BOLD, 20);
 
-		setIconImage(new ImageIcon("images/icon.png").getImage());
+		setIconImage(new ImageIcon(ResourcePaths.bundledSprite("icon.png")).getImage());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		pack();
 		setSize(20 + mapDimensions[1] * TILE_SIZE, 50 + 20 + mapDimensions[0] * TILE_SIZE);
@@ -184,7 +185,7 @@ public class GameFrame extends JFrame implements Observer {
 		for (int column = 0; column < mapDimensions[1]; column++) {
 			for (int row = 0; row < mapDimensions[0]; row++) {
 				try {
-					tiles[row][column] = ImageIO.read(new File("images/track" + map[row][column] + ".png"));
+					tiles[row][column] = ImageIO.read(new File(ResourcePaths.bundledSprite("track" + map[row][column] + ".png")));
 				} catch (Exception exception) {
 					System.err.println("Error loading track tile images: " + exception.getMessage());
 				}

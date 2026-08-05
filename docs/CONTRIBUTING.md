@@ -12,7 +12,7 @@ Super Sprint Supélec is a desktop Java Swing game inspired by [Super Sprint](ht
 | `view`      | Swing UI frames and rendering             |
 | `controller`| Game loop, input handling, AI logic       |
 
-Assets (`images/`), serialized data (`halloffame.dat`), and UML diagrams (`diagram/`) live at the repository root.
+Assets live under `src/sprites/` and `src/data/`. Documentation and UML diagrams live under `docs/`. Runtime Hall of Fame data is stored in the Linux user data directory (see `model.ResourcePaths`).
 
 ## General principles
 
@@ -52,8 +52,11 @@ Follow standard Java conventions ([Oracle Code Conventions](https://www.oracle.c
 ```
 src/
   controller/   # Main, Game, Controller hierarchy, game tick task
-  model/        # Car, Circuit, HallOfFame, Result
+  model/        # Car, Circuit, HallOfFame, Result, ResourcePaths
   view/         # MenuFrame, GameFrame, HallFrame
+  sprites/      # Bundled PNG assets
+  data/         # Seed Hall of Fame serialization file
+docs/           # Markdown documentation and UML diagrams
 ```
 
 Each public class belongs in its own file named after the class. The entry point is `controller.Main`.
@@ -92,7 +95,7 @@ Each public class belongs in its own file named after the class. The entry point
 
 ### Serialization
 
-- `Result` and `HallOfFame` persist data to `halloffame.dat` via Java serialization. When changing serializable classes, bump `serialVersionUID` intentionally and document migration needs.
+- `Result` and `HallOfFame` persist leaderboard data via Java serialization to the user data file resolved by `ResourcePaths.userHallOfFameFile()` (seeded from `src/data/hall_of_fame.dat` on first run). When changing serializable classes, bump `serialVersionUID` intentionally and document migration needs.
 
 ### Deprecated APIs
 
@@ -118,13 +121,14 @@ When adding tests in the future, prefer JUnit 5 under `src/test/java/` mirroring
 
 ## Asset and documentation files
 
-| Path              | Purpose                                      |
-|-------------------|----------------------------------------------|
-| `images/`         | PNG sprites, menus, track tiles              |
-| `halloffame.dat`  | Serialized leaderboard (generated at runtime)|
-| `diagram/`        | UML class diagram (`classes.ucls`, PNG export) |
-| `REPORT.md`       | English project report                       |
-| `README.md`       | User-facing quick start                      |
+| Path                        | Purpose                                      |
+|-----------------------------|----------------------------------------------|
+| `src/sprites/`              | PNG sprites, menus, track tiles              |
+| `src/data/hall_of_fame.dat` | Seed leaderboard copied on first run         |
+| `docs/diagram/`             | UML class diagram (`classes.ucls`, PNG export)|
+| `docs/REPORT.md`            | English project report                       |
+| `docs/README.md`            | User-facing quick start                      |
+| `README.md` (repo root)     | Pointer to full documentation                |
 
 Do not commit OS junk (`Thumbs.db`, `.DS_Store`). Binary assets should stay unchanged unless replacing art.
 

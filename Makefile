@@ -3,6 +3,7 @@ BUILD_DIR := build
 MAIN_CLASS := controller.Main
 SMOKE_TIMEOUT_SEC := 5
 SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
+BUNDLED_CAR_SPRITES := src/sprites/voiture1.png src/sprites/voiture2.png src/sprites/voiture3.png src/sprites/voiture4.png
 
 .PHONY: all compile run smoke-test clean help prepare-sprites
 
@@ -16,12 +17,12 @@ help:
 	@echo "  make clean       Remove build artifacts"
 	@echo "  make help        Show this message"
 
-$(BUILD_DIR)/images/.sprites-stamp: $(SPRITE_SCRIPT) images/voiture1.png images/voiture2.png images/voiture3.png images/voiture4.png
+$(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(BUNDLED_CAR_SPRITES)
 	@bash $(SPRITE_SCRIPT) $(BUILD_DIR)
 
-prepare-sprites: $(BUILD_DIR)/images/.sprites-stamp
+prepare-sprites: $(BUILD_DIR)/sprites/.sprites-stamp
 
-$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(BUILD_DIR)/images/.sprites-stamp
+$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(BUILD_DIR)/sprites/.sprites-stamp
 	@mkdir -p $(BUILD_DIR)
 	@find src -name '*.java' > $(BUILD_DIR)/sources.txt
 	javac -d $(BUILD_DIR) -sourcepath src @$(BUILD_DIR)/sources.txt

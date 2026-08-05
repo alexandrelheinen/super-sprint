@@ -1,6 +1,6 @@
 # Super Sprint Supélec — build instructions
 
-This project is a plain Java application (no Maven/Gradle). All build steps run from the **repository root** so relative asset paths (`images/`, `halloffame.dat`) resolve correctly.
+This project is a plain Java application (no Maven/Gradle). All build and run commands execute from the **repository root** so relative paths to `src/sprites/` and `src/data/` resolve correctly.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ make --version
 | `make compile`     | Compile all sources into `build/`                |
 | `make run`         | Compile (if needed) and launch the game          |
 | `make smoke-test`  | Headless launch test (exits after a few seconds) |
-| `make clean`       | Remove compiled classes                          |
+| `make clean`       | Remove compiled classes and prepared sprites     |
 | `make help`        | List available targets                           |
 
 ## Compile
@@ -35,7 +35,7 @@ make compile
 
 Sources live under `src/` in packages `controller`, `model`, and `view`. Class files are written to `build/` mirroring the package structure.
 
-During compilation, `scripts/prepare-car-sprites.sh` downloads GTA 2 car artwork (A-Type, B-Type, Z-Type, T-Rex) from the GTA Wiki, horizontally flips each image so it faces right in-game, and writes PNGs to `build/images/voitureN.png`. If a download or conversion fails, a warning is printed and the bundled `images/voitureN.png` fallback is copied instead.
+During compilation, `scripts/prepare-car-sprites.sh` downloads GTA 2 car artwork (A-Type, B-Type, Z-Type, T-Rex) from the GTA Wiki, horizontally flips each image so it faces right in-game, and writes PNGs to `build/sprites/voitureN.png`. If a download or conversion fails, a warning is printed and the bundled `src/sprites/voitureN.png` fallback is copied instead.
 
 Equivalent manual command:
 
@@ -74,19 +74,28 @@ This wraps the JVM with `xvfb-run` and terminates after five seconds. A exit cod
 make clean
 ```
 
-Removes `build/` and generated source lists. Does **not** delete `halloffame.dat` (runtime leaderboard data).
+Removes `build/` and generated source lists. Does **not** delete the user Hall of Fame file under `~/.local/share/super-sprint-supelec/`.
+
+## User data (Linux)
+
+On first launch, the game copies `src/data/hall_of_fame.dat` to:
+
+- `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat`, or
+- `~/.local/share/super-sprint-supelec/hall_of_fame.dat` when `XDG_DATA_HOME` is unset.
+
+Subsequent runs read and write leaderboard data from that user file only.
 
 ## Legacy compilation note
 
-Older revisions used a hand-maintained `java-files.txt` source list. That workflow has been removed in favor of automatic source discovery via the Makefile.
+Older revisions used a hand-maintained `java-files.txt` source list and stored assets under `images/` at the repository root. That layout has been replaced by `src/sprites/`, `src/data/`, and automatic source discovery via the Makefile.
 
 ## Troubleshooting
 
 | Problem | Likely cause | Fix |
 |---------|--------------|-----|
 | `Could not find or load main class controller.Main` | Not compiled or wrong directory | Run `make compile` from repo root |
-| Missing images / file not found | Wrong working directory | Always run from repository root |
-| Car sprite download failed | Network blocked or missing ffmpeg | Warnings appear during `make compile`; bundled `images/voiture*.png` are copied to `build/images/` |
+| Missing sprites / file not found | Wrong working directory | Always run from repository root |
+| Car sprite download failed | Network blocked or missing ffmpeg | Warnings appear during `make compile`; bundled `src/sprites/voiture*.png` are copied to `build/sprites/` |
 | HeadlessException on CI | No display | Use `make smoke-test` (includes Xvfb) |
 | Deprecation warnings for Observer | Legacy observer pattern | Warnings are expected; see CONTRIBUTING.md |
 
