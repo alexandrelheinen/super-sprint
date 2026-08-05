@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <class-diagram version="1.1.8" icons="true" automaticImage="PNG" always-add-relationships="true" generalizations="true" 
   realizations="true" associations="true" dependencies="true" nesting-relationships="true">  
-  <class id="1" language="java" name="controleur.Controleur" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/controleur/Controleur.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="1" language="java" name="controller.Controller" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/controller/Controleur.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="585" y="381"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -10,8 +10,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="2" language="java" name="controleur.Game" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/controleur/Game.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="2" language="java" name="controller.Game" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/controller/Game.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="852" y="229"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -19,8 +19,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="3" language="java" name="controleur.Humain" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/controleur/Humain.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="3" language="java" name="controller.HumanController" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/controller/Humain.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="562" y="665"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -28,8 +28,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="4" language="java" name="controleur.Intelligence" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/controleur/Intelligence.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="4" language="java" name="controller.AiController" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/controller/Intelligence.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="994" y="642"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -37,8 +37,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="5" language="java" name="controleur.Temps" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/controleur/Temps.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="5" language="java" name="controller.GameTickTask" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/controller/Temps.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="564" y="84"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -46,8 +46,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="6" language="java" name="modele.Circuit" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/modele/Circuit.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="6" language="java" name="model.Circuit" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/model/Circuit.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="200" y="938"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -55,8 +55,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="7" language="java" name="modele.Voiture" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/modele/Voiture.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="7" language="java" name="model.Car" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/model/Voiture.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="233" y="330"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -64,8 +64,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="8" language="java" name="vue.GameFrame" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/vue/GameFrame.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="8" language="java" name="view.GameFrame" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/view/GameFrame.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="935" y="990"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -73,8 +73,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="9" language="java" name="vue.MenuFrame" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/vue/MenuFrame.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="9" language="java" name="view.MenuFrame" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/view/MenuFrame.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="708" y="1170"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -82,8 +82,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="10" language="java" name="vue.HallFrame" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/vue/HallFrame.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="10" language="java" name="view.HallFrame" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/view/HallFrame.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="208" y="1346"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -91,8 +91,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="11" language="java" name="modele.HallOfFame" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/modele/HallOfFame.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="11" language="java" name="model.HallOfFame" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/model/HallOfFame.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="433" y="1106"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -100,8 +100,8 @@
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="12" language="java" name="modele.Result" project="SuperSprintSupelec" 
-    file="/SuperSprintSupelec/src/modele/Result.java" binary="false" corner="BOTTOM_RIGHT">    
+  <class id="12" language="java" name="model.Result" project="SuperSprintSupelec" 
+    file="/SuperSprintSupelec/src/model/Result.java" binary="false" corner="BOTTOM_RIGHT">    
     <position height="-1" width="-1" x="485" y="1417"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
@@ -119,7 +119,7 @@
   </association>  
   <association id="16">    
     <end type="SOURCE" refId="5" navigable="false">      
-      <attribute id="17" name="controle"/>      
+      <attribute id="17" name="controllers"/>      
       <multiplicity id="18" minimum="0" maximum="2147483647"/>    
     </end>    
     <end type="TARGET" refId="1" navigable="true"/>    
@@ -151,7 +151,7 @@
   </dependency>  
   <association id="26">    
     <end type="SOURCE" refId="1" navigable="false">      
-      <attribute id="27" name="voiture"/>      
+      <attribute id="27" name="car"/>      
       <multiplicity id="28" minimum="0" maximum="1"/>    
     </end>    
     <end type="TARGET" refId="7" navigable="true"/>    
@@ -307,7 +307,7 @@
   </dependency>  
   <association id="78">    
     <end type="SOURCE" refId="2" navigable="false">      
-      <attribute id="79" name="controleur"/>      
+      <attribute id="79" name="controllers"/>      
       <multiplicity id="80" minimum="0" maximum="2147483647"/>    
     </end>    
     <end type="TARGET" refId="1" navigable="true"/>    

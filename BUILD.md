@@ -75,7 +75,7 @@ Removes `build/` and generated source lists. Does **not** delete `halloffame.dat
 
 ## Legacy compilation note
 
-Older revisions used `java-files.txt` with `javac @java-files.txt`. That approach is replaced by the Makefile, which discovers sources automatically. The legacy file may remain temporarily for reference but is not required to build.
+Older revisions used a hand-maintained `java-files.txt` source list. That workflow has been removed in favor of automatic source discovery via the Makefile.
 
 ## Troubleshooting
 
