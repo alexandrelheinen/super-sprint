@@ -6,7 +6,6 @@ import javax.swing.SwingUtilities;
 
 import model.Car;
 import model.Circuit;
-import model.ConfigLoader;
 import model.GameCatalog;
 import model.GameConfig;
 import model.HallOfFame;
@@ -14,6 +13,7 @@ import model.ReferencePath;
 import model.TrackGeometry;
 import view.GameFrame;
 import view.MenuFrame;
+import view.dialogs.RaceCompletionDialog;
 
 public class Game {
 
@@ -23,10 +23,6 @@ public class Game {
 	public static final int ONE_BASED_INDEX_OFFSET = 1;
 
 	private static final String GAME_TITLE_PREFIX = GameConfig.GAME_TITLE + " — ";
-	private static final String MSG_COMPUTER_WON = ConfigLoader.getMessage(
-			"messages.game.computer.won",
-			"The computer won.");
-	private static final double AI_HALL_OF_FAME_TIME_MULTIPLIER = 1000.0;
 
 	public static final int[][][] TRACK_MAPS = {
 			{
@@ -153,17 +149,19 @@ public class Game {
 
 		double raceTimeMs = circuit.getRaceTimeMs();
 		int track = trackIndex - ONE_BASED_INDEX_OFFSET;
-		boolean humanWon = winnerIndex < humanPlayerCount;
 
 		SwingUtilities.invokeLater(() -> {
 			detachRenderObservers();
 			gameFrame.shutdown();
-			if (humanWon) {
-				hallOfFame.tryAddResult(raceTimeMs, track);
-			} else {
-				hallOfFame.tryAddResult(raceTimeMs * AI_HALL_OF_FAME_TIME_MULTIPLIER, track);
-				javax.swing.JOptionPane.showMessageDialog(menuFrame, MSG_COMPUTER_WON);
-			}
+			RaceCompletionDialog dialog = new RaceCompletionDialog(
+					menuFrame,
+					hallOfFame,
+					winnerIndex,
+					humanPlayerCount,
+					raceTimeMs,
+					lapCount,
+					track);
+			dialog.showDialog();
 			menuFrame.showMenu();
 		});
 	}

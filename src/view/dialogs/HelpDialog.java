@@ -28,7 +28,7 @@ public class HelpDialog extends JDialog {
 	private static final String INFO_TITLE = ConfigLoader.getString("messages.help.info.title", "Information");
 	private static final String INFO_BODY = ConfigLoader.getMessage(
 			"messages.help.info.body",
-			"Software Project 2014/2015 — Sequence 6\nVersion 14.01.14\n\nConfigure laps in Race Setup before launching the grid.\nFinish first within the lap limit to enter the Hall of Fame.");
+			"Software Project 2014/2015 — Sequence 6\nVersion 14.01.14\n\nConfigure laps in Race Setup before launching the grid.\nFinish first to enter the Hall of Fame, ranked by mean time per lap.");
 	private static final String CLOSE = ConfigLoader.getString("messages.help.button.close", "Back to Menu");
 
 	private static final int PANEL_INSET = 22;

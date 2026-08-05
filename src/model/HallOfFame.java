@@ -20,17 +20,15 @@ import view.HallFrame;
 public class HallOfFame extends Observable {
 
 	public static final int MAX_RESULTS = 10;
+	/** Returned by {@link #findPlacementRank} when a result would not place. */
+	public static final int NO_PLACEMENT = -1;
 
 	private static final int DEFAULT_BASE_TIME_MS = 30000;
 	private static final int DEFAULT_TIME_STEP_MS = 1000;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
-	private static final String DEFAULT_PLAYER_NAME = ConfigLoader.getString("messages.hall.default.player", "Player");
 	private static final String MSG_CREATE_FILE_SUFFIX = ConfigLoader.getMessage(
 			"messages.hall.create.file.suffix",
 			"\nA new Hall of Fame file will be created.");
-	private static final String MSG_NEW_ENTRY_PROMPT = ConfigLoader.getMessage(
-			"messages.hall.new.entry.prompt",
-			"New Hall of Fame entry!\n#%d - %s\nEnter the player name:");
 
 	private final Result[][] results;
 	private final Path hallOfFameFile;
@@ -85,11 +83,13 @@ public class HallOfFame extends Observable {
 
 	private void initializeDefaultRecords() {
 		String[] defaultNames = GameConfig.HALL_DEFAULT_NAMES;
+		int defaultLaps = GameConfig.DEFAULT_LAP_COUNT;
 		for (int trackIndex = 0; trackIndex < Circuit.TRACK_COUNT; trackIndex++) {
 			for (int rankIndex = 0; rankIndex < MAX_RESULTS; rankIndex++) {
 				results[trackIndex][rankIndex] = new Result(
 						defaultNames[rankIndex],
-						DEFAULT_BASE_TIME_MS + (long) DEFAULT_TIME_STEP_MS * rankIndex);
+						DEFAULT_BASE_TIME_MS + (long) DEFAULT_TIME_STEP_MS * rankIndex,
+						defaultLaps);
 			}
 		}
 		persistResults();
@@ -112,40 +112,46 @@ public class HallOfFame extends Observable {
 		return results[trackIndex][rankIndex];
 	}
 
-	public void tryAddResult(double timeMs, int trackIndex) {
+	/**
+	 * Returns the 0-based leaderboard rank this race would earn when ordered by
+	 * mean lap time, or {@link #NO_PLACEMENT} if it is slower than every entry.
+	 */
+	public int findPlacementRank(double durationMs, int lapCount, int trackIndex) {
+		double meanLapTimeMs = durationMs / lapCount;
 		int insertionIndex = MAX_RESULTS;
 		for (int rankIndex = MAX_RESULTS - ONE_BASED_INDEX_OFFSET; rankIndex >= 0; rankIndex--) {
-			double existingTime = results[trackIndex][rankIndex].getTimeMs();
-			if (timeMs < existingTime) {
+			Result existing = results[trackIndex][rankIndex];
+			if (existing == null || meanLapTimeMs < existing.getMeanLapTimeMs()) {
 				insertionIndex = rankIndex;
 			}
 		}
-		if (insertionIndex < MAX_RESULTS) {
-			insertResult(insertionIndex, timeMs, trackIndex);
-		} else {
+		return insertionIndex < MAX_RESULTS ? insertionIndex : NO_PLACEMENT;
+	}
+
+	/**
+	 * Inserts a named result at the rank implied by mean lap time and opens the
+	 * Hall of Fame. Caller must ensure the result places ({@link #findPlacementRank}
+	 * is not {@link #NO_PLACEMENT}).
+	 */
+	public void addResult(String playerName, double durationMs, int lapCount, int trackIndex) {
+		int rankIndex = findPlacementRank(durationMs, lapCount, trackIndex);
+		if (rankIndex == NO_PLACEMENT) {
 			setChanged();
 			notifyObservers();
+			return;
 		}
-	}
-
-	public int getLastUpdatedTrackIndex() {
-		return lastUpdatedTrackIndex;
-	}
-
-	private void insertResult(int rankIndex, double timeMs, int trackIndex) {
-		String message = String.format(
-				MSG_NEW_ENTRY_PROMPT,
-				rankIndex + ONE_BASED_INDEX_OFFSET,
-				GameCatalog.trackName(trackIndex + ONE_BASED_INDEX_OFFSET));
-		String playerName = JOptionPane.showInputDialog(message, DEFAULT_PLAYER_NAME);
 		for (int shiftIndex = MAX_RESULTS - ONE_BASED_INDEX_OFFSET; shiftIndex > rankIndex; shiftIndex--) {
 			results[trackIndex][shiftIndex] = results[trackIndex][shiftIndex - ONE_BASED_INDEX_OFFSET];
 		}
 		lastUpdatedTrackIndex = trackIndex;
-		results[trackIndex][rankIndex] = new Result(playerName, timeMs);
+		results[trackIndex][rankIndex] = new Result(playerName, durationMs, lapCount);
 		persistResults();
 		setChanged();
 		notifyObservers();
 		hallFrame.showHall();
+	}
+
+	public int getLastUpdatedTrackIndex() {
+		return lastUpdatedTrackIndex;
 	}
 }
