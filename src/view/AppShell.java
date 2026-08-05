@@ -659,6 +659,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private void updateTrackPreview(int trackIndex) {
 		selectedTrack = trackIndex + ONE_BASED_INDEX_OFFSET;
 		trackIcon.setIcon(new ImageIcon(TrackPreviewRenderer.render(
+				trackIndex + ONE_BASED_INDEX_OFFSET,
 				Game.TRACK_MAPS[trackIndex],
 				UiScale.scale(this, TRACK_PREVIEW_WIDTH),
 				UiScale.scale(this, SETUP_PREVIEW_HEIGHT))));
