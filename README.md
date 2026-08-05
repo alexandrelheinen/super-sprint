@@ -1,20 +1,103 @@
-# \#fr Projet Logiciel Supélec
-**Séquence 6 - 2014/2015**
+# Super Sprint Supélec
 
-A functional version [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/)-like game.
+A desktop racing game inspired by [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/), developed as the Supélec engineering software project (Sequence 6, 2014/2015).
 
-This project was developed as Supélec engineering course software project from Nov. 2014 to Feb. 2015.
+Authors: **Alexandre LOEBLEIN HEINEN** and **Gautier SHARPIN**
 
-## Compiling ##
+## Features
 
-Make sure that you have Java JDK installed in your computer and then just run the Java compiler command
+- Top-down arcade racing with four car models and four track layouts
+- One- or two-player local multiplayer (remaining slots filled by AI opponents)
+- Fixed three-lap races with lap counting and race timer
+- Hall of Fame leaderboard persisted to `halloffame.dat`
+- Simple proportional–derivative (PD) controller for AI drivers
+
+## Requirements
+
+- JDK 17 or newer
+- GNU Make
+- A graphical environment to play (X11 on Linux, native display on macOS/Windows)
+
+## Quick start
+
+From the repository root:
+
+```bash
+make run
 ```
-java @./java-files.txt
-```
-that compiles all files listed on `java-files.txt`.
 
-You can update your files list by typing (anyway a default file is given in)
+This compiles sources into `build/` and launches `controller.Main`.
+
+Other useful commands:
+
+```bash
+make compile      # compile only
+make smoke-test   # headless startup check (Linux CI)
+make clean        # remove build artifacts
+make help         # list targets
 ```
-javac $(find . -name \*.java)
+
+See [BUILD.md](BUILD.md) for detailed build instructions and troubleshooting.
+
+## Controls
+
+| Player | Accelerate / brake | Turn |
+|--------|-------------------|------|
+| 1      | ↑ / ↓ arrow keys  | ← / → arrow keys |
+| 2      | W / S             | A / D |
+
+Each race runs for **3 laps**. The first car to complete the lap count wins.
+
+## Project layout
+
 ```
-**Note:** you must change the current directory to your project source folder before run the command to update filename list.
+src/
+  controller/   Game loop, input, AI (Main entry point)
+  model/        Car physics, track logic, Hall of Fame persistence
+  view/         Swing menus and race rendering
+images/         Sprites, track tiles, UI artwork
+diagram/        UML class diagram (ObjectAid source + PNG export)
+halloffame.dat  Serialized leaderboard (created/updated at runtime)
+```
+
+## Architecture
+
+The codebase follows **Model–View–Controller**:
+
+```mermaid
+flowchart LR
+  MenuFrame --> Game
+  Game --> GameFrame
+  Game --> Circuit
+  Game --> Controller
+  Controller --> Car
+  Car --> Circuit
+  GameFrame --> Car
+  GameFrame --> Circuit
+  HallOfFame --> HallFrame
+  MenuFrame --> HallOfFame
+```
+
+- **Model** — `Car`, `Circuit`, `HallOfFame`, `Result`
+- **View** — `MenuFrame`, `GameFrame`, `HallFrame`
+- **Controller** — `Game`, `Controller`, `HumanController`, `AiController`, `GameTickTask`
+
+See [REPORT.md](REPORT.md) for the full design document (English translation of the original French project report).
+
+## Documentation
+
+| File | Purpose |
+|------|---------|
+| [README.md](README.md) | Quick start (this file) |
+| [BUILD.md](BUILD.md) | Build and run instructions |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Code standards for contributors |
+| [AGENTS.md](AGENTS.md) | Checklist for AI coding assistants |
+| [REPORT.md](REPORT.md) | Project report and architecture |
+
+## Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) compiles the project and runs a headless launch smoke test on every push and pull request to `master`.
+
+## License
+
+This repository contains a student academic project. No explicit license file is provided; contact the authors for reuse questions.
