@@ -8,11 +8,11 @@
 - License: [Creative Commons Zero (CC0 1.0)](https://creativecommons.org/publicdomain/zero/1.0/)
 - Credit (optional): Kenney.nl
 
-Build extracts `PNG/Retina/` into `build/sprites/kenney/` via
-`scripts/prepare-kenney-sprites.sh`. Runtime scenery uses:
+Build extracts only the scenery sprites we use into `build/sprites/kenney/`
+via `scripts/prepare-kenney-sprites.sh` (not the full tanks/roads pack):
 
 - Ground fill tiles: `tileGrass1/2.png`, `tileSand1/2.png`
-- Flora: `treeGreen_*` (grass biome) and `treeBrown_*` (sand biome), including twigs
+- Flora: `treeGreen_*` / `treeBrown_*` (large, small, twigs, leaf)
 
 Track tiles (`track_00.png` … `track_06.png`) keep Super Sprint lane geometry and are
 **original generated art** inspired by Kenney’s asphalt look
