@@ -90,8 +90,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String COMBO_NAME_TRACK = "track";
 	private static final String COMBO_NAME_LAPS = "laps";
 
-	private static final String HERO_TITLE = ConfigLoader.getString("messages.menu.hero.title", "SUPER SPRINT SUPELEC");
-	private static final String HERO_SUBTITLE = ConfigLoader.getString("messages.menu.hero.subtitle", "Arcade top-down racing");
+	private static final String HERO_TITLE = ConfigLoader.getString("messages.menu.hero.title", "SUPER SPRINT");
+	private static final String HERO_BRAND = ConfigLoader.getString("messages.menu.hero.brand", "Supélec");
 	private static final String BUTTON_ONE_PLAYER = ConfigLoader.getString("messages.menu.button.one.player", "1 Player");
 	private static final String BUTTON_TWO_PLAYERS = ConfigLoader.getString("messages.menu.button.two.players", "2 Players");
 	private static final String BUTTON_HALL_OF_FAME = ConfigLoader.getString("messages.menu.button.hall", "Hall of Fame");
@@ -162,7 +162,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 		JPanel heroPanel = new JPanel(new BorderLayout());
 		heroPanel.setOpaque(false);
-		heroPanel.add(new HeroBanner(this, HERO_TITLE, HERO_SUBTITLE), BorderLayout.CENTER);
+		heroPanel.add(new HeroBanner(this, HERO_TITLE, HERO_BRAND), BorderLayout.CENTER);
 
 		buttonPanel = new JPanel(new GridLayout(BUTTON_GRID_COLUMNS, BUTTON_GRID_COLUMNS, BUTTON_GRID_GAP, BUTTON_GRID_GAP));
 		buttonPanel.setOpaque(false);

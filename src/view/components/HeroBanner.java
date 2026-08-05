@@ -3,6 +3,7 @@ package view.components;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -22,17 +23,18 @@ import view.ui.UiPainter;
 
 /**
  * Main menu hero: the bundled splash artwork framed in a rounded panel with a
- * dark scrim at the bottom and the game title overlaid on top of it.
+ * dark scrim at the top and the game title overlaid near the top edge.
  */
 public class HeroBanner extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	private static final int MIN_HEIGHT = 220;
 	private static final int TITLE_FONT_SIZE = 42;
-	private static final int SUBTITLE_OFFSET = 34;
+	private static final int BRAND_FONT_SIZE = 22;
+	private static final int TITLE_TOP_OFFSET = 48;
+	private static final int BRAND_GAP = 28;
 	private static final int CORNER_ARC = 28;
-	private static final int TITLE_BOTTOM_OFFSET = 74;
-	private static final double SCRIM_START_RATIO = 0.42;
+	private static final double SCRIM_END_RATIO = 0.55;
 	private static final int SCRIM_MAX_ALPHA = 235;
 
 	private static final String SPLASH_SPRITE = "splash.png";
@@ -40,13 +42,13 @@ public class HeroBanner extends JPanel {
 
 	private final Component context;
 	private final String title;
-	private final String subtitle;
+	private final String brandLine;
 	private final BufferedImage splashImage;
 
-	public HeroBanner(Component context, String title, String subtitle) {
+	public HeroBanner(Component context, String title, String brandLine) {
 		this.context = context;
 		this.title = title;
-		this.subtitle = subtitle;
+		this.brandLine = brandLine;
 		this.splashImage = loadSplashImage();
 		setOpaque(false);
 	}
@@ -76,7 +78,7 @@ public class HeroBanner extends JPanel {
 
 		int centerX = getWidth() / 2;
 		int titleBaseline = splashImage != null
-				? getHeight() - UiScale.scale(context, TITLE_BOTTOM_OFFSET)
+				? UiScale.scale(context, TITLE_TOP_OFFSET)
 				: getHeight() / 2 - 8;
 		UiPainter.paintTitleGlow(
 				graphics2D,
@@ -84,17 +86,23 @@ public class HeroBanner extends JPanel {
 				centerX,
 				titleBaseline,
 				UiScale.scale(context, TITLE_FONT_SIZE));
-		graphics2D.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, context));
-		graphics2D.setColor(GameTheme.TEXT_PRIMARY);
-		var metrics = graphics2D.getFontMetrics();
-		int subtitleWidth = metrics.stringWidth(subtitle);
-		graphics2D.drawString(subtitle, centerX - subtitleWidth / 2, titleBaseline + UiScale.scale(context, SUBTITLE_OFFSET));
+
+		if (brandLine != null && !brandLine.isEmpty()) {
+			int brandFontSize = UiScale.scale(context, BRAND_FONT_SIZE);
+			Font brandFont = GameTheme.FONT_SUBTITLE.deriveFont(Font.PLAIN, (float) brandFontSize);
+			graphics2D.setFont(brandFont);
+			graphics2D.setColor(GameTheme.TEXT_PRIMARY);
+			var metrics = graphics2D.getFontMetrics();
+			int brandWidth = metrics.stringWidth(brandLine);
+			int brandBaseline = titleBaseline + UiScale.scale(context, BRAND_GAP);
+			graphics2D.drawString(brandLine, centerX - brandWidth / 2, brandBaseline);
+		}
 		graphics2D.dispose();
 	}
 
 	/**
 	 * Draws the splash image scaled to cover the banner (cropping overflow),
-	 * clipped to a rounded frame, with a bottom gradient scrim so the
+	 * clipped to a rounded frame, with a top gradient scrim so the
 	 * overlaid title stays readable.
 	 */
 	private void paintSplashArtwork(Graphics2D graphics2D) {
@@ -118,23 +126,23 @@ public class HeroBanner extends JPanel {
 				drawHeight,
 				null);
 
-		int scrimTop = (int) (height * SCRIM_START_RATIO);
+		int scrimBottom = (int) (height * SCRIM_END_RATIO);
 		graphics2D.setPaint(new GradientPaint(
 				0,
-				scrimTop,
-				new Color(
-						GameTheme.BACKGROUND_DARK.getRed(),
-						GameTheme.BACKGROUND_DARK.getGreen(),
-						GameTheme.BACKGROUND_DARK.getBlue(),
-						0),
 				0,
-				height,
 				new Color(
 						GameTheme.BACKGROUND_DARK.getRed(),
 						GameTheme.BACKGROUND_DARK.getGreen(),
 						GameTheme.BACKGROUND_DARK.getBlue(),
-						SCRIM_MAX_ALPHA)));
-		graphics2D.fillRect(0, scrimTop, width, height - scrimTop);
+						SCRIM_MAX_ALPHA),
+				0,
+				scrimBottom,
+				new Color(
+						GameTheme.BACKGROUND_DARK.getRed(),
+						GameTheme.BACKGROUND_DARK.getGreen(),
+						GameTheme.BACKGROUND_DARK.getBlue(),
+						0)));
+		graphics2D.fillRect(0, 0, width, scrimBottom);
 
 		graphics2D.setClip(previousClip);
 		graphics2D.setColor(GameTheme.GLASS_BORDER);
