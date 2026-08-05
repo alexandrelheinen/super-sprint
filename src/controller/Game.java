@@ -41,6 +41,7 @@ public class Game {
 			HallOfFame hallOfFame,
 			MenuFrame menuFrame) {
 		Controller.resetPlayerCount();
+		GameCatalog.validateLapCount(laps);
 		this.trackIndex = trackNumber;
 		trackMap = Game.TRACK_MAPS[trackNumber - 1];
 		this.lapCount = laps;
