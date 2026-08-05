@@ -23,7 +23,9 @@ import javax.imageio.ImageIO;
 
 import model.Car;
 import model.Circuit;
+import model.GameCatalog;
 import model.ResourcePaths;
+import model.Terrain;
 import model.TrackGeometry;
 import view.theme.GameTheme;
 import view.ui.UiPainter;
@@ -90,6 +92,7 @@ public class GameFrame extends Canvas implements Observer {
 	private final java.awt.Font hudFont;
 	private final Dimension preferredRaceSize;
 	private final Rectangle2D.Float viewBounds;
+	private final Terrain terrain;
 	private BufferedImage staticScene;
 	private volatile boolean renderingEnabled = true;
 	private volatile Car[] hudCars;
@@ -98,6 +101,7 @@ public class GameFrame extends Canvas implements Observer {
 	public GameFrame(int[] carModels, int[][] trackMap, int trackNumber) {
 		this.trackMap = trackMap;
 		this.trackNumber = trackNumber;
+		this.terrain = GameCatalog.trackTerrain(trackNumber);
 		this.carModels = carModels.clone();
 		mapDimensions = new int[] {trackMap.length, trackMap[0].length};
 
@@ -271,8 +275,8 @@ public class GameFrame extends Canvas implements Observer {
 						RenderingHints.KEY_INTERPOLATION,
 						RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
-				// Letterbox outside the contain-scaled race with grass tone.
-				graphics2D.setColor(RaceSceneryPainter.GRASS_DARK);
+				// Letterbox outside the contain-scaled race with terrain tone.
+				graphics2D.setColor(RaceSceneryPainter.letterboxColor(terrain));
 				graphics2D.fillRect(0, 0, getWidth(), getHeight());
 
 				applyViewTransform(graphics2D);
@@ -322,11 +326,10 @@ public class GameFrame extends Canvas implements Observer {
 		UiPainter.enableQuality(graphics2D);
 		int seed = RaceSceneryPainter.seedFor(trackMap);
 
-		RaceSceneryPainter.paintGrassField(graphics2D, trackPixelWidth, trackPixelHeight);
-		RaceSceneryPainter.paintGrassPatches(graphics2D, trackPixelWidth, trackPixelHeight, seed ^ 0x51ED);
+		RaceSceneryPainter.paintGround(graphics2D, trackPixelWidth, trackPixelHeight, terrain, seed ^ 0x51ED);
 
-		// Block trees on the asphalt ribbon only (not whole tiles), so corner
-		// runoff and the outer belt can get splash-style canopies.
+		// Block flora on the asphalt ribbon only (not whole tiles), so corner
+		// runoff and the outer belt can still get scenery.
 		Path2D unitPath = TrackGeometry.buildPreviewPath(trackMap);
 		Shape centerline = AffineTransform.getScaleInstance(TILE_SIZE, TILE_SIZE)
 				.createTransformedShape(unitPath);
@@ -334,21 +337,23 @@ public class GameFrame extends Canvas implements Observer {
 				Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS,
 				BasicStroke.CAP_ROUND,
 				BasicStroke.JOIN_ROUND).createStrokedShape(centerline);
-		RaceSceneryPainter.paintTrees(
+		RaceSceneryPainter.paintFlora(
 				graphics2D,
 				trackPixelWidth,
 				trackPixelHeight,
 				asphaltRibbon,
+				terrain,
 				seed ^ 0xC0FFEE,
 				OUTER_TREE_COUNT,
 				0.045,
 				0.095);
-		RaceSceneryPainter.paintTreesInOpenTiles(
+		RaceSceneryPainter.paintFloraInOpenTiles(
 				graphics2D,
 				trackMap,
 				TILE_SIZE,
 				trackOriginX(),
 				trackOriginY(),
+				terrain,
 				seed ^ 0xBEE5,
 				INFIELD_TREE_COUNT);
 

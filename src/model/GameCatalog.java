@@ -8,6 +8,7 @@ public final class GameCatalog {
 
 	public static final String[] CAR_MODEL_NAMES = GameConfig.CAR_MODEL_NAMES;
 	public static final String[] TRACK_NAMES = GameConfig.TRACK_NAMES;
+	public static final Terrain[] TRACK_TERRAINS = GameConfig.TRACK_TERRAINS;
 	public static final int[] LAP_COUNT_OPTIONS = GameConfig.LAP_COUNT_OPTIONS;
 	public static final int DEFAULT_LAP_COUNT = GameConfig.DEFAULT_LAP_COUNT;
 
@@ -22,6 +23,12 @@ public final class GameCatalog {
 	public static String trackName(int trackIndex) {
 		validateIndex(trackIndex, Circuit.TRACK_COUNT, "track");
 		return TRACK_NAMES[trackIndex - ONE_BASED_INDEX_OFFSET];
+	}
+
+	/** One-based track index → terrain / biome for scenery. */
+	public static Terrain trackTerrain(int trackIndex) {
+		validateIndex(trackIndex, Circuit.TRACK_COUNT, "track");
+		return TRACK_TERRAINS[trackIndex - ONE_BASED_INDEX_OFFSET];
 	}
 
 	public static String[] carModelOptions() {

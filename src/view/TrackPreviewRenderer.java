@@ -10,12 +10,14 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 
+import model.GameCatalog;
+import model.Terrain;
 import view.theme.GameTheme;
 import view.ui.UiPainter;
 
 /**
  * Renders track menu previews by stroking a tile-accurate outline built from
- * constrained cubic Bézier segments, over shared procedural scenery.
+ * constrained cubic Bézier segments, over terrain-aware scenery.
  */
 public final class TrackPreviewRenderer {
 
@@ -30,7 +32,12 @@ public final class TrackPreviewRenderer {
 	private TrackPreviewRenderer() {
 	}
 
-	public static BufferedImage render(int[][] trackMap, int width, int height) {
+	/** Renders using the configured terrain for the one-based track index. */
+	public static BufferedImage render(int trackIndexOneBased, int[][] trackMap, int width, int height) {
+		return render(trackMap, width, height, GameCatalog.trackTerrain(trackIndexOneBased));
+	}
+
+	public static BufferedImage render(int[][] trackMap, int width, int height, Terrain terrain) {
 		Path2D trackPath = TrackPreviewPathBuilder.buildTrackPath(trackMap);
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = image.createGraphics();
@@ -40,8 +47,7 @@ public final class TrackPreviewRenderer {
 		graphics.setClip(frame);
 
 		int seed = RaceSceneryPainter.seedFor(trackMap);
-		RaceSceneryPainter.paintGrassField(graphics, width, height);
-		RaceSceneryPainter.paintGrassPatches(graphics, width, height, seed ^ 0x9E3779B9);
+		RaceSceneryPainter.paintGround(graphics, width, height, terrain, seed ^ 0x9E3779B9);
 
 		Rectangle2D bounds = trackPath.getBounds2D();
 		double spanX = Math.max(bounds.getWidth(), 1e-3);
@@ -64,11 +70,12 @@ public final class TrackPreviewRenderer {
 				BasicStroke.CAP_ROUND,
 				BasicStroke.JOIN_ROUND).createStrokedShape(trackInScreen);
 
-		RaceSceneryPainter.paintTrees(
+		RaceSceneryPainter.paintFlora(
 				graphics,
 				width,
 				height,
 				trackBand,
+				terrain,
 				seed ^ 0xA5A5A5A5,
 				TREE_COUNT,
 				0.09,

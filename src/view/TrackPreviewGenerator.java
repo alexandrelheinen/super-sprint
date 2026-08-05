@@ -26,7 +26,11 @@ public final class TrackPreviewGenerator {
 			Path outputFile = outputDirectory.resolve(
 					"track_preview" + (trackIndex + ONE_BASED_INDEX_OFFSET) + ".png");
 			ImageIO.write(
-					TrackPreviewRenderer.render(Game.TRACK_MAPS[trackIndex], PREVIEW_WIDTH, PREVIEW_HEIGHT),
+					TrackPreviewRenderer.render(
+							trackIndex + ONE_BASED_INDEX_OFFSET,
+							Game.TRACK_MAPS[trackIndex],
+							PREVIEW_WIDTH,
+							PREVIEW_HEIGHT),
 					"png",
 					outputFile.toFile());
 			System.out.println("Generated " + outputFile);
