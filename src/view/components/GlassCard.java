@@ -16,6 +16,7 @@ public class GlassCard extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static final int CORNER_ARC = 20;
 	private static final int CARD_PADDING = 14;
+	private static final int TITLE_CLEARANCE = 8;
 
 	public GlassCard(LayoutManager layout, Component context, String title) {
 		super(layout != null ? layout : new BorderLayout());
@@ -24,7 +25,7 @@ public class GlassCard extends JPanel {
 		if (title != null && !title.isEmpty()) {
 			setBorder(javax.swing.BorderFactory.createCompoundBorder(
 					ThemedPanel.sectionBorder(title, context),
-					new EmptyBorder(CARD_PADDING, CARD_PADDING, CARD_PADDING, CARD_PADDING)));
+					new EmptyBorder(TITLE_CLEARANCE, CARD_PADDING, CARD_PADDING, CARD_PADDING)));
 		}
 	}
 
