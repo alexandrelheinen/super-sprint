@@ -25,12 +25,20 @@ public final class UiScale {
 	public static final int REFERENCE_WIDTH = 960;
 	public static final int REFERENCE_HEIGHT = 720;
 
+	private static final int MIN_WINDOW_WIDTH = 640;
+	private static final int MIN_WINDOW_HEIGHT = 480;
+	private static final int SCREEN_SIZE_DIVISOR = 2;
+	private static final int MINIMUM_SIZE_DIVISOR = 2;
+	private static final float MIN_FONT_SIZE = 11f;
+
 	private UiScale() {
 	}
 
 	public static Dimension quarterScreenSize() {
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-		return new Dimension(Math.max(640, screen.width / 2), Math.max(480, screen.height / 2));
+		return new Dimension(
+				Math.max(MIN_WINDOW_WIDTH, screen.width / SCREEN_SIZE_DIVISOR),
+				Math.max(MIN_WINDOW_HEIGHT, screen.height / SCREEN_SIZE_DIVISOR));
 	}
 
 	public static float scaleFactor(Component component) {
@@ -45,7 +53,7 @@ public final class UiScale {
 
 	public static Font scaledFont(Component component, Font baseFont) {
 		float factor = scaleFactor(component);
-		return baseFont.deriveFont(Math.max(baseFont.getSize2D() * factor, 11f));
+		return baseFont.deriveFont(Math.max(baseFont.getSize2D() * factor, MIN_FONT_SIZE));
 	}
 
 	public static ImageIcon scaledCarIcon(Component component, int modelIndex, int width, int height) {
@@ -71,7 +79,7 @@ public final class UiScale {
 	public static void applyQuarterScreenSize(JFrame frame) {
 		Dimension size = quarterScreenSize();
 		frame.setSize(size);
-		frame.setMinimumSize(new Dimension(size.width / 2, size.height / 2));
+		frame.setMinimumSize(new Dimension(size.width / MINIMUM_SIZE_DIVISOR, size.height / MINIMUM_SIZE_DIVISOR));
 		frame.setLocationRelativeTo(null);
 	}
 

@@ -9,6 +9,9 @@ import view.GameFrame;
 
 public class HumanController extends Controller implements KeyListener {
 
+	private static final int PLAYER_ONE = 1;
+	private static final int PLAYER_TWO = 2;
+
 	private final int playerNumber;
 
 	public HumanController(
@@ -29,7 +32,7 @@ public class HumanController extends Controller implements KeyListener {
 	@Override
 	public void keyPressed(KeyEvent event) {
 		int keyCode = event.getKeyCode();
-		if (playerNumber == 1) {
+		if (playerNumber == PLAYER_ONE) {
 			switch (keyCode) {
 				case KeyEvent.VK_DOWN:
 				case KeyEvent.VK_UP:
@@ -40,7 +43,7 @@ public class HumanController extends Controller implements KeyListener {
 				default:
 					break;
 			}
-		} else if (playerNumber == 2) {
+		} else if (playerNumber == PLAYER_TWO) {
 			switch (keyCode) {
 				case KeyEvent.VK_S:
 				case KeyEvent.VK_W:
@@ -57,7 +60,7 @@ public class HumanController extends Controller implements KeyListener {
 	@Override
 	public void keyReleased(KeyEvent event) {
 		int keyCode = event.getKeyCode();
-		if (playerNumber == 1) {
+		if (playerNumber == PLAYER_ONE) {
 			switch (keyCode) {
 				case KeyEvent.VK_DOWN:
 				case KeyEvent.VK_UP:
@@ -66,7 +69,7 @@ public class HumanController extends Controller implements KeyListener {
 				default:
 					break;
 			}
-		} else if (playerNumber == 2) {
+		} else if (playerNumber == PLAYER_TWO) {
 			switch (keyCode) {
 				case KeyEvent.VK_S:
 				case KeyEvent.VK_W:

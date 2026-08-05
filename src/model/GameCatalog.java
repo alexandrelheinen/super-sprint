@@ -2,27 +2,26 @@ package model;
 
 public final class GameCatalog {
 
-	public static final String[] CAR_MODEL_NAMES = {"A-Type", "B-Type", "Z-Type", "T-Rex"};
-	public static final String[] TRACK_NAMES = {
-			"Campus Loop",
-			"Foundry Eight",
-			"Serpent Pass",
-			"Metro Chicane"
-	};
-	public static final int[] LAP_COUNT_OPTIONS = {1, 2, 3, 5, 7, 10};
-	public static final int DEFAULT_LAP_COUNT = 3;
+	private static final String LAP_LABEL_SINGULAR = " lap";
+	private static final String LAP_LABEL_PLURAL = " laps";
+	private static final int ONE_BASED_INDEX_OFFSET = 1;
+
+	public static final String[] CAR_MODEL_NAMES = GameSettings.CAR_MODEL_NAMES;
+	public static final String[] TRACK_NAMES = GameSettings.TRACK_NAMES;
+	public static final int[] LAP_COUNT_OPTIONS = GameSettings.LAP_COUNT_OPTIONS;
+	public static final int DEFAULT_LAP_COUNT = GameSettings.DEFAULT_LAP_COUNT;
 
 	private GameCatalog() {
 	}
 
 	public static String carModelName(int modelIndex) {
 		validateIndex(modelIndex, Car.CAR_MODEL_COUNT, "car model");
-		return CAR_MODEL_NAMES[modelIndex - 1];
+		return CAR_MODEL_NAMES[modelIndex - ONE_BASED_INDEX_OFFSET];
 	}
 
 	public static String trackName(int trackIndex) {
 		validateIndex(trackIndex, Circuit.TRACK_COUNT, "track");
-		return TRACK_NAMES[trackIndex - 1];
+		return TRACK_NAMES[trackIndex - ONE_BASED_INDEX_OFFSET];
 	}
 
 	public static String[] carModelOptions() {
@@ -37,7 +36,7 @@ public final class GameCatalog {
 		String[] options = new String[LAP_COUNT_OPTIONS.length];
 		for (int index = 0; index < LAP_COUNT_OPTIONS.length; index++) {
 			int laps = LAP_COUNT_OPTIONS[index];
-			options[index] = laps + (laps == 1 ? " lap" : " laps");
+			options[index] = laps + (laps == ONE_BASED_INDEX_OFFSET ? LAP_LABEL_SINGULAR : LAP_LABEL_PLURAL);
 		}
 		return options;
 	}
@@ -68,7 +67,7 @@ public final class GameCatalog {
 	}
 
 	private static void validateIndex(int index, int count, String label) {
-		if (index < 1 || index > count) {
+		if (index < ONE_BASED_INDEX_OFFSET || index > count) {
 			throw new IllegalArgumentException("Invalid " + label + " index: " + index);
 		}
 	}

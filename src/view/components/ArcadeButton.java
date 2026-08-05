@@ -15,6 +15,11 @@ import view.theme.GameTheme;
 public class ArcadeButton extends JButton {
 
 	private static final long serialVersionUID = 1L;
+	private static final int CORNER_ARC = 18;
+	private static final int SHADOW_DEPTH = 3;
+	private static final int BORDER_INSET = 1;
+	private static final int TEXT_BASELINE_DIVISOR = 2;
+
 	private final boolean primary;
 
 	public ArcadeButton(String text) {
@@ -45,7 +50,6 @@ public class ArcadeButton extends JButton {
 		Graphics2D graphics2D = (Graphics2D) graphics.create();
 		graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		int arc = 18;
 		Color top = primary ? GameTheme.ACCENT_BLUE_BRIGHT : GameTheme.PANEL_SURFACE;
 		Color bottom = primary ? GameTheme.ACCENT_BLUE : GameTheme.BORDER_SOFT;
 		if (getModel().isPressed()) {
@@ -56,18 +60,18 @@ public class ArcadeButton extends JButton {
 		}
 
 		graphics2D.setColor(bottom);
-		graphics2D.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+		graphics2D.fillRoundRect(0, 0, getWidth(), getHeight(), CORNER_ARC, CORNER_ARC);
 		graphics2D.setColor(top);
-		graphics2D.fillRoundRect(0, 0, getWidth(), getHeight() - 3, arc, arc);
+		graphics2D.fillRoundRect(0, 0, getWidth(), getHeight() - SHADOW_DEPTH, CORNER_ARC, CORNER_ARC);
 		graphics2D.setColor(GameTheme.BORDER_SOFT);
-		graphics2D.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, arc, arc);
+		graphics2D.drawRoundRect(0, 0, getWidth() - BORDER_INSET, getHeight() - BORDER_INSET, CORNER_ARC, CORNER_ARC);
 
 		Font font = getFont();
 		graphics2D.setFont(font);
 		graphics2D.setColor(getForeground());
 		var metrics = graphics2D.getFontMetrics();
-		int textX = (getWidth() - metrics.stringWidth(getText())) / 2;
-		int textY = (getHeight() - metrics.getHeight()) / 2 + metrics.getAscent();
+		int textX = (getWidth() - metrics.stringWidth(getText())) / TEXT_BASELINE_DIVISOR;
+		int textY = (getHeight() - metrics.getHeight()) / TEXT_BASELINE_DIVISOR + metrics.getAscent();
 		graphics2D.drawString(getText(), textX, textY);
 		graphics2D.dispose();
 	}

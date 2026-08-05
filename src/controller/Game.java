@@ -6,6 +6,7 @@ import javax.swing.SwingUtilities;
 
 import model.Circuit;
 import model.GameCatalog;
+import model.GameSettings;
 import model.HallOfFame;
 import view.GameFrame;
 import view.MenuFrame;
@@ -13,6 +14,48 @@ import view.MenuFrame;
 public class Game {
 
 	public static final int TICK_INTERVAL_MS = 10;
+	public static final int TIMER_START_DELAY_TICKS = 5;
+	public static final int MS_PER_SECOND = 1000;
+	public static final int ONE_BASED_INDEX_OFFSET = 1;
+
+	private static final String GAME_TITLE_PREFIX = GameSettings.GAME_TITLE + " — ";
+	private static final String MSG_COMPUTER_WON = "The computer won.";
+	private static final double AI_HALL_OF_FAME_TIME_MULTIPLIER = 1000.0;
+
+	public static final int[][][] TRACK_MAPS = {
+			{
+					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
+							Circuit.TILE_CORNER_BOTTOM_RIGHT},
+					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_OPEN, Circuit.TILE_OPEN,
+							Circuit.TILE_STRAIGHT_HORIZONTAL},
+					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
+							Circuit.TILE_CORNER_BOTTOM_LEFT}
+			},
+			{
+					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_CORNER_BOTTOM_RIGHT, Circuit.TILE_OPEN,
+							Circuit.TILE_OPEN},
+					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL,
+							Circuit.TILE_CORNER_BOTTOM_RIGHT},
+					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
+							Circuit.TILE_CORNER_BOTTOM_LEFT}
+			},
+			{
+					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
+							Circuit.TILE_CORNER_BOTTOM_RIGHT},
+					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_OPEN, Circuit.TILE_CORNER_TOP_RIGHT,
+							Circuit.TILE_CORNER_BOTTOM_LEFT},
+					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_CORNER_BOTTOM_LEFT,
+							Circuit.TILE_OPEN}
+			},
+			{
+					{Circuit.TILE_CORNER_TOP_RIGHT, Circuit.TILE_CORNER_BOTTOM_RIGHT, Circuit.TILE_CORNER_TOP_RIGHT,
+							Circuit.TILE_CORNER_BOTTOM_RIGHT},
+					{Circuit.TILE_STRAIGHT_HORIZONTAL, Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_CORNER_BOTTOM_LEFT,
+							Circuit.TILE_STRAIGHT_HORIZONTAL},
+					{Circuit.TILE_CORNER_TOP_LEFT, Circuit.TILE_STRAIGHT_VERTICAL, Circuit.TILE_STRAIGHT_VERTICAL,
+							Circuit.TILE_CORNER_BOTTOM_LEFT}
+			}
+	};
 
 	private final HallOfFame hallOfFame;
 	private final MenuFrame menuFrame;
@@ -26,13 +69,6 @@ public class Game {
 	private final int trackIndex;
 	private boolean running;
 
-	public static final int[][][] TRACK_MAPS = {
-			{{4, 2, 2, 3}, {1, 7, 7, 1}, {5, 2, 2, 6}},
-			{{4, 3, 7, 7}, {1, 5, 2, 3}, {5, 2, 2, 6}},
-			{{4, 2, 2, 3}, {1, 7, 4, 6}, {5, 2, 6, 7}},
-			{{4, 3, 4, 3}, {1, 5, 6, 1}, {5, 2, 2, 6}}
-	};
-
 	public Game(
 			int[] carModels,
 			int trackNumber,
@@ -43,14 +79,14 @@ public class Game {
 		Controller.resetPlayerCount();
 		GameCatalog.validateLapCount(laps);
 		this.trackIndex = trackNumber;
-		trackMap = Game.TRACK_MAPS[trackNumber - 1];
+		trackMap = Game.TRACK_MAPS[trackNumber - ONE_BASED_INDEX_OFFSET];
 		this.lapCount = laps;
 		this.hallOfFame = hallOfFame;
 		this.menuFrame = menuFrame;
 		this.humanPlayerCount = humanPlayers;
 
 		gameFrame = new GameFrame(
-				"Super Sprint Supelec — " + GameCatalog.trackName(trackNumber),
+				GAME_TITLE_PREFIX + GameCatalog.trackName(trackNumber),
 				carModels,
 				trackMap,
 				trackNumber);
@@ -61,16 +97,18 @@ public class Game {
 		for (int index = 0; index < carModels.length; index++) {
 			if (index < humanPlayers) {
 				controllers[index] = new HumanController(
-						carModels[index], index + 1, index + 1, gameFrame, circuit);
+						carModels[index], index + ONE_BASED_INDEX_OFFSET, index + ONE_BASED_INDEX_OFFSET, gameFrame,
+						circuit);
 			} else {
-				controllers[index] = new AiController(carModels[index], index + 1, gameFrame, circuit);
+				controllers[index] = new AiController(
+						carModels[index], index + ONE_BASED_INDEX_OFFSET, gameFrame, circuit);
 			}
 		}
 
 		gameTimer = new Timer(true);
 		gameTimer.scheduleAtFixedRate(
 				new GameTickTask(controllers, circuit, this),
-				(long) 5 * TICK_INTERVAL_MS,
+				(long) TIMER_START_DELAY_TICKS * TICK_INTERVAL_MS,
 				TICK_INTERVAL_MS);
 		running = true;
 	}
@@ -101,7 +139,7 @@ public class Game {
 		gameTimer.purge();
 
 		double raceTimeMs = circuit.getRaceTimeMs();
-		int track = trackIndex - 1;
+		int track = trackIndex - ONE_BASED_INDEX_OFFSET;
 		boolean humanWon = winnerIndex < humanPlayerCount;
 
 		SwingUtilities.invokeLater(() -> {
@@ -110,8 +148,8 @@ public class Game {
 			if (humanWon) {
 				hallOfFame.tryAddResult(raceTimeMs, track);
 			} else {
-				hallOfFame.tryAddResult(raceTimeMs * 1000.0, track);
-				javax.swing.JOptionPane.showMessageDialog(menuFrame, "The computer won.");
+				hallOfFame.tryAddResult(raceTimeMs * AI_HALL_OF_FAME_TIME_MULTIPLIER, track);
+				javax.swing.JOptionPane.showMessageDialog(menuFrame, MSG_COMPUTER_WON);
 			}
 			menuFrame.showMenu();
 		});
