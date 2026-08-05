@@ -16,6 +16,9 @@ CAR_COUNT=$((GRID_SIZE * GRID_SIZE))
 # Long axis in pixels after rotate-to-face-right.
 RACE_LENGTH="${CAR_SPRITE_LENGTH:-40}"
 MENU_LENGTH="${CAR_MENU_SPRITE_LENGTH:-200}"
+# Fixed race-setup preview canvas (matches AppShell CAR_PREVIEW_*).
+MENU_CANVAS_WIDTH="${CAR_MENU_CANVAS_WIDTH:-200}"
+MENU_CANVAS_HEIGHT="${CAR_MENU_CANVAS_HEIGHT:-110}"
 # Near-key L1 distance treated as definite background (sheet key ≈ RGB(18,201,215)).
 CHROMA_HARD="${CAR_CHROMA_HARD:-95}"
 # Soft matte band width in pixels around background.
@@ -35,7 +38,8 @@ if ! python3 -c "from PIL import Image" >/dev/null 2>&1; then
 fi
 
 python3 - "${SOURCE_SHEET}" "${OUT_DIR}" "${CONFIG_OUT_DIR}" "${BUNDLED_SPRITE_DIR}" "${BUNDLED_CONFIG_DIR}" \
-	"${CAR_COUNT}" "${GRID_SIZE}" "${RACE_LENGTH}" "${MENU_LENGTH}" "${CHROMA_HARD}" "${CHROMA_FRINGE}" <<'PY'
+	"${CAR_COUNT}" "${GRID_SIZE}" "${RACE_LENGTH}" "${MENU_LENGTH}" \
+	"${MENU_CANVAS_WIDTH}" "${MENU_CANVAS_HEIGHT}" "${CHROMA_HARD}" "${CHROMA_FRINGE}" <<'PY'
 from __future__ import annotations
 
 import sys
@@ -53,8 +57,10 @@ car_count = int(sys.argv[6])
 grid_size = int(sys.argv[7])
 race_length = int(sys.argv[8])
 menu_length = int(sys.argv[9])
-chroma_hard = int(sys.argv[10])
-chroma_fringe = int(sys.argv[11])
+menu_canvas_width = int(sys.argv[10])
+menu_canvas_height = int(sys.argv[11])
+chroma_hard = int(sys.argv[12])
+chroma_fringe = int(sys.argv[13])
 
 # Index order is row-major (left-to-right, top-to-bottom).
 # Stats: acceleration (m/s²), max speed (m/s), handling index.
@@ -278,6 +284,23 @@ def scale_to_length(image: Image.Image, length: int) -> Image.Image:
 	return resize_premultiplied(image, new_size)
 
 
+def fit_on_canvas(image: Image.Image, canvas_width: int, canvas_height: int) -> Image.Image:
+	"""Center the sprite on a fixed transparent canvas, preserving aspect ratio."""
+	width, height = image.size
+	if width <= 0 or height <= 0:
+		return Image.new("RGBA", (canvas_width, canvas_height), (0, 0, 0, 0))
+	scale = min(canvas_width / float(width), canvas_height / float(height))
+	fit_size = (
+		max(1, int(round(width * scale))),
+		max(1, int(round(height * scale))),
+	)
+	fitted = resize_premultiplied(image, fit_size) if fit_size != (width, height) else image
+	canvas = Image.new("RGBA", (canvas_width, canvas_height), (0, 0, 0, 0))
+	offset = ((canvas_width - fitted.size[0]) // 2, (canvas_height - fitted.size[1]) // 2)
+	canvas.paste(fitted, offset, fitted)
+	return canvas
+
+
 def cleanup_cyan_fringe(image: Image.Image, key: tuple[int, int, int], t_hard: int) -> Image.Image:
 	"""Remove rescale/key leftovers that are still cyan-ish, preserving soft alpha."""
 	key_cyan = max(1.0, cyan_amount(key))
@@ -397,7 +420,8 @@ sheet_w, sheet_h = sheet.size
 key = dominant_background(sheet)
 print(
 	f"Using cyan key color RGB{key} "
-	f"(hard≤{chroma_hard}, fringe={chroma_fringe}px, race={race_length}px, menu={menu_length}px)"
+	f"(hard≤{chroma_hard}, fringe={chroma_fringe}px, race={race_length}px, "
+	f"menu={menu_length}px on {menu_canvas_width}x{menu_canvas_height})"
 )
 
 config_lines = [
@@ -433,6 +457,8 @@ for index in range(car_count):
 	menu = scale_to_length(facing_right, menu_length)
 	menu = cleanup_cyan_fringe(menu, key, chroma_hard)
 	menu = trim_transparent(menu)
+	# Fixed canvas so race-setup preview slots never change height per model.
+	menu = fit_on_canvas(menu, menu_canvas_width, menu_canvas_height)
 
 	race_name = f"car_{index:02d}.png"
 	menu_name = f"car_{index:02d}_menu.png"
@@ -442,7 +468,6 @@ for index in range(car_count):
 	number, name, acceleration, max_speed, handling = CAR_META[index]
 	names.append(name)
 	width, height = race.size
-	menu_w, menu_h = menu.size
 	config_lines.extend(
 		[
 			f"car.{index}.index={index}",
@@ -451,8 +476,8 @@ for index in range(car_count):
 			f"car.{index}.color={mean_color[0]},{mean_color[1]},{mean_color[2]}",
 			f"car.{index}.width={width}",
 			f"car.{index}.height={height}",
-			f"car.{index}.menuWidth={menu_w}",
-			f"car.{index}.menuHeight={menu_h}",
+			f"car.{index}.menuWidth={menu_canvas_width}",
+			f"car.{index}.menuHeight={menu_canvas_height}",
 			f"car.{index}.acceleration={acceleration}",
 			f"car.{index}.maxSpeed={max_speed}",
 			f"car.{index}.handling={handling}",
@@ -461,7 +486,8 @@ for index in range(car_count):
 	)
 	print(
 		f"Prepared {race_name} + {menu_name}: #{number} {name} "
-		f"mean=RGB{mean_color} race={width}x{height} menu={menu_w}x{menu_h}"
+		f"mean=RGB{mean_color} race={width}x{height} "
+		f"menu={menu_canvas_width}x{menu_canvas_height}"
 	)
 
 config_lines.append("catalog.car.names=" + ",".join(names))

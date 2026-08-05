@@ -103,6 +103,24 @@ public final class UiPainter {
 		return underlineTop + TITLE_UNDERLINE_HEIGHT;
 	}
 
+	/**
+	 * Fixed inset well for race-setup car/track preview slots so the sprite
+	 * sits in a stable frame regardless of asset aspect ratio.
+	 */
+	public static void paintPreviewWell(Graphics2D graphics, int x, int y, int width, int height, int arc) {
+		enableQuality(graphics);
+		graphics.setColor(new Color(8, 14, 24, 160));
+		graphics.fillRoundRect(x, y, width, height, arc, arc);
+		graphics.setColor(GameTheme.BORDER_SOFT);
+		graphics.drawRoundRect(x, y, width - 1, height - 1, arc, arc);
+		graphics.setColor(new Color(
+				GameTheme.ACCENT_YELLOW.getRed(),
+				GameTheme.ACCENT_YELLOW.getGreen(),
+				GameTheme.ACCENT_YELLOW.getBlue(),
+				90));
+		graphics.drawRoundRect(x + 1, y + 1, width - 3, height - 3, Math.max(2, arc - 2), Math.max(2, arc - 2));
+	}
+
 	public static void paintHudStrip(Graphics2D graphics, int x, int y, int width, int height) {
 		enableQuality(graphics);
 		graphics.setPaint(new GradientPaint(

@@ -130,13 +130,28 @@ public final class UiScale {
 		}
 	}
 
+	/**
+	 * Fits {@code source} inside {@code width}×{@code height} while preserving
+	 * aspect ratio, centered on a transparent canvas. Never stretches the sprite
+	 * to fill — menu preview slots stay a fixed size regardless of car shape.
+	 */
 	private static BufferedImage scaleImage(BufferedImage source, int width, int height) {
 		BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		if (source == null || source.getWidth() <= 0 || source.getHeight() <= 0) {
+			return scaled;
+		}
+		double fit = Math.min(
+				width / (double) source.getWidth(),
+				height / (double) source.getHeight());
+		int drawWidth = Math.max(1, (int) Math.round(source.getWidth() * fit));
+		int drawHeight = Math.max(1, (int) Math.round(source.getHeight() * fit));
+		int offsetX = (width - drawWidth) / 2;
+		int offsetY = (height - drawHeight) / 2;
 		java.awt.Graphics2D graphics = scaled.createGraphics();
 		graphics.setRenderingHint(
 				java.awt.RenderingHints.KEY_INTERPOLATION,
 				java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		graphics.drawImage(source, 0, 0, width, height, null);
+		graphics.drawImage(source, offsetX, offsetY, drawWidth, drawHeight, null);
 		graphics.dispose();
 		return scaled;
 	}
