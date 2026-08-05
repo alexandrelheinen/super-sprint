@@ -93,18 +93,13 @@ def paint_edge_lines_linear(
 
 
 def paint_edge_lines_radial(color: np.ndarray, radius: np.ndarray) -> np.ndarray:
-	"""Thin white paint lines just inside each lane edge (corners)."""
+	"""Thin white paint on the inner edge; outer edge is the kerb itself."""
 	inner_line = smoothstep(INNER + EDGE_LINE_INSET - 0.6, INNER + EDGE_LINE_INSET, radius) * (
 		1.0 - smoothstep(INNER + EDGE_LINE_INSET + EDGE_LINE_WIDTH - 0.4,
 						 INNER + EDGE_LINE_INSET + EDGE_LINE_WIDTH + 0.6, radius)
 	)
-	# Sit the outer line just inside the kerb so white paint frames the asphalt.
-	outer_edge = OUTER - CURB_WIDTH - 1.0
-	outer_line = smoothstep(outer_edge - EDGE_LINE_WIDTH - 0.6, outer_edge - EDGE_LINE_WIDTH + 0.4, radius) * (
-		1.0 - smoothstep(outer_edge, outer_edge + 0.6, radius)
-	)
-	line = np.maximum(inner_line, outer_line)[..., None]
-	return color * (1.0 - 0.92 * line) + EDGE_LINE * (0.92 * line)
+	line = inner_line[..., None]
+	return color * (1.0 - 0.88 * line) + EDGE_LINE * (0.88 * line)
 
 
 def paint_crisp_curb(color: np.ndarray, radius: np.ndarray, angle: np.ndarray) -> np.ndarray:
