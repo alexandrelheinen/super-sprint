@@ -295,13 +295,14 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		for (ArcadeButton button : mainButtons) {
 			button.applyScaledSize(this, MAIN_BUTTON_WIDTH, MAIN_BUTTON_HEIGHT);
 		}
+		String carPrototype = longestComboLabel(carMenus[0]);
 		for (int playerIndex = 0; playerIndex < MAX_HUMAN_PLAYERS; playerIndex++) {
-			StyledComboBox.apply(carMenus[playerIndex], this);
+			StyledComboBox.apply(carMenus[playerIndex], this, carPrototype);
 			layoutComboBox(carMenus[playerIndex]);
 		}
-		StyledComboBox.apply(trackMenu, this);
+		StyledComboBox.apply(trackMenu, this, longestComboLabel(trackMenu));
 		layoutComboBox(trackMenu);
-		StyledComboBox.apply(lapMenu, this);
+		StyledComboBox.apply(lapMenu, this, longestComboLabel(lapMenu));
 		layoutComboBox(lapMenu);
 		updateSetupCardHeights();
 		if (CARD_SETUP.equals(activeCard)) {
@@ -349,9 +350,10 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 			if (!card.isVisible()) {
 				continue;
 			}
-			Dimension equalSize = new Dimension(card.getPreferredSize().width, maxHeight);
-			card.setPreferredSize(equalSize);
-			card.setMinimumSize(equalSize);
+			// Equalize height only — locking min width to the natural preferred
+			// width overflowed the fixed shell when three columns were visible.
+			card.setPreferredSize(new Dimension(card.getPreferredSize().width, maxHeight));
+			card.setMinimumSize(new Dimension(0, maxHeight));
 		}
 	}
 
@@ -360,6 +362,21 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		Dimension comboSize = new Dimension(comboBox.getPreferredSize().width, comboHeight);
 		comboBox.setPreferredSize(comboSize);
 		comboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, comboHeight));
+	}
+
+	private static String longestComboLabel(JComboBox<?> comboBox) {
+		String longest = "A-Type";
+		for (int index = 0; index < comboBox.getItemCount(); index++) {
+			Object item = comboBox.getItemAt(index);
+			if (item == null) {
+				continue;
+			}
+			String text = String.valueOf(item);
+			if (text.length() > longest.length()) {
+				longest = text;
+			}
+		}
+		return longest;
 	}
 
 	private void addSetupCard(JPanel container, JPanel card, int columnIndex) {
@@ -413,9 +430,9 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		JPanel body = new JPanel();
 		body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
 		body.setOpaque(false);
-		carMenus[playerIndex].setAlignmentX(Component.LEFT_ALIGNMENT);
-		previewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		statsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		stretchHorizontally(carMenus[playerIndex]);
+		stretchHorizontally(previewPanel);
+		stretchHorizontally(statsPanel);
 		body.add(carMenus[playerIndex]);
 		body.add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
 		body.add(previewPanel);
@@ -451,10 +468,10 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		JPanel body = new JPanel();
 		body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
 		body.setOpaque(false);
-		trackMenu.setAlignmentX(Component.LEFT_ALIGNMENT);
-		previewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		lapsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		lapMenu.setAlignmentX(Component.LEFT_ALIGNMENT);
+		stretchHorizontally(trackMenu);
+		stretchHorizontally(previewPanel);
+		stretchHorizontally(lapsLabel);
+		stretchHorizontally(lapMenu);
 		body.add(trackMenu);
 		body.add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
 		body.add(previewPanel);
@@ -464,6 +481,15 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		body.add(lapMenu);
 		card.add(body, BorderLayout.NORTH);
 		return card;
+	}
+
+	/**
+	 * BoxLayout only grows children up to their maximum size; unset maxima fall
+	 * back to preferred size and leave combo/stat rows narrow and clipped.
+	 */
+	private static void stretchHorizontally(javax.swing.JComponent component) {
+		component.setAlignmentX(Component.LEFT_ALIGNMENT);
+		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 	}
 
 	private void showCard(String cardName) {

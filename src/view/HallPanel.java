@@ -91,7 +91,7 @@ public class HallPanel extends BackgroundPanel implements Observer, ActionListen
 		String[] trackOptions = GameCatalog.trackOptions();
 		trackMenu = new JComboBox(trackOptions);
 		trackMenu.addItemListener(this);
-		StyledComboBox.apply(trackMenu, scaleContext);
+		StyledComboBox.apply(trackMenu, scaleContext, longestItemLabel(trackMenu));
 		layoutTrackSelector(trackMenu, scaleContext);
 		selectorCard.add(trackMenu, BorderLayout.CENTER);
 		body.add(selectorCard, BorderLayout.NORTH);
@@ -165,7 +165,7 @@ public class HallPanel extends BackgroundPanel implements Observer, ActionListen
 
 	public void applyScaledMetrics(Component scaleContext) {
 		closeButton.applyScaledSize(scaleContext, CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT);
-		StyledComboBox.apply(trackMenu, scaleContext);
+		StyledComboBox.apply(trackMenu, scaleContext, longestItemLabel(trackMenu));
 		layoutTrackSelector(trackMenu, scaleContext);
 		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(scaleContext, TABLE_ROW_HEIGHT)));
 		int tableViewportHeight = resultsTable.getRowHeight() * (HallOfFame.MAX_RESULTS + 1);
@@ -240,6 +240,21 @@ public class HallPanel extends BackgroundPanel implements Observer, ActionListen
 		Dimension comboSize = new Dimension(comboBox.getPreferredSize().width, comboHeight);
 		comboBox.setPreferredSize(comboSize);
 		comboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, comboHeight));
+	}
+
+	private static String longestItemLabel(JComboBox<?> comboBox) {
+		String longest = "Track";
+		for (int index = 0; index < comboBox.getItemCount(); index++) {
+			Object item = comboBox.getItemAt(index);
+			if (item == null) {
+				continue;
+			}
+			String text = String.valueOf(item);
+			if (text.length() > longest.length()) {
+				longest = text;
+			}
+		}
+		return longest;
 	}
 
 	private static final class ThemedCellRenderer extends DefaultTableCellRenderer {

@@ -74,17 +74,33 @@ public final class UiScale {
 	public static void lockFixedShellSize(JFrame frame, Dimension largestRaceContent) {
 		lockedContentSize = fixedShellContentSize(largestRaceContent);
 		frame.setResizable(false);
+		frame.getContentPane().setPreferredSize(lockedContentSize);
+		frame.getContentPane().setMinimumSize(lockedContentSize);
 		// Realize peer so insets are valid before applying the outer size.
 		frame.pack();
-		Insets insets = frame.getInsets();
-		Dimension outer = new Dimension(
-				lockedContentSize.width + insets.left + insets.right,
-				lockedContentSize.height + insets.top + insets.bottom);
+		Dimension outer = outerSizeForContent(frame, lockedContentSize);
 		frame.setSize(outer);
+		frame.validate();
+		// Some WMs change insets after setSize; grow until the client area matches.
+		Dimension actual = frame.getContentPane().getSize();
+		int deltaW = lockedContentSize.width - actual.width;
+		int deltaH = lockedContentSize.height - actual.height;
+		if (deltaW != 0 || deltaH != 0) {
+			outer = new Dimension(outer.width + deltaW, outer.height + deltaH);
+			frame.setSize(outer);
+			frame.validate();
+		}
 		frame.setMinimumSize(outer);
 		frame.setMaximumSize(outer);
 		frame.setPreferredSize(outer);
 		frame.setLocationRelativeTo(null);
+	}
+
+	private static Dimension outerSizeForContent(JFrame frame, Dimension content) {
+		Insets insets = frame.getInsets();
+		return new Dimension(
+				content.width + insets.left + insets.right,
+				content.height + insets.top + insets.bottom);
 	}
 
 	public static Dimension lockedContentSize() {

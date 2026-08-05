@@ -56,13 +56,30 @@ public final class UiPainter {
 	}
 
 	public static void paintGlassSurface(Graphics2D graphics, int x, int y, int width, int height, int arc) {
+		paintGlassSurface(graphics, x, y, width, height, arc, true);
+	}
+
+	/**
+	 * @param paintTopAccent when false, skips the yellow top bar so ABOVE_TOP
+	 *        section titles (Player / Track) are not covered.
+	 */
+	public static void paintGlassSurface(
+			Graphics2D graphics,
+			int x,
+			int y,
+			int width,
+			int height,
+			int arc,
+			boolean paintTopAccent) {
 		enableQuality(graphics);
 		graphics.setColor(GameTheme.GLASS_FILL);
 		graphics.fillRoundRect(x, y, width, height, arc, arc);
 		graphics.setColor(GameTheme.GLASS_BORDER);
 		graphics.drawRoundRect(x, y, width - 1, height - 1, arc, arc);
-		graphics.setColor(GameTheme.ACCENT_YELLOW);
-		graphics.fillRoundRect(x + 12, y, width - 24, 3, 2, 2);
+		if (paintTopAccent) {
+			graphics.setColor(GameTheme.ACCENT_YELLOW);
+			graphics.fillRoundRect(x + 12, y, width - 24, 3, 2, 2);
+		}
 	}
 
 	private static final int TITLE_UNDERLINE_GAP = 8;
