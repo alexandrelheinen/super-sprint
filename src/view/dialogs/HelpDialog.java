@@ -34,8 +34,8 @@ public class HelpDialog extends JDialog {
 	private static final int PANEL_INSET = 22;
 	private static final int SECTION_GAP = 16;
 	private static final int PLAYER_LABEL_GAP = 8;
-	private static final int BUTTON_WIDTH = 180;
-	private static final int BUTTON_HEIGHT = 48;
+	private static final int BUTTON_WIDTH = 200;
+	private static final int BUTTON_HEIGHT = 54;
 
 	public HelpDialog(Component owner) {
 		super(javax.swing.SwingUtilities.getWindowAncestor(owner), TITLE, ModalityType.APPLICATION_MODAL);
@@ -64,8 +64,9 @@ public class HelpDialog extends JDialog {
 		infoArea.setOpaque(false);
 		infoArea.setLineWrap(true);
 		infoArea.setWrapStyleWord(true);
-		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_BODY, owner));
+		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, owner));
 		infoArea.setForeground(GameTheme.TEXT_PRIMARY);
+		infoArea.setBorder(new EmptyBorder(8, 4, 8, 4));
 		infoCard.add(infoArea, BorderLayout.CENTER);
 
 		ArcadeButton closeButton = new ArcadeButton(CLOSE, false);
@@ -83,6 +84,12 @@ public class HelpDialog extends JDialog {
 
 		setContentPane(root);
 		pack();
+		java.awt.Dimension packed = getSize();
+		java.awt.Dimension baseline = view.UiScale.quarterScreenSize();
+		setSize(
+				Math.max(packed.width, (int) (baseline.width * 0.72)),
+				Math.max(packed.height, (int) (baseline.height * 0.78)));
+		setMinimumSize(new java.awt.Dimension(packed.width, packed.height));
 		setLocationRelativeTo(owner);
 	}
 
@@ -91,8 +98,12 @@ public class HelpDialog extends JDialog {
 		panel.setOpaque(false);
 		JLabel label = ThemedPanel.createLabel(playerLabel, owner);
 		label.setHorizontalAlignment(JLabel.CENTER);
+		label.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, owner));
 		panel.add(label, BorderLayout.NORTH);
-		panel.add(new KeyboardPanel(owner, layout), BorderLayout.CENTER);
+		JPanel keyboardHolder = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
+		keyboardHolder.setOpaque(false);
+		keyboardHolder.add(new KeyboardPanel(owner, layout));
+		panel.add(keyboardHolder, BorderLayout.CENTER);
 		return panel;
 	}
 
