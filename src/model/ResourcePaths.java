@@ -1,8 +1,15 @@
 package model;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import javax.imageio.ImageIO;
+
+import view.SpriteImageProcessor;
 
 public final class ResourcePaths {
 
@@ -41,5 +48,10 @@ public final class ResourcePaths {
 			return prepared.toString();
 		}
 		return bundledSprite(fileName);
+	}
+
+	public static BufferedImage loadCarSprite(int modelIndex) throws IOException {
+		BufferedImage source = ImageIO.read(new File(carSpritePath(modelIndex)));
+		return SpriteImageProcessor.normalizeCarSprite(source);
 	}
 }

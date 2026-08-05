@@ -294,7 +294,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 				for (int aiIndex = humanPlayerCount; aiIndex < 4; aiIndex++) {
 					carModels[aiIndex] = random.nextInt(4) + 1;
 				}
-				new Game(carModels, selectedTrack, humanPlayerCount, LAP_COUNT, hallOfFame);
+				new Game(carModels, selectedTrack, humanPlayerCount, LAP_COUNT, hallOfFame, this);
 				break;
 			case 11:
 				showMainMenu();
@@ -305,12 +305,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	}
 
 	private void updateCarPreview(int playerIndex, int modelIndex) {
-		UiScale.fitLabelIcon(
-				carIcons[playerIndex],
-				this,
-				ResourcePaths.carSpritePath(modelIndex + 1),
-				96,
-				56);
+		carIcons[playerIndex].setIcon(UiScale.scaledCarIcon(this, modelIndex + 1, 96, 56));
 		int[] stats = Car.CAR_MODEL_STATS[modelIndex];
 		for (int statIndex = 0; statIndex < 3; statIndex++) {
 			carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
