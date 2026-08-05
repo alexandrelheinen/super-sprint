@@ -2,6 +2,7 @@ package controller;
 
 import model.Car;
 import model.Circuit;
+import model.GameCatalog;
 import view.GameFrame;
 
 public abstract class Controller {
@@ -16,7 +17,11 @@ public abstract class Controller {
 				? Integer.toString(playerCount)
 				: "C";
 		car = new Car(modelIndex, startPosition, name, frame, playerCount, circuit);
-		System.out.println("Car created: model " + modelIndex + "; start position " + startPosition);
+		System.out.println(
+				"Car created: "
+						+ GameCatalog.carModelName(modelIndex)
+						+ "; start position "
+						+ startPosition);
 		System.out.println(this.getClass());
 		System.out.println(" ------------- ");
 		this.frame = frame;

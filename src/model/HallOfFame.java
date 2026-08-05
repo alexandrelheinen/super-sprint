@@ -124,8 +124,8 @@ public class HallOfFame extends Observable {
 	private void insertResult(int rankIndex, double timeMs, int trackIndex) {
 		String message = "New Hall of Fame entry!\n#"
 				+ (rankIndex + 1)
-				+ " - Track "
-				+ (trackIndex + 1)
+				+ " - "
+				+ GameCatalog.trackName(trackIndex + 1)
 				+ "\nEnter the player name:";
 		String playerName = JOptionPane.showInputDialog(message, "Player");
 		for (int shiftIndex = MAX_RESULTS - 1; shiftIndex > rankIndex; shiftIndex--) {
