@@ -19,8 +19,8 @@ public class Circuit extends Observable {
 	public static final int TILE_CORNER_BOTTOM_LEFT = 6;
 	public static final int TILE_OPEN = 7;
 
-	private static final int INNER_RADIUS = 26;
-	private static final int OUTER_RADIUS = 191;
+	public static final int INNER_RADIUS = 26;
+	public static final int OUTER_RADIUS = 191;
 	private static final double FINISH_LINE_LEFT_OFFSET = -122;
 	private static final double FINISH_LINE_RIGHT_OFFSET = 43;
 	private static final double FINISH_LINE_Y_OFFSET = -50;
@@ -167,5 +167,9 @@ public class Circuit extends Observable {
 		int row = (int) (1.0 * mapDimensions[0] * car.getY() / frameDimensions[1]);
 		int column = (int) (1.0 * mapDimensions[1] * car.getX() / frameDimensions[0]);
 		return new int[] {row, column};
+	}
+
+	public int[][] getTrackMap() {
+		return trackMap;
 	}
 }
