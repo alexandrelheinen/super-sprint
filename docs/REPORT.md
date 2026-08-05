@@ -173,7 +173,7 @@ All user-visible strings were translated to English during the 2026 refactor; th
 
 Graphics are static PNG files under `src/sprites/`:
 
-- Car sprites: `cars.png` (3×3 sheet) sliced at build into `car_00.png` … `car_08.png`
+- Car sprites: `cars.png` (3×3 sheet) sliced at build into race `car_00.png` … `car_08.png` and larger menu `car_00_menu.png` … `car_08_menu.png` (soft cyan matte)
 - Track tiles: `track_00.png` … `track_06.png` (same naming; wide Super Sprint lane geometry; Kenney-inspired asphalt from `scripts/generate-track-tiles.py`)
 - Terrain scenery: Kenney Top-down Tanks Redux grass/sand tiles + green/brown trees (CC0; zip vendored under `third_party/`, extracted to `build/sprites/kenney/` at build)
 - UI: `icon.png`, splash, generated `track_preview_XX.png`

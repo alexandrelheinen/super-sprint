@@ -27,6 +27,7 @@ public final class ResourcePaths {
 	/** Zero-padded width for indexed sprite stems (`car_00.png`, `track_01.png`). */
 	public static final int SPRITE_INDEX_DIGITS = 2;
 	private static final String CAR_SPRITE_STEM = "car";
+	private static final String CAR_MENU_SPRITE_SUFFIX = "_menu";
 	private static final String TRACK_TILE_STEM = "track";
 	private static final String TRACK_PREVIEW_STEM = "track_preview";
 
@@ -80,6 +81,16 @@ public final class ResourcePaths {
 		return indexedSpriteFile(CAR_SPRITE_STEM, modelIndex);
 	}
 
+	/** Larger keyed sprite used in the race-setup menu preview. */
+	public static String carMenuSpriteFileName(int modelIndex) {
+		String raceName = carSpriteFileName(modelIndex);
+		int dot = raceName.lastIndexOf('.');
+		if (dot < 0) {
+			return raceName + CAR_MENU_SPRITE_SUFFIX;
+		}
+		return raceName.substring(0, dot) + CAR_MENU_SPRITE_SUFFIX + raceName.substring(dot);
+	}
+
 	public static String trackTileFileName(int tileType) {
 		return indexedSpriteFile(TRACK_TILE_STEM, tileType);
 	}
@@ -89,12 +100,21 @@ public final class ResourcePaths {
 	}
 
 	public static String carSpritePath(int modelIndex) {
-		String fileName = carSpriteFileName(modelIndex);
-		Path prepared = PREPARED_SPRITE_DIR.resolve(fileName);
+		return resolveSpritePath(carSpriteFileName(modelIndex));
+	}
+
+	public static String carMenuSpritePath(int modelIndex) {
+		String menuFile = carMenuSpriteFileName(modelIndex);
+		Path prepared = PREPARED_SPRITE_DIR.resolve(menuFile);
 		if (Files.exists(prepared)) {
 			return prepared.toString();
 		}
-		return bundledSprite(fileName);
+		Path bundled = BUNDLED_SPRITE_DIR.resolve(menuFile);
+		if (Files.exists(bundled)) {
+			return bundled.toString();
+		}
+		// Older checkouts may only have race-sized sprites.
+		return carSpritePath(modelIndex);
 	}
 
 	public static String trackTilePath(int tileType) {
@@ -104,5 +124,18 @@ public final class ResourcePaths {
 	public static BufferedImage loadCarSprite(int modelIndex) throws IOException {
 		BufferedImage source = ImageIO.read(new File(carSpritePath(modelIndex)));
 		return SpriteImageProcessor.normalizeCarSprite(source);
+	}
+
+	public static BufferedImage loadCarMenuSprite(int modelIndex) throws IOException {
+		BufferedImage source = ImageIO.read(new File(carMenuSpritePath(modelIndex)));
+		return SpriteImageProcessor.normalizeCarSprite(source);
+	}
+
+	private static String resolveSpritePath(String fileName) {
+		Path prepared = PREPARED_SPRITE_DIR.resolve(fileName);
+		if (Files.exists(prepared)) {
+			return prepared.toString();
+		}
+		return bundledSprite(fileName);
 	}
 }

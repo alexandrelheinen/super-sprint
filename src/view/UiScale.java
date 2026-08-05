@@ -123,10 +123,10 @@ public final class UiScale {
 
 	public static ImageIcon scaledCarIcon(Component component, int modelIndex, int width, int height) {
 		try {
-			BufferedImage sprite = ResourcePaths.loadCarSprite(modelIndex);
+			BufferedImage sprite = ResourcePaths.loadCarMenuSprite(modelIndex);
 			return new ImageIcon(scaleImage(sprite, scale(component, width), scale(component, height)));
 		} catch (IOException exception) {
-			return scaledIcon(component, ResourcePaths.carSpritePath(modelIndex), width, height);
+			return scaledIcon(component, ResourcePaths.carMenuSpritePath(modelIndex), width, height);
 		}
 	}
 

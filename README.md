@@ -60,7 +60,7 @@ src/
   controller/   Game loop, input, AI (Main entry point)
   model/        Car physics, track logic, Hall of Fame persistence
   view/         Swing menus and race rendering
-  sprites/      Bundled PNG assets (cars, tracks, UI)
+  sprites/      Bundled PNG assets (cars + menu cars, tracks, UI)
   third_party/  Vendored Kenney Top-down Tanks Redux zip (build extracts scenery)
   data/         Seed Hall of Fame file copied on first run
 docs/           Markdown documentation
