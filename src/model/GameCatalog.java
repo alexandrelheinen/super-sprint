@@ -6,6 +6,7 @@ public final class GameCatalog {
 
 	private static final String LAP_LABEL_SINGULAR = " lap";
 	private static final String LAP_LABEL_PLURAL = " laps";
+	private static final String CAR_OPTION_SEPARATOR = " - ";
 
 	public static final String[] CAR_MODEL_NAMES = GameConfig.CAR_MODEL_NAMES;
 	public static final int[] CAR_MODEL_NUMBERS = GameConfig.CAR_MODEL_NUMBERS;
@@ -48,8 +49,18 @@ public final class GameCatalog {
 		return TRACK_TERRAINS[trackIndex];
 	}
 
+	/** Dropdown label: {@code 12 - Vintage Yellow Hot Rod}. */
+	public static String carModelOptionLabel(int modelIndex) {
+		validateIndex(modelIndex, Car.CAR_MODEL_COUNT, "car model");
+		return CAR_MODEL_NUMBERS[modelIndex] + CAR_OPTION_SEPARATOR + CAR_MODEL_NAMES[modelIndex];
+	}
+
 	public static String[] carModelOptions() {
-		return CAR_MODEL_NAMES.clone();
+		String[] options = new String[CAR_MODEL_NAMES.length];
+		for (int index = 0; index < options.length; index++) {
+			options[index] = carModelOptionLabel(index);
+		}
+		return options;
 	}
 
 	public static String[] trackOptions() {

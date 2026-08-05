@@ -365,7 +365,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	}
 
 	private static String longestComboLabel(JComboBox<?> comboBox) {
-		String longest = "Purple Retro Grand Prix";
+		String longest = "12 - Vintage Yellow Hot Rod";
 		for (int index = 0; index < comboBox.getItemCount(); index++) {
 			Object item = comboBox.getItemAt(index);
 			if (item == null) {
