@@ -38,7 +38,6 @@ public final class UiPainter {
 
 		paintDiagonalStripes(graphics, width, height);
 		paintBottomCheckerFade(graphics, width, height);
-		paintTrackSilhouette(graphics, width, height);
 		paintTopAccentGlow(graphics, width);
 	}
 
@@ -145,21 +144,6 @@ public final class UiPainter {
 				graphics.fillRect(column * CHECKER_SIZE, y, CHECKER_SIZE, CHECKER_SIZE);
 			}
 		}
-	}
-
-	private static void paintTrackSilhouette(Graphics2D graphics, int width, int height) {
-		int centerX = width / 2;
-		int centerY = height / 2 + 10;
-		Path2D outer = new Path2D.Float();
-		outer.moveTo(centerX - 180, centerY - 40);
-		outer.curveTo(centerX - 220, centerY - 90, centerX + 220, centerY - 90, centerX + 180, centerY - 40);
-		outer.curveTo(centerX + 240, centerY + 10, centerX + 120, centerY + 90, centerX, centerY + 70);
-		outer.curveTo(centerX - 120, centerY + 90, centerX - 240, centerY + 10, centerX - 180, centerY - 40);
-		graphics.setColor(new Color(GameTheme.ACCENT_BLUE.getRed(), GameTheme.ACCENT_BLUE.getGreen(), GameTheme.ACCENT_BLUE.getBlue(), 28));
-		graphics.fill(outer);
-		graphics.setColor(new Color(GameTheme.ACCENT_YELLOW.getRed(), GameTheme.ACCENT_YELLOW.getGreen(), GameTheme.ACCENT_YELLOW.getBlue(), 90));
-		graphics.setStroke(new BasicStroke(2.5f));
-		graphics.draw(outer);
 	}
 
 	private static void paintTopAccentGlow(Graphics2D graphics, int width) {
