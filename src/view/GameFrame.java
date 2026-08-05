@@ -27,7 +27,7 @@ import view.ui.UiPainter;
 public class GameFrame extends JFrame implements Observer {
 
 	public static final int TILE_SIZE = 219;
-	public static final int[] CAR_RENDER_OFFSET = {40, 29};
+	public static final int[] CAR_RENDER_OFFSET = {0, 0};
 
 	private static final long serialVersionUID = 1L;
 	private static final int FRAME_HORIZONTAL_MARGIN = 20;
