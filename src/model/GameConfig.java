@@ -20,7 +20,7 @@ public final class GameConfig {
 	private static final String DEFAULT_GAME_TITLE = "Super Sprint Supelec";
 	private static final String DEFAULT_CAR_MODEL_NAMES = "A-Type,B-Type,Z-Type,T-Rex";
 	private static final String DEFAULT_TRACK_NAMES = "Campus Loop,Foundry Eight,Serpent Pass,Metro Chicane";
-	private static final String DEFAULT_TRACK_TERRAINS = "grass,autumn,forest,desert";
+	private static final String DEFAULT_TRACK_TERRAINS = "grass,sand,grass,sand";
 	private static final String DEFAULT_LAP_COUNT_OPTIONS = "1,2,3,5,7,10";
 	private static final int DEFAULT_LAP_COUNT_FALLBACK = 3;
 	private static final int DEFAULT_MAX_CARS = 4;

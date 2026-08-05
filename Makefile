@@ -4,14 +4,17 @@ BUILD_DIR := build
 MAIN_CLASS := controller.Main
 SMOKE_TIMEOUT_SEC := 5
 SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
+KENNEY_SCRIPT := scripts/prepare-kenney-sprites.sh
 TRACK_PREVIEW_SCRIPT := scripts/generate-track-previews.sh
 BUNDLED_CAR_SPRITES := src/sprites/car_00.png src/sprites/car_01.png src/sprites/car_02.png src/sprites/car_03.png
+KENNEY_ZIP := third_party/kenney-top-down-tanks-redux/kenney_topdownTanksRedux.zip
+KENNEY_LICENSE := third_party/kenney-top-down-tanks-redux/License.txt
 CONFIG_FILES := $(wildcard src/data/config/*.properties)
 JUNIT_VERSION := 1.10.2
 JUNIT_JAR := $(BUILD_DIR)/lib/junit-platform-console-standalone-$(JUNIT_VERSION).jar
 JUNIT_URL := https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(JUNIT_VERSION)/junit-platform-console-standalone-$(JUNIT_VERSION).jar
 
-.PHONY: all compile run test smoke-test clean help prepare-sprites
+.PHONY: all compile run test smoke-test clean help prepare-sprites prepare-kenney-sprites
 
 all: compile
 
@@ -29,6 +32,11 @@ $(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(BUNDLED_CAR_SPRITES)
 
 prepare-sprites: $(BUILD_DIR)/sprites/.sprites-stamp
 
+$(BUILD_DIR)/sprites/.kenney-stamp: $(KENNEY_SCRIPT) $(KENNEY_ZIP) $(KENNEY_LICENSE)
+	@bash $(KENNEY_SCRIPT) $(BUILD_DIR)
+
+prepare-kenney-sprites: $(BUILD_DIR)/sprites/.kenney-stamp
+
 $(BUILD_DIR)/sprites/.track-previews-stamp: $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)/.stamp
 	@bash $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)
 	@touch $(BUILD_DIR)/sprites/.track-previews-stamp
@@ -40,7 +48,7 @@ $(BUILD_DIR)/config/.stamp: $(CONFIG_FILES)
 	@cp src/data/config/*.properties $(BUILD_DIR)/config/
 	@touch $(BUILD_DIR)/config/.stamp
 
-$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(CONFIG_FILES) $(BUILD_DIR)/sprites/.sprites-stamp $(BUILD_DIR)/config/.stamp
+$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(CONFIG_FILES) $(BUILD_DIR)/sprites/.sprites-stamp $(BUILD_DIR)/sprites/.kenney-stamp $(BUILD_DIR)/config/.stamp
 	@mkdir -p $(BUILD_DIR)
 	@find src -name '*.java' > $(BUILD_DIR)/sources.txt
 	javac -d $(BUILD_DIR) -sourcepath src @$(BUILD_DIR)/sources.txt

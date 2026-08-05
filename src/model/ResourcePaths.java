@@ -54,6 +54,18 @@ public final class ResourcePaths {
 	}
 
 	/**
+	 * Kenney Top-down Tanks Redux sprites extracted at build time into
+	 * {@code build/sprites/kenney/}.
+	 */
+	public static String kenneySprite(String fileName) {
+		Path prepared = PREPARED_SPRITE_DIR.resolve("kenney").resolve(fileName);
+		if (Files.isRegularFile(prepared)) {
+			return prepared.toString();
+		}
+		return BUNDLED_SPRITE_DIR.resolve("kenney").resolve(fileName).toString();
+	}
+
+	/**
 	 * Builds {@code stem_XX.png} with a zero-based, zero-padded index
 	 * (e.g. {@code car_00.png}, {@code track_03.png}).
 	 */

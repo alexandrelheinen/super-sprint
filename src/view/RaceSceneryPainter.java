@@ -1,11 +1,9 @@
 package view;
 
 import java.awt.Color;
-import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -23,41 +21,30 @@ import model.ResourcePaths;
 import model.Terrain;
 
 /**
- * Terrain-aware ground fill and flora placement for the race view and track
- * menu previews. Flora art is derived from Kenney's Top-down Tanks Redux (CC0).
+ * Terrain-aware scenery for the race view and track menu previews.
+ * Ground tiles and flora come from Kenney Top-down Tanks Redux (CC0),
+ * extracted at build time into {@code build/sprites/kenney/}.
  */
 public final class RaceSceneryPainter {
 
-	private enum GroundFill {
-		MEADOW,
-		DAPPLED,
-		DUNES
-	}
-
 	private static final class TerrainStyle {
-		final Color groundLight;
-		final Color groundDark;
-		final Color patch;
-		final GroundFill fill;
-		final String[] spriteFiles;
+		final Color letterbox;
+		final String[] groundTiles;
+		final String[] floraFiles;
 		final double[] sizeScales;
 		final int[] weights;
 		final double densityScale;
 
 		TerrainStyle(
-				Color groundLight,
-				Color groundDark,
-				Color patch,
-				GroundFill fill,
-				String[] spriteFiles,
+				Color letterbox,
+				String[] groundTiles,
+				String[] floraFiles,
 				double[] sizeScales,
 				int[] weights,
 				double densityScale) {
-			this.groundLight = groundLight;
-			this.groundDark = groundDark;
-			this.patch = patch;
-			this.fill = fill;
-			this.spriteFiles = spriteFiles;
+			this.letterbox = letterbox;
+			this.groundTiles = groundTiles;
+			this.floraFiles = floraFiles;
 			this.sizeScales = sizeScales;
 			this.weights = weights;
 			this.densityScale = densityScale;
@@ -65,42 +52,41 @@ public final class RaceSceneryPainter {
 	}
 
 	private static final Map<Terrain, TerrainStyle> STYLES = buildStyles();
+	private static final Map<Terrain, BufferedImage[]> GROUND_CACHE = new EnumMap<>(Terrain.class);
 	private static final Map<Terrain, BufferedImage[]> FLORA_CACHE = new EnumMap<>(Terrain.class);
 
 	private RaceSceneryPainter() {
 	}
 
 	public static Color letterboxColor(Terrain terrain) {
-		return style(terrain).groundDark;
+		return style(terrain).letterbox;
 	}
 
+	/**
+	 * Fills the playfield by tiling Kenney grass/sand tiles.
+	 */
 	public static void paintGround(Graphics2D graphics, int width, int height, Terrain terrain, int seed) {
-		TerrainStyle palette = style(terrain);
-		graphics.setPaint(new GradientPaint(0, 0, palette.groundLight, width, height, palette.groundDark));
-		graphics.fillRect(0, 0, width, height);
-
-		graphics.setPaint(new GradientPaint(
-				0,
-				0,
-				withAlpha(palette.groundDark, 0),
-				0,
-				height * 0.18f,
-				withAlpha(palette.groundDark, 60)));
-		graphics.fillRect(0, 0, width, Math.max(1, (int) (height * 0.22f)));
-
-		graphics.setPaint(new GradientPaint(
-				0,
-				height,
-				withAlpha(palette.groundDark, 75),
-				0,
-				height * 0.78f,
-				withAlpha(palette.groundDark, 0)));
-		graphics.fillRect(0, (int) (height * 0.72f), width, height);
-
-		switch (palette.fill) {
-			case DAPPLED -> paintDappledFill(graphics, width, height, palette, seed);
-			case DUNES -> paintDuneFill(graphics, width, height, palette, seed);
-			case MEADOW -> paintMeadowPatches(graphics, width, height, palette, seed);
+		BufferedImage[] tiles = loadGroundTiles(terrain);
+		if (tiles.length == 0) {
+			graphics.setColor(style(terrain).letterbox);
+			graphics.fillRect(0, 0, width, height);
+			return;
+		}
+		Random random = new Random(seed);
+		int tileSize = tiles[0].getWidth();
+		if (tileSize < 1) {
+			tileSize = 64;
+		}
+		for (int y = 0; y < height; y += tileSize) {
+			for (int x = 0; x < width; x += tileSize) {
+				// Deterministic checker with occasional swaps for variety.
+				int variant = ((x / tileSize) + (y / tileSize)) & 1;
+				if (tiles.length > 1 && random.nextInt(7) == 0) {
+					variant = 1 - variant;
+				}
+				variant = Math.floorMod(variant, tiles.length);
+				graphics.drawImage(tiles[variant], x, y, tileSize, tileSize, null);
+			}
 		}
 	}
 
@@ -203,76 +189,6 @@ public final class RaceSceneryPainter {
 		return seed;
 	}
 
-	private static void paintMeadowPatches(
-			Graphics2D graphics,
-			int width,
-			int height,
-			TerrainStyle palette,
-			int seed) {
-		Random random = new Random(seed);
-		int patchCount = Math.max(12, (width * height) / 700);
-		for (int index = 0; index < patchCount; index++) {
-			double cx = random.nextDouble() * width;
-			double cy = random.nextDouble() * height;
-			double rw = 6 + random.nextDouble() * (12 + width * 0.01);
-			double rh = 3 + random.nextDouble() * (8 + height * 0.008);
-			graphics.setColor(palette.patch);
-			graphics.fill(new Ellipse2D.Double(cx - rw, cy - rh, rw * 2, rh * 2));
-		}
-	}
-
-	private static void paintDappledFill(
-			Graphics2D graphics,
-			int width,
-			int height,
-			TerrainStyle palette,
-			int seed) {
-		Random random = new Random(seed);
-		int patchCount = Math.max(28, (width * height) / 420);
-		for (int index = 0; index < patchCount; index++) {
-			double cx = random.nextDouble() * width;
-			double cy = random.nextDouble() * height;
-			double rw = 4 + random.nextDouble() * (9 + width * 0.008);
-			double rh = 3 + random.nextDouble() * (7 + height * 0.007);
-			graphics.setColor(palette.patch);
-			graphics.fill(new Ellipse2D.Double(cx - rw, cy - rh, rw * 2, rh * 2));
-		}
-		graphics.setColor(withAlpha(palette.groundDark, 28));
-		for (int index = 0; index < 8; index++) {
-			double x = random.nextDouble() * width;
-			graphics.fill(new Rectangle2D.Double(x, 0, 2 + random.nextDouble() * 4, height));
-		}
-	}
-
-	private static void paintDuneFill(
-			Graphics2D graphics,
-			int width,
-			int height,
-			TerrainStyle palette,
-			int seed) {
-		Random random = new Random(seed);
-		graphics.setColor(withAlpha(palette.groundLight, 55));
-		double bandGap = Math.max(18, Math.min(width, height) * 0.045);
-		for (double offset = -height; offset < width + height; offset += bandGap) {
-			double thickness = bandGap * (0.35 + random.nextDouble() * 0.35);
-			java.awt.geom.Path2D band = new java.awt.geom.Path2D.Double();
-			band.moveTo(offset, 0);
-			band.lineTo(offset + thickness, 0);
-			band.lineTo(offset - height + thickness, height);
-			band.lineTo(offset - height, height);
-			band.closePath();
-			graphics.fill(band);
-		}
-		int speckles = Math.max(10, (width * height) / 1400);
-		graphics.setColor(palette.patch);
-		for (int index = 0; index < speckles; index++) {
-			double cx = random.nextDouble() * width;
-			double cy = random.nextDouble() * height;
-			double r = 2 + random.nextDouble() * 5;
-			graphics.fill(new Ellipse2D.Double(cx - r, cy - r * 0.55, r * 2, r * 1.1));
-		}
-	}
-
 	private static void paintFloraSprite(
 			Graphics2D graphics,
 			BufferedImage sprite,
@@ -286,7 +202,8 @@ public final class RaceSceneryPainter {
 		double aspect = (double) sprite.getHeight() / Math.max(1, sprite.getWidth());
 		int drawW = Math.max(2, (int) Math.round(size));
 		int drawH = Math.max(2, (int) Math.round(size * aspect));
-		double angle = random.nextDouble() * Math.PI * 2.0;
+		// Small random yaw so top-down trees don't look stamped.
+		double angle = (random.nextDouble() - 0.5) * 0.7;
 
 		AffineTransform previous = graphics.getTransform();
 		graphics.translate(x, y);
@@ -311,16 +228,31 @@ public final class RaceSceneryPainter {
 		return 0;
 	}
 
+	private static synchronized BufferedImage[] loadGroundTiles(Terrain terrain) {
+		BufferedImage[] cached = GROUND_CACHE.get(terrain);
+		if (cached != null) {
+			return cached;
+		}
+		BufferedImage[] tiles = loadKenneyImages(style(terrain).groundTiles);
+		GROUND_CACHE.put(terrain, tiles);
+		return tiles;
+	}
+
 	private static synchronized BufferedImage[] loadFlora(Terrain terrain) {
 		BufferedImage[] cached = FLORA_CACHE.get(terrain);
 		if (cached != null) {
 			return cached;
 		}
-		TerrainStyle palette = style(terrain);
+		BufferedImage[] sprites = loadKenneyImages(style(terrain).floraFiles);
+		FLORA_CACHE.put(terrain, sprites);
+		return sprites;
+	}
+
+	private static BufferedImage[] loadKenneyImages(String[] fileNames) {
 		List<BufferedImage> loaded = new ArrayList<>();
-		for (String relativePath : palette.spriteFiles) {
+		for (String fileName : fileNames) {
 			try {
-				File file = new File(ResourcePaths.bundledSprite(relativePath));
+				File file = new File(ResourcePaths.kenneySprite(fileName));
 				BufferedImage image = ImageIO.read(file);
 				if (image != null) {
 					loaded.add(image);
@@ -329,9 +261,7 @@ public final class RaceSceneryPainter {
 				// Skip missing variants; placement still works with whatever loads.
 			}
 		}
-		BufferedImage[] sprites = loaded.toArray(new BufferedImage[0]);
-		FLORA_CACHE.put(terrain, sprites);
-		return sprites;
+		return loaded.toArray(new BufferedImage[0]);
 	}
 
 	private static TerrainStyle style(Terrain terrain) {
@@ -339,65 +269,32 @@ public final class RaceSceneryPainter {
 		return palette != null ? palette : STYLES.get(Terrain.GRASS);
 	}
 
-	private static Color withAlpha(Color color, int alpha) {
-		return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
-	}
-
 	private static Map<Terrain, TerrainStyle> buildStyles() {
 		Map<Terrain, TerrainStyle> styles = new EnumMap<>(Terrain.class);
 		styles.put(Terrain.GRASS, new TerrainStyle(
-				new Color(96, 132, 48),
-				new Color(52, 86, 34),
-				new Color(68, 104, 38, 100),
-				GroundFill.MEADOW,
+				new Color(72, 118, 48),
+				new String[] {"tileGrass1.png", "tileGrass2.png"},
 				new String[] {
-						"trees/grass/canopy_large.png",
-						"trees/grass/canopy_small.png",
-						"trees/grass/canopy_accent.png",
+						"treeGreen_large.png",
+						"treeGreen_small.png",
+						"treeGreen_twigs.png",
+						"treeGreen_leaf.png",
 				},
-				new double[] {1.0, 0.78, 0.7},
-				new int[] {44, 40, 16},
+				new double[] {1.0, 0.72, 0.48, 0.4},
+				new int[] {40, 34, 18, 8},
 				1.0));
-		styles.put(Terrain.FOREST, new TerrainStyle(
-				new Color(54, 92, 42),
-				new Color(28, 52, 28),
-				new Color(36, 64, 32, 120),
-				GroundFill.DAPPLED,
+		styles.put(Terrain.SAND, new TerrainStyle(
+				new Color(196, 164, 104),
+				new String[] {"tileSand1.png", "tileSand2.png"},
 				new String[] {
-						"trees/forest/canopy_large.png",
-						"trees/forest/canopy_deep.png",
-						"trees/forest/canopy_small.png",
+						"treeBrown_large.png",
+						"treeBrown_small.png",
+						"treeBrown_twigs.png",
+						"treeBrown_leaf.png",
 				},
-				new double[] {1.05, 1.0, 0.72},
-				new int[] {38, 34, 28},
-				1.45));
-		styles.put(Terrain.AUTUMN, new TerrainStyle(
-				new Color(118, 112, 48),
-				new Color(78, 68, 32),
-				new Color(140, 92, 40, 95),
-				GroundFill.MEADOW,
-				new String[] {
-						"trees/autumn/canopy_large.png",
-						"trees/autumn/canopy_small.png",
-						"trees/autumn/canopy_accent.png",
-				},
-				new double[] {1.0, 0.78, 0.74},
-				new int[] {40, 34, 26},
-				1.1));
-		styles.put(Terrain.DESERT, new TerrainStyle(
-				new Color(214, 178, 108),
-				new Color(168, 128, 72),
-				new Color(196, 148, 84, 90),
-				GroundFill.DUNES,
-				new String[] {
-						"trees/desert/scrub_bush.png",
-						"trees/desert/scrub_large.png",
-						"trees/desert/scrub_small.png",
-						"trees/desert/scrub_twigs.png",
-				},
-				new double[] {0.95, 0.72, 0.62, 0.5},
-				new int[] {30, 30, 24, 16},
-				0.7));
+				new double[] {1.0, 0.72, 0.48, 0.4},
+				new int[] {38, 32, 20, 10},
+				0.85));
 		return styles;
 	}
 }

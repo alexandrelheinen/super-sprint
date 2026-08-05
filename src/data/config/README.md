@@ -5,7 +5,7 @@ without changing Java source code.
 
 | File | Purpose |
 |------|---------|
-| `catalog.properties` | Car and track names, per-track terrains, lap options, Hall of Fame seed names |
+| `catalog.properties` | Car and track names, per-track terrains (`grass`/`sand`), lap options, Hall of Fame seed names |
 | `game.properties` | Window title and race rules (max cars, human players) |
 | `theme.properties` | UI colors (RGB), glass surfaces, HUD strip, and font family/sizes |
 | `ui.properties` | Reference resolution and minimum window/font sizes |
