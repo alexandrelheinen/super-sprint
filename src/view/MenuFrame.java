@@ -295,6 +295,38 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		trackPreviewPanel.setPreferredSize(new Dimension(UiScale.scale(this, TRACK_PREVIEW_WIDTH), previewHeight));
 		trackPreviewPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, previewHeight));
 		trackPreviewPanel.setMinimumSize(new Dimension(UiScale.scale(this, TRACK_PREVIEW_WIDTH), previewHeight));
+		equalizeVisibleSetupCardHeights();
+	}
+
+	/**
+	 * Makes every visible Race Setup card share the tallest preferred height
+	 * so columns line up, while card contents stay top-aligned.
+	 */
+	private void equalizeVisibleSetupCardHeights() {
+		GlassCard[] setupCards = {carPanels[0], carPanels[1], trackAndLapsPanel};
+		for (GlassCard card : setupCards) {
+			if (card.isVisible()) {
+				card.setPreferredSize(null);
+				card.setMinimumSize(null);
+				card.setMaximumSize(null);
+			}
+		}
+		int maxHeight = 0;
+		for (GlassCard card : setupCards) {
+			if (card.isVisible()) {
+				maxHeight = Math.max(maxHeight, card.getPreferredSize().height);
+			}
+		}
+		for (GlassCard card : setupCards) {
+			if (!card.isVisible()) {
+				continue;
+			}
+			Dimension preferred = card.getPreferredSize();
+			Dimension equalSize = new Dimension(preferred.width, maxHeight);
+			card.setPreferredSize(equalSize);
+			card.setMinimumSize(new Dimension(0, maxHeight));
+			card.setMaximumSize(new Dimension(Integer.MAX_VALUE, maxHeight));
+		}
 	}
 
 	private void layoutComboBox(JComboBox<?> comboBox) {
