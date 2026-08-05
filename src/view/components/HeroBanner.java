@@ -32,7 +32,8 @@ public class HeroBanner extends JPanel {
 	private static final int TITLE_FONT_SIZE = 42;
 	private static final int BRAND_FONT_SIZE = 22;
 	private static final int TITLE_TOP_OFFSET = 48;
-	private static final int BRAND_GAP = 28;
+	/** Clearance between the title underline and the top of the brand glyphs. */
+	private static final int BRAND_CLEARANCE = 14;
 	private static final int CORNER_ARC = 28;
 	private static final double SCRIM_END_RATIO = 0.55;
 	private static final int SCRIM_MAX_ALPHA = 235;
@@ -80,7 +81,7 @@ public class HeroBanner extends JPanel {
 		int titleBaseline = splashImage != null
 				? UiScale.scale(context, TITLE_TOP_OFFSET)
 				: getHeight() / 2 - 8;
-		UiPainter.paintTitleGlow(
+		int underlineBottom = UiPainter.paintTitleGlow(
 				graphics2D,
 				title,
 				centerX,
@@ -94,7 +95,10 @@ public class HeroBanner extends JPanel {
 			graphics2D.setColor(GameTheme.TEXT_PRIMARY);
 			var metrics = graphics2D.getFontMetrics();
 			int brandWidth = metrics.stringWidth(brandLine);
-			int brandBaseline = titleBaseline + UiScale.scale(context, BRAND_GAP);
+			// Place below the yellow underline with room for accents (é).
+			int brandBaseline = underlineBottom
+					+ UiScale.scale(context, BRAND_CLEARANCE)
+					+ metrics.getAscent();
 			graphics2D.drawString(brandLine, centerX - brandWidth / 2, brandBaseline);
 		}
 		graphics2D.dispose();
