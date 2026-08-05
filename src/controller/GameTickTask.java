@@ -1,0 +1,33 @@
+package controller;
+
+import java.util.TimerTask;
+
+import model.Circuit;
+
+public class GameTickTask extends TimerTask {
+
+	private final Controller[] controllers;
+	private final Circuit circuit;
+	private final Game game;
+
+	public GameTickTask(Controller[] controllers, Circuit circuit, Game game) {
+		this.controllers = controllers;
+		this.circuit = circuit;
+		this.game = game;
+		System.out.println("Race started with " + controllers.length + " cars.");
+		System.out.println(" ------------- ");
+	}
+
+	@Override
+	public void run() {
+		circuit.tick();
+		game.checkRaceFinished();
+		for (int index = 0; index < controllers.length; index++) {
+			circuit.enforceTrackBoundaries(controllers[index].getCar());
+			controllers[index].update();
+			for (int otherIndex = 0; otherIndex < index; otherIndex++) {
+				controllers[index].getCar().collideWith(controllers[otherIndex].getCar());
+			}
+		}
+	}
+}

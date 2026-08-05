@@ -52,7 +52,7 @@ Equivalent manual command:
 
 ```bash
 make compile
-java -cp build controleur.Main
+java -cp build controller.Main
 ```
 
 ## Headless smoke test
@@ -81,7 +81,7 @@ Older revisions used `java-files.txt` with `javac @java-files.txt`. That approac
 
 | Problem | Likely cause | Fix |
 |---------|--------------|-----|
-| `Could not find or load main class controleur.Main` | Not compiled or wrong directory | Run `make compile` from repo root |
+| `Could not find or load main class controller.Main` | Not compiled or wrong directory | Run `make compile` from repo root |
 | Missing images / file not found | Wrong working directory | Always run from repository root |
 | HeadlessException on CI | No display | Use `make smoke-test` (includes Xvfb) |
 | Deprecation warnings for Observer | Legacy observer pattern | Warnings are expected; see CONTRIBUTING.md |
