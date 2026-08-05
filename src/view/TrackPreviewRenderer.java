@@ -26,7 +26,8 @@ public final class TrackPreviewRenderer {
 	private static final float PADDING_RATIO = 0.12f;
 	private static final int CORNER_ARC = 16;
 	private static final int BORDER_ARC = 14;
-	private static final Color ASPHALT = new Color(48, 52, 58);
+	/** Cool Kenney-inspired asphalt, matched to generated track tiles. */
+	private static final Color ASPHALT = new Color(142, 164, 170);
 	private static final int TREE_COUNT = 10;
 
 	private TrackPreviewRenderer() {
