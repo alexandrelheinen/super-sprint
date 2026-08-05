@@ -1,14 +1,19 @@
 package view;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Canvas;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.AffineTransformOp;
@@ -93,8 +98,13 @@ public class GameFrame extends Canvas implements Observer {
 	private final Terrain terrain;
 	private BufferedImage staticScene;
 	private volatile boolean renderingEnabled = true;
+	private volatile boolean racingInputEnabled = false;
 	private volatile Car[] hudCars;
 	private volatile int totalLaps;
+	private volatile String countdownLabel = "";
+	private volatile float countdownProgress = 0f;
+	private volatile boolean countdownGoStep = false;
+	private volatile boolean countdownVisible = false;
 
 	public GameFrame(int[] carModels, int[][] trackMap, int trackNumber) {
 		this.trackMap = trackMap;
@@ -174,6 +184,97 @@ public class GameFrame extends Canvas implements Observer {
 	public void attachRaceStatus(Car[] cars, int lapCount) {
 		hudCars = cars.clone();
 		totalLaps = lapCount;
+	}
+
+	public void setRacingInputEnabled(boolean enabled) {
+		racingInputEnabled = enabled;
+	}
+
+	public boolean isRacingInputEnabled() {
+		return racingInputEnabled;
+	}
+
+	public void setCountdownPresentation(String label, float progress, boolean goStep) {
+		countdownLabel = label != null ? label : "";
+		countdownProgress = Math.max(0f, Math.min(1f, progress));
+		countdownGoStep = goStep;
+		countdownVisible = !countdownLabel.isEmpty();
+	}
+
+	public void clearCountdownPresentation() {
+		countdownVisible = false;
+		countdownLabel = "";
+		countdownProgress = 0f;
+		countdownGoStep = false;
+	}
+
+	/**
+	 * Warms the static scenery cache and presents a complete race frame (track,
+	 * flora, tiles, cars on the grid, HUD) before the countdown begins.
+	 */
+	public void presentPreparedScene(Circuit circuit) {
+		staticScene();
+		// Double-present so both BufferStrategy backs show the prepared scene.
+		renderCompositeFrame(circuit);
+		renderCompositeFrame(circuit);
+		Toolkit.getDefaultToolkit().sync();
+	}
+
+	/**
+	 * Paints a full race frame in one pass (scene + cars + HUD + countdown).
+	 * Used for the opening present and animated countdown; the live race still
+	 * uses the observer-driven path in {@link #update}.
+	 */
+	public void renderCompositeFrame(Circuit circuit) {
+		if (!renderingEnabled || !isDisplayable()) {
+			return;
+		}
+		BufferStrategy bufferStrategy = getBufferStrategy();
+		if (bufferStrategy == null) {
+			return;
+		}
+		Graphics graphics = null;
+		try {
+			graphics = bufferStrategy.getDrawGraphics();
+			Graphics2D graphics2D = (Graphics2D) graphics;
+			graphics2D.setRenderingHint(
+					RenderingHints.KEY_INTERPOLATION,
+					RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+			graphics2D.setRenderingHint(
+					RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+			graphics2D.setRenderingHint(
+					RenderingHints.KEY_TEXT_ANTIALIASING,
+					RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+			graphics2D.setColor(RaceSceneryPainter.letterboxColor(terrain));
+			graphics2D.fillRect(0, 0, getWidth(), getHeight());
+
+			applyViewTransform(graphics2D);
+			graphics2D.drawImage(staticScene(), 0, 0, null);
+
+			graphics2D.setColor(Color.YELLOW);
+			graphics2D.drawLine(
+					trackOriginX() + (int) circuit.getFinishLine().getX1(),
+					trackOriginY() + (int) circuit.getFinishLine().getY1(),
+					trackOriginX() + (int) circuit.getFinishLine().getX2(),
+					trackOriginY() + (int) circuit.getFinishLine().getY2());
+
+			paintCarsInView(graphics2D);
+
+			graphics2D.setTransform(new AffineTransform());
+			UiPainter.paintHudStrip(graphics2D, 0, getHeight() - HUD_BAR_HEIGHT, getWidth(), HUD_BAR_HEIGHT);
+			paintHudContent(graphics2D, circuit);
+			if (countdownVisible) {
+				paintCountdownOverlay(graphics2D);
+			}
+		} finally {
+			if (graphics != null) {
+				graphics.dispose();
+			}
+		}
+		bufferStrategy.show();
+		Toolkit.getDefaultToolkit().sync();
 	}
 
 	/** Track-local origin: cars / finish line are relative to the tile grid. */
@@ -287,6 +388,9 @@ public class GameFrame extends Canvas implements Observer {
 				graphics2D.setTransform(new AffineTransform());
 				UiPainter.paintHudStrip(graphics2D, 0, getHeight() - HUD_BAR_HEIGHT, getWidth(), HUD_BAR_HEIGHT);
 				paintHudContent(graphics2D, circuit);
+				if (countdownVisible) {
+					paintCountdownOverlay(graphics2D);
+				}
 				renderFlags[renderFlags.length - ONE_BASED_INDEX_OFFSET] = true;
 			} finally {
 				if (graphics != null) {
@@ -300,6 +404,97 @@ public class GameFrame extends Canvas implements Observer {
 			Toolkit.getDefaultToolkit().sync();
 			resetFlags(renderFlags);
 		}
+	}
+
+	private void paintCarsInView(Graphics2D graphics2D) {
+		Car[] cars = hudCars;
+		if (cars == null) {
+			return;
+		}
+		for (Car car : cars) {
+			BufferedImage sprite = carSprites[car.getSpriteIndex()];
+			if (sprite == null) {
+				continue;
+			}
+			AffineTransform transform = new AffineTransform();
+			transform.rotate(
+					car.getAngle(),
+					sprite.getWidth() / (double) SPRITE_CENTER_DIVISOR,
+					sprite.getHeight() / (double) SPRITE_CENTER_DIVISOR);
+			AffineTransformOp rotation = new AffineTransformOp(transform, AffineTransformOp.TYPE_BILINEAR);
+			graphics2D.drawImage(
+					sprite,
+					rotation,
+					trackOriginX() + car.getX() - CAR_RENDER_OFFSET[0] / SPRITE_CENTER_DIVISOR,
+					trackOriginY() + car.getY() - CAR_RENDER_OFFSET[1] / SPRITE_CENTER_DIVISOR);
+		}
+	}
+
+	/**
+	 * Centered 3-2-1-GO presentation above the HUD: pop-in scale, soft halo,
+	 * outlined yellow type that settles then fades at the end of each step.
+	 */
+	private void paintCountdownOverlay(Graphics2D graphics2D) {
+		String label = countdownLabel;
+		if (label == null || label.isEmpty()) {
+			return;
+		}
+		float progress = countdownProgress;
+		float pop = progress < 0.28f ? 1f - progress / 0.28f : 0f;
+		float scale = 1f + 0.42f * pop * pop;
+		float fade = progress > 0.82f ? Math.max(0f, 1f - (progress - 0.82f) / 0.18f) : 1f;
+		float alpha = Math.max(0f, Math.min(1f, fade));
+
+		int centerX = getWidth() / 2;
+		int centerY = Math.max(1, getHeight() - HUD_BAR_HEIGHT) / 2;
+		float baseSize = countdownGoStep ? 86f : 108f;
+		Font font = GameTheme.FONT_TITLE.deriveFont(Font.BOLD, baseSize * scale);
+		graphics2D.setFont(font);
+		FontMetrics metrics = graphics2D.getFontMetrics();
+		int textWidth = metrics.stringWidth(label);
+		int textX = centerX - textWidth / 2;
+		int textY = centerY + (metrics.getAscent() - metrics.getDescent()) / 2;
+
+		Graphics2D overlay = (Graphics2D) graphics2D.create();
+		overlay.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+		overlay.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		overlay.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+		float ringRadius = Math.max(textWidth, metrics.getHeight()) * (0.72f + 0.18f * pop);
+		overlay.setColor(new Color(0, 0, 0, 90));
+		overlay.fill(new Ellipse2D.Float(
+				centerX - ringRadius,
+				centerY - ringRadius * 0.72f,
+				ringRadius * 2f,
+				ringRadius * 1.44f));
+
+		Color halo = countdownGoStep
+				? new Color(255, 230, 90, 55)
+				: new Color(90, 170, 255, 45);
+		overlay.setColor(halo);
+		overlay.setStroke(new BasicStroke(10f + 14f * pop, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		overlay.draw(new Ellipse2D.Float(
+				centerX - ringRadius * 0.85f,
+				centerY - ringRadius * 0.62f,
+				ringRadius * 1.7f,
+				ringRadius * 1.24f));
+
+		overlay.setColor(new Color(0, 0, 0, 160));
+		overlay.drawString(label, textX + 4, textY + 5);
+
+		Color fill = countdownGoStep ? GameTheme.ACCENT_YELLOW : GameTheme.TEXT_PRIMARY;
+		overlay.setColor(new Color(20, 28, 44));
+		for (int ox = -3; ox <= 3; ox++) {
+			for (int oy = -3; oy <= 3; oy++) {
+				if (ox == 0 && oy == 0) {
+					continue;
+				}
+				overlay.drawString(label, textX + ox, textY + oy);
+			}
+		}
+		overlay.setColor(fill);
+		overlay.drawString(label, textX, textY);
+		overlay.dispose();
 	}
 
 	/**

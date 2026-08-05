@@ -69,6 +69,8 @@ public class Game {
 	private final int lapCount;
 	private final int trackIndex;
 	private boolean running;
+	private boolean racing;
+	private RaceCountdown countdown;
 
 	public Game(
 			int[] carModels,
@@ -111,6 +113,15 @@ public class Game {
 
 		appShell.showRace(gameFrame, GAME_TITLE_PREFIX + GameCatalog.trackName(trackNumber));
 
+		// Build scenery/sprites and present a full frame before the countdown
+		// so 3-2-1-GO never plays over an empty or half-drawn canvas.
+		gameFrame.presentPreparedScene(circuit);
+		countdown = new RaceCountdown();
+		gameFrame.setCountdownPresentation(countdown.label(), countdown.progress(), countdown.isGoStep());
+		gameFrame.renderCompositeFrame(circuit);
+		gameFrame.setRacingInputEnabled(false);
+		racing = false;
+
 		gameTimer = new Timer(true);
 		gameTimer.scheduleAtFixedRate(
 				new GameTickTask(controllers, circuit, this),
@@ -123,8 +134,32 @@ public class Game {
 		return running;
 	}
 
+	/** {@code true} once the countdown has finished and cars may move. */
+	public boolean isRacing() {
+		return racing;
+	}
+
+	public RaceCountdown getCountdown() {
+		return countdown;
+	}
+
+	public GameFrame getGameFrame() {
+		return gameFrame;
+	}
+
+	public Circuit getCircuit() {
+		return circuit;
+	}
+
+	void beginRacing() {
+		racing = true;
+		countdown = null;
+		gameFrame.clearCountdownPresentation();
+		gameFrame.setRacingInputEnabled(true);
+	}
+
 	public void checkRaceFinished() {
-		if (!running) {
+		if (!running || !racing) {
 			return;
 		}
 		for (int index = 0; index < controllers.length; index++) {

@@ -26,6 +26,9 @@ public class HumanController extends Controller implements KeyListener {
 
 	@Override
 	public void keyPressed(KeyEvent event) {
+		if (!frame.isRacingInputEnabled()) {
+			return;
+		}
 		int keyCode = event.getKeyCode();
 		if (playerNumber == PLAYER_ONE) {
 			switch (keyCode) {
@@ -54,6 +57,9 @@ public class HumanController extends Controller implements KeyListener {
 
 	@Override
 	public void keyReleased(KeyEvent event) {
+		if (!frame.isRacingInputEnabled()) {
+			return;
+		}
 		int keyCode = event.getKeyCode();
 		if (playerNumber == PLAYER_ONE) {
 			switch (keyCode) {
