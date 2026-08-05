@@ -18,6 +18,8 @@ public class ThemedPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static final int SECTION_BORDER_WIDTH = 2;
 	private static final int HEADER_SUBTITLE_GAP = 6;
+	private static final int SECTION_TITLE_TOP_INSET = 10;
+	private static final int SECTION_TITLE_SIDE_INSET = 8;
 
 	public ThemedPanel() {
 		setOpaque(true);
@@ -26,10 +28,17 @@ public class ThemedPanel extends JPanel {
 
 	public static Border sectionBorder(String title, Component context) {
 		TitledBorder border = BorderFactory.createTitledBorder(
+				BorderFactory.createEmptyBorder(
+						SECTION_TITLE_TOP_INSET,
+						SECTION_TITLE_SIDE_INSET,
+						4,
+						SECTION_TITLE_SIDE_INSET),
 				BorderFactory.createLineBorder(GameTheme.BORDER_SOFT, SECTION_BORDER_WIDTH),
-				title);
-		border.setTitleColor(GameTheme.ACCENT_YELLOW);
-		border.setTitleFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, context));
+				title,
+				TitledBorder.LEFT,
+				TitledBorder.ABOVE_TOP,
+				GameTheme.scaled(GameTheme.FONT_SUBTITLE, context),
+				GameTheme.ACCENT_YELLOW);
 		return border;
 	}
 
