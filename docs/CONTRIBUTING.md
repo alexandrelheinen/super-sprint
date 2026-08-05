@@ -110,14 +110,15 @@ The project uses `java.util.Observable` / `Observer` (deprecated since Java 9). 
 
 ## Testing expectations
 
-There is no unit-test suite yet. Validation is:
+Validation is:
 
 ```bash
 make compile      # must succeed with no errors
+make test         # runs the JUnit 5 suite in tests/
 make smoke-test   # launches the app headlessly and exits cleanly
 ```
 
-When adding tests in the future, prefer JUnit 5 under `src/test/java/` mirroring the main package structure.
+Unit tests live under `tests/`, mirroring the main package structure (`tests/model/`, `tests/controller/`). They use JUnit 5; `make test` downloads the JUnit console launcher into `build/lib/` on first run. Tests must stay headless (no Swing windows) so they can run in CI.
 
 ## Asset and documentation files
 

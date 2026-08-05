@@ -31,31 +31,45 @@ public class AiController extends Controller {
 			ReferencePath referencePath) {
 		super(modelIndex, startPosition, frame, circuit);
 		this.referencePath = referencePath;
-
-		double handling = car.getStat(Car.STAT_HANDLING_INDEX);
-		double maxTurnRate = handling * TURN_RATE_PER_HANDLING;
-		double maxAcceleration = car.getStat(Car.STAT_ACCELERATION_INDEX);
-		double cruiseSpeed = car.getStat(Car.STAT_MAX_SPEED_INDEX) * CRUISE_SPEED_RATIO;
-
-		vehicle = new DubinsVehicle(
+		trackingLoop = createTrackingLoop(
+				car.getStat(Car.STAT_MAX_SPEED_INDEX),
+				car.getStat(Car.STAT_ACCELERATION_INDEX),
+				car.getStat(Car.STAT_HANDLING_INDEX),
 				car.getPositionXMeters(),
 				car.getPositionYMeters(),
-				car.getAngle(),
-				car.getStat(Car.STAT_MAX_SPEED_INDEX),
-				0.0,
-				maxTurnRate,
-				maxAcceleration,
-				TURN_RATE_DOT);
+				car.getAngle());
+		vehicle = trackingLoop.getVehicle();
+	}
 
+	/**
+	 * Builds the vehicle model and PD controller used by AI drivers. Exposed
+	 * so tests can simulate exactly the tracking setup used in-game.
+	 */
+	public static TrackingLoop createTrackingLoop(
+			double maxSpeedMs,
+			double maxAccelerationMs2,
+			double handling,
+			double xMeters,
+			double yMeters,
+			double heading) {
+		DubinsVehicle vehicle = new DubinsVehicle(
+				xMeters,
+				yMeters,
+				heading,
+				maxSpeedMs,
+				0.0,
+				handling * TURN_RATE_PER_HANDLING,
+				maxAccelerationMs2,
+				TURN_RATE_DOT);
 		PdPathFollowController pathController = new PdPathFollowController(
 				handling * HEADING_KP_PER_HANDLING,
 				handling * HEADING_KD_PER_HANDLING,
 				handling * CROSS_TRACK_KP_PER_HANDLING,
 				SPEED_KP,
 				SPEED_KD,
-				cruiseSpeed,
+				maxSpeedMs * CRUISE_SPEED_RATIO,
 				CURVATURE_GAIN);
-		trackingLoop = new TrackingLoop(vehicle, pathController);
+		return new TrackingLoop(vehicle, pathController);
 	}
 
 	@Override

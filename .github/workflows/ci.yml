@@ -26,5 +26,8 @@ jobs:
       - name: Compile
         run: make compile
 
+      - name: Run unit tests
+        run: make test
+
       - name: Smoke test application launch
         run: make smoke-test

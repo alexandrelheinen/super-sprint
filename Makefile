@@ -1,4 +1,5 @@
 JAVA_SOURCES := $(shell find src -name '*.java')
+TEST_SOURCES := $(shell find tests -name '*.java')
 BUILD_DIR := build
 MAIN_CLASS := controller.Main
 SMOKE_TIMEOUT_SEC := 5
@@ -6,8 +7,11 @@ SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
 TRACK_PREVIEW_SCRIPT := scripts/generate-track-previews.sh
 BUNDLED_CAR_SPRITES := src/sprites/car1.png src/sprites/car2.png src/sprites/car3.png src/sprites/car4.png
 CONFIG_FILES := $(wildcard src/data/config/*.properties)
+JUNIT_VERSION := 1.10.2
+JUNIT_JAR := $(BUILD_DIR)/lib/junit-platform-console-standalone-$(JUNIT_VERSION).jar
+JUNIT_URL := https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(JUNIT_VERSION)/junit-platform-console-standalone-$(JUNIT_VERSION).jar
 
-.PHONY: all compile run smoke-test clean help prepare-sprites
+.PHONY: all compile run test smoke-test clean help prepare-sprites
 
 all: compile
 
@@ -15,6 +19,7 @@ help:
 	@echo "Super Sprint Supelec — make targets:"
 	@echo "  make compile     Compile Java sources into $(BUILD_DIR)/"
 	@echo "  make run         Compile (if needed) and launch the game"
+	@echo "  make test        Run the JUnit test suite in tests/"
 	@echo "  make smoke-test  Headless launch test for CI"
 	@echo "  make clean       Remove build artifacts"
 	@echo "  make help        Show this message"
@@ -46,6 +51,22 @@ compile: $(BUILD_DIR)/.stamp
 
 run: compile
 	java -cp $(BUILD_DIR) $(MAIN_CLASS)
+
+$(JUNIT_JAR):
+	@mkdir -p $(BUILD_DIR)/lib
+	curl -fsSL -o $(JUNIT_JAR) $(JUNIT_URL)
+
+$(BUILD_DIR)/tests/.stamp: $(BUILD_DIR)/.stamp $(TEST_SOURCES) $(JUNIT_JAR)
+	@mkdir -p $(BUILD_DIR)/tests
+	javac -d $(BUILD_DIR)/tests -cp $(BUILD_DIR):$(JUNIT_JAR) $(TEST_SOURCES)
+	@touch $(BUILD_DIR)/tests/.stamp
+
+test: $(BUILD_DIR)/tests/.stamp
+	java -jar $(JUNIT_JAR) execute \
+		--class-path $(BUILD_DIR):$(BUILD_DIR)/tests \
+		--scan-class-path \
+		--fail-if-no-tests \
+		--disable-banner
 
 smoke-test: compile
 	@command -v xvfb-run >/dev/null 2>&1 || { echo "xvfb-run is required for smoke-test"; exit 1; }
