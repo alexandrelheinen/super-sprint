@@ -4,9 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.GridLayout;
 
+import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.border.EmptyBorder;
 
 import model.ConfigLoader;
@@ -18,7 +21,9 @@ import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
 /**
- * Help screen content hosted inside {@link AppShell}.
+ * Help screen content hosted inside {@link AppShell}. Controls and information
+ * sit side by side so the fixed window can show both without clipping; each
+ * column scrolls independently if needed.
  */
 public class HelpPanel extends BackgroundPanel {
 
@@ -39,9 +44,13 @@ public class HelpPanel extends BackgroundPanel {
 	private static final int PLAYER_LABEL_GAP = 8;
 	private static final int BUTTON_WIDTH = 200;
 	private static final int BUTTON_HEIGHT = 54;
+	private static final int SCROLL_UNIT = 16;
+	private static final int HELP_KEY_SIZE = 46;
+	private static final int SCROLL_BOTTOM_PAD = 20;
 
 	private final ArcadeButton closeButton;
 	private final JTextArea infoArea;
+	private final JPanel keyboardColumn;
 
 	public HelpPanel(Component scaleContext, Runnable onClose) {
 		super(BackgroundPanel.Style.SCREEN);
@@ -50,46 +59,71 @@ public class HelpPanel extends BackgroundPanel {
 
 		add(ThemedPanel.createHeader(TITLE, null, scaleContext), BorderLayout.NORTH);
 
+		JPanel columns = new JPanel(new GridLayout(1, 2, SECTION_GAP, 0));
+		columns.setOpaque(false);
+
 		GlassCard controlsCard = new GlassCard(new BorderLayout(), scaleContext, CONTROLS_TITLE);
 		controlsCard.setOpaque(false);
-
-		JPanel keyboardRow = new JPanel(new GridLayout(1, 2, SECTION_GAP, 0));
-		keyboardRow.setOpaque(false);
-		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
-		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_TWO, KeyboardPanel.Layout.WASD));
-		controlsCard.add(keyboardRow, BorderLayout.CENTER);
-		add(controlsCard, BorderLayout.CENTER);
+		keyboardColumn = new JPanel(new GridLayout(2, 1, 0, SECTION_GAP));
+		keyboardColumn.setOpaque(false);
+		rebuildKeyboards(scaleContext);
+		JPanel keyboardHolder = new JPanel(new BorderLayout());
+		keyboardHolder.setOpaque(false);
+		keyboardHolder.add(keyboardColumn, BorderLayout.NORTH);
+		keyboardHolder.add(Box.createVerticalStrut(SCROLL_BOTTOM_PAD), BorderLayout.SOUTH);
+		controlsCard.add(wrapScroll(keyboardHolder), BorderLayout.CENTER);
+		columns.add(controlsCard);
 
 		GlassCard infoCard = new GlassCard(new BorderLayout(), scaleContext, INFO_TITLE);
 		infoCard.setOpaque(false);
 		infoArea = new JTextArea(INFO_BODY);
 		infoArea.setEditable(false);
 		infoArea.setOpaque(false);
+		infoArea.setFocusable(false);
 		infoArea.setLineWrap(true);
 		infoArea.setWrapStyleWord(true);
-		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, scaleContext));
+		// Explicit rows keep preferred height tall enough for descenders.
+		infoArea.setRows(INFO_BODY.split("\n", -1).length + 2);
+		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
 		infoArea.setForeground(GameTheme.TEXT_PRIMARY);
-		infoArea.setBorder(new EmptyBorder(8, 4, 8, 4));
-		infoCard.add(infoArea, BorderLayout.CENTER);
+		infoArea.setBorder(new EmptyBorder(8, 8, 16, 8));
+		infoCard.add(wrapScroll(infoArea), BorderLayout.CENTER);
+		columns.add(infoCard);
+
+		add(columns, BorderLayout.CENTER);
 
 		closeButton = new ArcadeButton(CLOSE, false);
 		closeButton.addActionListener(event -> onClose.run());
 		JPanel footer = new JPanel(new BorderLayout());
 		footer.setOpaque(false);
 		footer.add(closeButton, BorderLayout.EAST);
-
-		JPanel south = new JPanel(new BorderLayout(0, SECTION_GAP));
-		south.setOpaque(false);
-		south.add(infoCard, BorderLayout.CENTER);
-		south.add(footer, BorderLayout.SOUTH);
-		add(south, BorderLayout.SOUTH);
+		add(footer, BorderLayout.SOUTH);
 	}
 
 	public void applyScaledMetrics(Component scaleContext) {
 		closeButton.applyScaledSize(scaleContext, BUTTON_WIDTH, BUTTON_HEIGHT);
-		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, scaleContext));
+		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
+		rebuildKeyboards(scaleContext);
 		revalidate();
 		repaint();
+	}
+
+	private void rebuildKeyboards(Component scaleContext) {
+		keyboardColumn.removeAll();
+		keyboardColumn.add(buildPlayerPanel(scaleContext, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
+		keyboardColumn.add(buildPlayerPanel(scaleContext, PLAYER_TWO, KeyboardPanel.Layout.WASD));
+		keyboardColumn.revalidate();
+	}
+
+	private static JScrollPane wrapScroll(Component view) {
+		JScrollPane scrollPane = new JScrollPane(view);
+		scrollPane.setOpaque(false);
+		scrollPane.getViewport().setOpaque(false);
+		scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT);
+		return scrollPane;
 	}
 
 	private static JPanel buildPlayerPanel(Component owner, String playerLabel, KeyboardPanel.Layout layout) {
@@ -97,11 +131,12 @@ public class HelpPanel extends BackgroundPanel {
 		panel.setOpaque(false);
 		JLabel label = ThemedPanel.createLabel(playerLabel, owner);
 		label.setHorizontalAlignment(JLabel.CENTER);
-		label.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, owner));
+		label.setFont(GameTheme.scaled(GameTheme.FONT_BODY, owner));
 		panel.add(label, BorderLayout.NORTH);
 		JPanel keyboardHolder = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
 		keyboardHolder.setOpaque(false);
-		keyboardHolder.add(new KeyboardPanel(owner, layout));
+		KeyboardPanel keyboard = new KeyboardPanel(owner, layout, HELP_KEY_SIZE);
+		keyboardHolder.add(keyboard);
 		panel.add(keyboardHolder, BorderLayout.CENTER);
 		return panel;
 	}
