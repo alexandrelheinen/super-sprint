@@ -48,7 +48,9 @@ prepare_sprite() {
 	if command -v curl >/dev/null 2>&1 \
 		&& command -v ffmpeg >/dev/null 2>&1 \
 		&& curl -fsSL "${url}" -o "${temp_file}" \
-		&& ffmpeg -y -loglevel error -i "${temp_file}" -vf hflip -update 1 -frames:v 1 "${output}"; then
+		&& ffmpeg -y -loglevel error -i "${temp_file}" \
+			-vf "hflip,format=rgba,colorkey=0x000000:0.08:0.05,format=rgb24,pad=iw:ih:0:0:white" \
+			-update 1 -frames:v 1 "${output}"; then
 		echo "Prepared car${index}.png from ${name} artwork (horizontally flipped)."
 		rm -f "${temp_file}"
 		return 0

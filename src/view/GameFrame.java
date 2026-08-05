@@ -19,6 +19,10 @@ import javax.swing.JFrame;
 
 import model.Car;
 import model.Circuit;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+
 import model.ResourcePaths;
 
 public class GameFrame extends JFrame implements Observer {
@@ -36,6 +40,7 @@ public class GameFrame extends JFrame implements Observer {
 	private final int[] mapDimensions;
 	private final Color hudColor;
 	private final Font hudFont;
+	private volatile boolean renderingEnabled = true;
 
 	public GameFrame(String title, int[] carModels, int[][] trackMap, int trackNumber) {
 		super(title);
@@ -47,9 +52,9 @@ public class GameFrame extends JFrame implements Observer {
 		carSprites = new BufferedImage[carModels.length];
 		for (int index = 0; index < carModels.length; index++) {
 			try {
-				carSprites[index] = ImageIO.read(new File(ResourcePaths.carSpritePath(carModels[index])));
+				carSprites[index] = ResourcePaths.loadCarSprite(carModels[index]);
 				System.out.println("Sprite #" + (index + 1) + " loaded");
-			} catch (Exception exception) {
+			} catch (IOException exception) {
 				System.err.println("Error loading car sprites: " + exception.getMessage());
 			}
 		}
@@ -82,9 +87,20 @@ public class GameFrame extends JFrame implements Observer {
 		return trackMap;
 	}
 
+	public void shutdown() {
+		renderingEnabled = false;
+		setVisible(false);
+	}
+
 	@Override
 	public void update(Observable observable, Object argument) {
+		if (!renderingEnabled || !isDisplayable()) {
+			return;
+		}
 		BufferStrategy bufferStrategy = getBufferStrategy();
+		if (bufferStrategy == null) {
+			return;
+		}
 		Graphics graphics = null;
 
 		if (observable.toString().contains("Car")) {
