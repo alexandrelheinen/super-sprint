@@ -28,12 +28,15 @@ import view.ui.UiPainter;
 public class HeroBanner extends JPanel {
 
 	private static final long serialVersionUID = 1L;
-	private static final int MIN_HEIGHT = 220;
-	private static final int TITLE_FONT_SIZE = 42;
-	private static final int BRAND_FONT_SIZE = 22;
-	private static final int TITLE_TOP_OFFSET = 48;
+	private static final int MIN_HEIGHT = 260;
+	/** Main menu hero title — larger than the global theme title size. */
+	private static final int TITLE_FONT_SIZE = 58;
+	/** Brand line under the title (e.g. Supélec). */
+	private static final int BRAND_FONT_SIZE = 32;
+	/** Empty space above SUPER SPRINT, in title line-heights. */
+	private static final int TITLE_TOP_MARGIN_LINES = 1;
 	/** Clearance between the title underline and the top of the brand glyphs. */
-	private static final int BRAND_CLEARANCE = 14;
+	private static final int BRAND_CLEARANCE = 16;
 	private static final int CORNER_ARC = 28;
 	private static final double SCRIM_END_RATIO = 0.55;
 	private static final int SCRIM_MAX_ALPHA = 235;
@@ -78,19 +81,23 @@ public class HeroBanner extends JPanel {
 		}
 
 		int centerX = getWidth() / 2;
+		int titleFontSize = UiScale.scale(context, TITLE_FONT_SIZE);
+		Font titleFont = GameTheme.FONT_TITLE.deriveFont(Font.BOLD, (float) titleFontSize);
+		var titleMetrics = graphics2D.getFontMetrics(titleFont);
+		// One title line-height of empty margin above the capitals, then the baseline.
 		int titleBaseline = splashImage != null
-				? UiScale.scale(context, TITLE_TOP_OFFSET)
+				? TITLE_TOP_MARGIN_LINES * titleMetrics.getHeight() + titleMetrics.getAscent()
 				: getHeight() / 2 - 8;
 		int underlineBottom = UiPainter.paintTitleGlow(
 				graphics2D,
 				title,
 				centerX,
 				titleBaseline,
-				UiScale.scale(context, TITLE_FONT_SIZE));
+				titleFontSize);
 
 		if (brandLine != null && !brandLine.isEmpty()) {
 			int brandFontSize = UiScale.scale(context, BRAND_FONT_SIZE);
-			Font brandFont = GameTheme.FONT_SUBTITLE.deriveFont(Font.PLAIN, (float) brandFontSize);
+			Font brandFont = GameTheme.FONT_SUBTITLE.deriveFont(Font.BOLD, (float) brandFontSize);
 			graphics2D.setFont(brandFont);
 			graphics2D.setColor(GameTheme.TEXT_PRIMARY);
 			var metrics = graphics2D.getFontMetrics();
