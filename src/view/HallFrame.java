@@ -1,8 +1,7 @@
 package view;
 
-import java.awt.Container;
+import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -12,31 +11,33 @@ import java.awt.event.WindowEvent;
 import java.util.Observable;
 import java.util.Observer;
 
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.SpringLayout;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 
 import model.Circuit;
 import model.HallOfFame;
 import model.Result;
+import view.components.ArcadeButton;
+import view.components.ThemedPanel;
+import view.theme.GameTheme;
 
 public class HallFrame extends JFrame implements Observer, ActionListener, ItemListener {
 
 	private static final long serialVersionUID = 1L;
-	private static final int REFERENCE_TABLE_WIDTH = 520;
-	private static final int REFERENCE_TABLE_HEIGHT = 220;
+	private static final String[] COLUMN_NAMES = {"Rank", "Name", "Time", "Date"};
 
 	@SuppressWarnings("rawtypes")
 	private final JComboBox trackMenu;
+	private final DefaultTableModel tableModel;
 	private final JTable resultsTable;
-	private final JTable headerTable;
 	private final MenuFrame menuFrame;
-	private final JButton closeButton;
-	private final JPanel panel;
+	private final ArcadeButton closeButton;
 	private HallOfFame hallOfFame;
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -44,37 +45,56 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		super("Hall Of Fame");
 		this.menuFrame = menuFrame;
 
-		panel = new JPanel();
+		ThemedPanel root = new ThemedPanel();
+		root.setLayout(new BorderLayout(0, 16));
+		root.setBorder(new EmptyBorder(18, 18, 18, 18));
+		root.styleSurface(GameTheme.BACKGROUND_DARK);
+
+		root.add(ThemedPanel.createHeader("Hall of Fame", "Best lap times by track", this), BorderLayout.NORTH);
+
+		JPanel body = new JPanel(new BorderLayout(0, 12));
+		body.setOpaque(false);
+
+		JPanel selectorPanel = new JPanel(new BorderLayout(12, 0));
+		selectorPanel.setOpaque(false);
+		selectorPanel.add(ThemedPanel.createLabel("Track", this), BorderLayout.WEST);
+
 		String[] trackOptions = new String[Circuit.TRACK_COUNT];
 		for (int trackIndex = 0; trackIndex < Circuit.TRACK_COUNT; trackIndex++) {
 			trackOptions[trackIndex] = "Track " + (trackIndex + 1);
 		}
-
-		String[][] header = {{"Rank", "Name", "Time", "Date"}};
-		String[] columnNames = {"", "", "", ""};
-		headerTable = new JTable(header, columnNames);
-		resultsTable = new JTable(new String[HallOfFame.MAX_RESULTS][4], columnNames);
-		headerTable.setEnabled(false);
-		resultsTable.setEnabled(false);
-
 		trackMenu = new JComboBox(trackOptions);
+		trackMenu.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		trackMenu.addItemListener(this);
-		trackMenu.setSelectedIndex(0);
+		selectorPanel.add(trackMenu, BorderLayout.CENTER);
+		body.add(selectorPanel, BorderLayout.NORTH);
 
-		closeButton = new JButton("Close");
+		tableModel = new DefaultTableModel(COLUMN_NAMES, 0);
+		resultsTable = new JTable(tableModel);
+		resultsTable.setEnabled(false);
+		resultsTable.setRowHeight(UiScale.scale(this, 24));
+		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
+		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
+		resultsTable.setGridColor(GameTheme.BORDER_SOFT);
+		resultsTable.setBackground(GameTheme.PANEL_SURFACE);
+		resultsTable.setForeground(GameTheme.TEXT_PRIMARY);
+		resultsTable.getTableHeader().setBackground(GameTheme.ACCENT_BLUE);
+		resultsTable.getTableHeader().setForeground(GameTheme.TEXT_PRIMARY);
+
+		JScrollPane scrollPane = new JScrollPane(resultsTable);
+		scrollPane.setBorder(ThemedPanel.sectionBorder("Leaderboard", this));
+		scrollPane.getViewport().setBackground(GameTheme.PANEL_SURFACE);
+		body.add(scrollPane, BorderLayout.CENTER);
+		root.add(body, BorderLayout.CENTER);
+
+		closeButton = new ArcadeButton("Close", false);
 		closeButton.addActionListener(this);
+		JPanel footer = new JPanel(new BorderLayout());
+		footer.setOpaque(false);
+		footer.add(closeButton, BorderLayout.EAST);
+		root.add(footer, BorderLayout.SOUTH);
 
-		SpringLayout layout = new SpringLayout();
-		panel.setLayout(layout);
-		panel.add(trackMenu);
-		panel.add(headerTable);
-		panel.add(resultsTable);
-		panel.add(closeButton);
-		add(panel);
-
-		applyLayout(layout);
-		applyScaledMetrics();
-
+		setContentPane(root);
 		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 			@Override
@@ -83,34 +103,19 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 			}
 		});
 		UiScale.applyQuarterScreenSize(this);
+		applyScaledMetrics();
 		UiScale.enableDelayedResize(this, this::applyScaledMetrics);
 		setVisible(false);
 	}
 
-	private void applyLayout(SpringLayout layout) {
-		Container contentPane = getContentPane();
-		layout.putConstraint(SpringLayout.WEST, trackMenu, 10, SpringLayout.WEST, contentPane);
-		layout.putConstraint(SpringLayout.NORTH, trackMenu, 10, SpringLayout.NORTH, contentPane);
-		layout.putConstraint(SpringLayout.WEST, headerTable, 10, SpringLayout.WEST, contentPane);
-		layout.putConstraint(SpringLayout.NORTH, headerTable, 8, SpringLayout.SOUTH, trackMenu);
-		layout.putConstraint(SpringLayout.WEST, resultsTable, 10, SpringLayout.WEST, contentPane);
-		layout.putConstraint(SpringLayout.NORTH, resultsTable, 8, SpringLayout.SOUTH, headerTable);
-		layout.putConstraint(SpringLayout.EAST, closeButton, -10, SpringLayout.EAST, contentPane);
-		layout.putConstraint(SpringLayout.NORTH, closeButton, 10, SpringLayout.SOUTH, resultsTable);
-	}
-
 	private void applyScaledMetrics() {
-		int tableWidth = UiScale.scale(this, REFERENCE_TABLE_WIDTH);
-		int headerHeight = UiScale.scale(this, 24);
-		int tableHeight = UiScale.scale(this, REFERENCE_TABLE_HEIGHT);
-		headerTable.setPreferredSize(new Dimension(tableWidth, headerHeight));
-		resultsTable.setPreferredSize(new Dimension(tableWidth, tableHeight));
-		headerTable.setFont(UiScale.scaledFont(this, headerTable.getFont().deriveFont(Font.BOLD, 12f)));
-		resultsTable.setFont(UiScale.scaledFont(this, resultsTable.getFont()));
-		trackMenu.setFont(UiScale.scaledFont(this, trackMenu.getFont()));
-		closeButton.setFont(UiScale.scaledFont(this, closeButton.getFont()));
-		panel.revalidate();
-		panel.repaint();
+		closeButton.applyScaledSize(this, 140, 46);
+		trackMenu.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
+		resultsTable.setRowHeight(UiScale.scale(this, 24));
+		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
+		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
+		revalidate();
+		repaint();
 	}
 
 	@Override
@@ -122,17 +127,18 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 	}
 
 	private void populateTable(int trackIndex) {
+		tableModel.setRowCount(0);
 		for (int rankIndex = 0; rankIndex < HallOfFame.MAX_RESULTS; rankIndex++) {
-			resultsTable.setValueAt(Integer.toString(rankIndex + 1), rankIndex, 0);
 			try {
-			 Result result = hallOfFame.getResult(trackIndex, rankIndex);
-				resultsTable.setValueAt(result.getName(), rankIndex, 1);
-				resultsTable.setValueAt(result.getTimeMs() / 1000.0 + " s", rankIndex, 2);
-				resultsTable.setValueAt(result.getDate(), rankIndex, 3);
+				Result result = hallOfFame.getResult(trackIndex, rankIndex);
+				tableModel.addRow(new Object[] {
+						Integer.toString(rankIndex + 1),
+						result.getName(),
+						result.getTimeMs() / 1000.0 + " s",
+						result.getDate()
+				});
 			} catch (RuntimeException exception) {
-				resultsTable.setValueAt("-", rankIndex, 1);
-				resultsTable.setValueAt("-", rankIndex, 2);
-				resultsTable.setValueAt("-", rankIndex, 3);
+				tableModel.addRow(new Object[] {Integer.toString(rankIndex + 1), "-", "-", "-"});
 			}
 		}
 	}
@@ -143,6 +149,9 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 	}
 
 	public void showHall() {
+		if (hallOfFame != null) {
+			populateTable(trackMenu.getSelectedIndex());
+		}
 		applyScaledMetrics();
 		setVisible(true);
 		toFront();
