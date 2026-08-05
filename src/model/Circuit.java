@@ -138,9 +138,9 @@ public class Circuit extends Observable {
 
 			if (!onTrack) {
 				car.setSpeed((float) (OFF_TRACK_SPEED_FACTOR * car.getSpeed()));
-				car.translateBy(
-						(float) -Math.signum(localPosition[0] - GameFrame.TILE_SIZE / TILE_CENTER_DIVISOR),
-						(float) -Math.signum(localPosition[1] - GameFrame.TILE_SIZE / TILE_CENTER_DIVISOR));
+				car.translateByMeters(
+						-WorldUnits.pxToM(Math.signum(localPosition[0] - GameFrame.TILE_SIZE / TILE_CENTER_DIVISOR)),
+						-WorldUnits.pxToM(Math.signum(localPosition[1] - GameFrame.TILE_SIZE / TILE_CENTER_DIVISOR)));
 			}
 		} catch (RuntimeException exception) {
 			System.err.println(ERROR_LEFT_TRACK);
