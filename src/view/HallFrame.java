@@ -1,6 +1,7 @@
 package view;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -17,15 +18,20 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 
 import model.ConfigLoader;
 import model.GameCatalog;
 import model.HallOfFame;
 import model.Result;
 import view.components.ArcadeButton;
+import view.components.GlassCard;
+import view.components.StyledComboBox;
 import view.components.ThemedPanel;
 import view.theme.GameTheme;
+import view.ui.BackgroundPanel;
 
 public class HallFrame extends JFrame implements Observer, ActionListener, ItemListener {
 
@@ -49,14 +55,13 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 	private static final String TIME_SUFFIX = ConfigLoader.getString("messages.hall.time.suffix", " s");
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 
-	private static final int ROOT_LAYOUT_GAP = 16;
-	private static final int PANEL_INSET = 18;
-	private static final int BODY_VERTICAL_GAP = 12;
+	private static final int PANEL_INSET = 22;
+	private static final int BODY_VERTICAL_GAP = 14;
 	private static final int SELECTOR_GAP = 12;
-	private static final int TABLE_ROW_HEIGHT = 24;
+	private static final int TABLE_ROW_HEIGHT = 28;
 	private static final int MIN_ROW_HEIGHT = 1;
-	private static final int CLOSE_BUTTON_WIDTH = 140;
-	private static final int CLOSE_BUTTON_HEIGHT = 46;
+	private static final int CLOSE_BUTTON_WIDTH = 150;
+	private static final int CLOSE_BUTTON_HEIGHT = 48;
 	private static final int MS_PER_SECOND = 1000;
 
 	@SuppressWarnings("rawtypes")
@@ -72,43 +77,62 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		super(WINDOW_TITLE);
 		this.menuFrame = menuFrame;
 
-		ThemedPanel root = new ThemedPanel();
-		root.setLayout(new BorderLayout(0, ROOT_LAYOUT_GAP));
+		BackgroundPanel root = new BackgroundPanel(BackgroundPanel.Style.SCREEN);
+		root.setLayout(new BorderLayout(0, BODY_VERTICAL_GAP));
 		root.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
-		root.styleSurface(GameTheme.BACKGROUND_DARK);
 
 		root.add(ThemedPanel.createHeader(HEADER_TITLE, HEADER_SUBTITLE, this), BorderLayout.NORTH);
 
 		JPanel body = new JPanel(new BorderLayout(0, BODY_VERTICAL_GAP));
 		body.setOpaque(false);
 
-		JPanel selectorPanel = new JPanel(new BorderLayout(SELECTOR_GAP, 0));
-		selectorPanel.setOpaque(false);
-		selectorPanel.add(ThemedPanel.createLabel(TRACK_LABEL, this), BorderLayout.WEST);
-
+		GlassCard selectorCard = new GlassCard(new BorderLayout(), this, TRACK_LABEL);
 		String[] trackOptions = GameCatalog.trackOptions();
 		trackMenu = new JComboBox(trackOptions);
-		trackMenu.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		trackMenu.addItemListener(this);
-		selectorPanel.add(trackMenu, BorderLayout.CENTER);
-		body.add(selectorPanel, BorderLayout.NORTH);
+		selectorCard.add(trackMenu, BorderLayout.CENTER);
+		body.add(selectorCard, BorderLayout.NORTH);
 
 		tableModel = new DefaultTableModel(COLUMN_NAMES, 0);
 		resultsTable = new JTable(tableModel);
 		resultsTable.setEnabled(false);
+		resultsTable.setShowVerticalLines(false);
 		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(this, TABLE_ROW_HEIGHT)));
 		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
-		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
-		resultsTable.setGridColor(GameTheme.BORDER_SOFT);
-		resultsTable.setBackground(GameTheme.PANEL_SURFACE);
-		resultsTable.setForeground(GameTheme.TEXT_PRIMARY);
-		resultsTable.getTableHeader().setBackground(GameTheme.ACCENT_BLUE);
-		resultsTable.getTableHeader().setForeground(GameTheme.TEXT_PRIMARY);
+		resultsTable.setDefaultRenderer(Object.class, new ThemedCellRenderer());
+		JTableHeader header = resultsTable.getTableHeader();
+		header.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
+		header.setBackground(GameTheme.ACCENT_BLUE);
+		header.setForeground(GameTheme.TEXT_PRIMARY);
+		header.setOpaque(true);
+		header.setDefaultRenderer(new DefaultTableCellRenderer() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Component getTableCellRendererComponent(
+					JTable table,
+					Object value,
+					boolean isSelected,
+					boolean hasFocus,
+					int row,
+					int column) {
+				super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+				setBackground(GameTheme.ACCENT_BLUE);
+				setForeground(GameTheme.TEXT_PRIMARY);
+				setBorder(new EmptyBorder(8, 10, 8, 10));
+				return this;
+			}
+		});
 
 		JScrollPane scrollPane = new JScrollPane(resultsTable);
-		scrollPane.setBorder(ThemedPanel.sectionBorder(LEADERBOARD_TITLE, this));
+		scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
 		scrollPane.getViewport().setBackground(GameTheme.PANEL_SURFACE);
-		body.add(scrollPane, BorderLayout.CENTER);
+		scrollPane.setOpaque(false);
+		scrollPane.getViewport().setOpaque(false);
+
+		GlassCard tableCard = new GlassCard(new BorderLayout(), this, LEADERBOARD_TITLE);
+		tableCard.add(scrollPane, BorderLayout.CENTER);
+		body.add(tableCard, BorderLayout.CENTER);
 		root.add(body, BorderLayout.CENTER);
 
 		closeButton = new ArcadeButton(CLOSE_BUTTON_LABEL, false);
@@ -134,7 +158,7 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 
 	private void applyScaledMetrics() {
 		closeButton.applyScaledSize(this, CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT);
-		trackMenu.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
+		StyledComboBox.apply(trackMenu, this);
 		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(this, TABLE_ROW_HEIGHT)));
 		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
@@ -199,5 +223,24 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		}
 		JComboBox box = (JComboBox) event.getSource();
 		populateTable(box.getSelectedIndex());
+	}
+
+	private static final class ThemedCellRenderer extends DefaultTableCellRenderer {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public Component getTableCellRendererComponent(
+				JTable table,
+				Object value,
+				boolean isSelected,
+				boolean hasFocus,
+				int row,
+				int column) {
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+			setForeground(GameTheme.TEXT_PRIMARY);
+			setBackground(row % 2 == 0 ? GameTheme.GLASS_FILL : GameTheme.PANEL_SURFACE);
+			setBorder(new EmptyBorder(6, 10, 6, 10));
+			return this;
+		}
 	}
 }
