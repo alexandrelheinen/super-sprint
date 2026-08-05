@@ -239,7 +239,7 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 1. Original French PDF project report (2015 evaluation submission — not stored in this repository).
 2. Course materials: Supélec *Projet Logiciel*, Sequence 6, 2014/2015.
 3. Inspiration: *Super Sprint* (arcade, 1985).
-4. Repository documentation: [README.md](README.md), [BUILD.md](BUILD.md), [CONTRIBUTING.md](CONTRIBUTING.md).
+4. Repository documentation: [README.md](../README.md), [BUILD.md](BUILD.md), [CONTRIBUTING.md](CONTRIBUTING.md).
 5. UML diagram: [diagram/classes.ucls](diagram/classes.ucls), [diagram/classes.png](diagram/classes.png).
 
 ---

@@ -127,14 +127,14 @@ When adding tests in the future, prefer JUnit 5 under `src/test/java/` mirroring
 | `src/data/hall_of_fame.dat` | Seed leaderboard copied on first run         |
 | `docs/diagram/`             | UML class diagram (`classes.ucls`, PNG export)|
 | `docs/REPORT.md`            | English project report                       |
-| `docs/README.md`            | User-facing quick start                      |
-| `README.md` (repo root)     | Pointer to full documentation                |
+| `README.md` (repo root)     | User-facing quick start                      |
+| `docs/BUILD.md`             | Build and run instructions                   |
 
 Do not commit OS junk (`Thumbs.db`, `.DS_Store`). Binary assets should stay unchanged unless replacing art.
 
 ## Markdown documentation
 
-- User docs (`README.md`) — concise quick start, build/run commands, controls.
+- User docs (`README.md` at repo root) — concise quick start, build/run commands, controls.
 - Technical report (`REPORT.md`) — architecture, design choices, references the original French submission when applicable.
 - This file (`CONTRIBUTING.md`) — contributor and code standards.
 
