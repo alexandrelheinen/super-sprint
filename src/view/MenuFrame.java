@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.SwingUtilities;
 
 import controller.Game;
 import model.Car;
@@ -192,6 +193,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		actionPanel.add(startButton);
 		racePanel.add(actionPanel, BorderLayout.SOUTH);
 
+		initializeRaceSetupDefaults();
+
 		setContentPane(mainPanel);
 		showMainMenu();
 		setIconImage(new ImageIcon(ResourcePaths.bundledSprite("icon.png")).getImage());
@@ -200,12 +203,32 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		applyScaledMetrics();
 		UiScale.enableDelayedResize(this, this::applyScaledMetrics);
 		setVisible(true);
+	}
 
-		carMenus[0].setSelectedIndex(0);
-		carMenus[1].setSelectedIndex(0);
+	private void initializeRaceSetupDefaults() {
+		for (int playerIndex = 0; playerIndex < 2; playerIndex++) {
+			carMenus[playerIndex].setSelectedIndex(0);
+		}
 		trackMenu.setSelectedIndex(0);
 		lapMenu.setSelectedIndex(GameCatalog.defaultLapCountOptionIndex());
-		selectedLapCount = GameCatalog.lapCountAt(lapMenu.getSelectedIndex());
+		refreshRaceSetupPreviews();
+	}
+
+	private void refreshRaceSetupPreviews() {
+		for (int playerIndex = 0; playerIndex < 2; playerIndex++) {
+			int modelIndex = carMenus[playerIndex].getSelectedIndex();
+			if (modelIndex >= 0) {
+				updateCarPreview(playerIndex, modelIndex);
+			}
+		}
+		int trackIndex = trackMenu.getSelectedIndex();
+		if (trackIndex >= 0) {
+			updateTrackPreview(trackIndex);
+		}
+		int lapIndex = lapMenu.getSelectedIndex();
+		if (lapIndex >= 0) {
+			selectedLapCount = GameCatalog.lapCountAt(lapIndex);
+		}
 	}
 
 	private void applyScaledMetrics() {
@@ -216,14 +239,11 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		for (int playerIndex = 0; playerIndex < 2; playerIndex++) {
 			styleComboBox(carMenus[playerIndex]);
 			styleProgressBars(playerIndex);
-			if (carMenus[playerIndex].getSelectedIndex() >= 0) {
-				updateCarPreview(playerIndex, carMenus[playerIndex].getSelectedIndex());
-			}
 		}
 		styleComboBox(trackMenu);
 		styleComboBox(lapMenu);
-		if (trackMenu.getSelectedIndex() >= 0) {
-			updateTrackPreview(trackMenu.getSelectedIndex());
+		if (racePanel.isShowing()) {
+			refreshRaceSetupPreviews();
 		}
 		startButton.applyScaledSize(this, 180, 52);
 		backToMenuButton.applyScaledSize(this, 180, 52);
@@ -259,6 +279,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		applyScaledMetrics();
 		revalidate();
 		repaint();
+		refreshRaceSetupPreviews();
+		SwingUtilities.invokeLater(this::refreshRaceSetupPreviews);
 	}
 
 	public void showMenu() {
@@ -345,13 +367,13 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		}
 		JComboBox box = (JComboBox) event.getSource();
 		String name = box.getName();
-		if (name.contains("car")) {
-			int playerIndex = name.contains("1") ? 0 : 1;
-			updateCarPreview(playerIndex, box.getSelectedIndex());
-		} else if ("laps".equals(name)) {
-			selectedLapCount = GameCatalog.lapCountAt(box.getSelectedIndex());
-		} else {
-			updateTrackPreview(box.getSelectedIndex());
+		switch (name) {
+			case "car1" -> updateCarPreview(0, box.getSelectedIndex());
+			case "car2" -> updateCarPreview(1, box.getSelectedIndex());
+			case "track" -> updateTrackPreview(box.getSelectedIndex());
+			case "laps" -> selectedLapCount = GameCatalog.lapCountAt(box.getSelectedIndex());
+			default -> {
+			}
 		}
 	}
 }
