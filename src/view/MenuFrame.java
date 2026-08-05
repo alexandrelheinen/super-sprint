@@ -1,6 +1,10 @@
 package view;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -56,6 +60,9 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final int RACE_PANEL_GAP = 18;
 	private static final int SETUP_COLUMN_COUNT = 4;
 	private static final int SETUP_COLUMN_GAP = 16;
+	private static final int SETUP_CARD_HEIGHT = 360;
+	private static final int SETUP_COMBO_HEIGHT = 40;
+	private static final int SETUP_PREVIEW_HEIGHT = 120;
 	private static final int VERTICAL_STRUT_SMALL = 8;
 	private static final int VERTICAL_STRUT_MEDIUM = 12;
 	private static final int ACTION_BUTTON_COLUMNS = 2;
@@ -89,9 +96,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String BUTTON_HALL_OF_FAME = ConfigLoader.getString("messages.menu.button.hall", "Hall of Fame");
 	private static final String BUTTON_HELP = ConfigLoader.getString("messages.menu.button.help", "Help & Info");
 	private static final String RACE_SETUP_TITLE = ConfigLoader.getString("messages.menu.race.setup.title", "Race Setup");
-	private static final String RACE_SETUP_SUBTITLE = ConfigLoader.getString(
-			"messages.menu.race.setup.subtitle",
-			"Choose cars, track, laps, and launch the grid");
 	private static final String PLAYER_SECTION_PREFIX = ConfigLoader.getString("messages.menu.section.player.prefix", "Player ");
 	private static final String TRACK_SECTION_TITLE = ConfigLoader.getString("messages.menu.section.track", "Track");
 	private static final String LAPS_SECTION_TITLE = ConfigLoader.getString("messages.menu.section.laps", "Laps");
@@ -121,6 +125,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private final ArcadeButton[] mainButtons;
 
 	private final BackgroundPanel racePanel;
+	private final JPanel setupBody;
 	private final GlassCard[] carPanels;
 	@SuppressWarnings("rawtypes")
 	private final JComboBox[] carMenus;
@@ -129,12 +134,12 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 	private final GlassCard trackPanel;
 	@SuppressWarnings("rawtypes")
-	private final JComboBox trackMenu;
-	private final JLabel trackIcon;
+	private JComboBox trackMenu;
+	private JLabel trackIcon;
 
 	private final GlassCard lapsPanel;
 	@SuppressWarnings("rawtypes")
-	private final JComboBox lapMenu;
+	private JComboBox lapMenu;
 
 	private final ArcadeButton startButton;
 	private final ArcadeButton backToMenuButton;
@@ -180,10 +185,10 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		racePanel.setLayout(new BorderLayout(RACE_PANEL_GAP, RACE_PANEL_GAP));
 		racePanel.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
 
-		JPanel raceHeader = ThemedPanel.createHeader(RACE_SETUP_TITLE, RACE_SETUP_SUBTITLE, this);
+		JPanel raceHeader = ThemedPanel.createHeader(RACE_SETUP_TITLE, null, this);
 		racePanel.add(raceHeader, BorderLayout.NORTH);
 
-		JPanel setupBody = new JPanel(new GridLayout(1, SETUP_COLUMN_COUNT, SETUP_COLUMN_GAP, 0));
+		setupBody = new JPanel(new GridBagLayout());
 		setupBody.setOpaque(false);
 
 		carPanels = new GlassCard[MAX_HUMAN_PLAYERS];
@@ -193,59 +198,15 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 		for (int playerIndex = 0; playerIndex < MAX_HUMAN_PLAYERS; playerIndex++) {
 			String sectionTitle = PLAYER_SECTION_PREFIX + (playerIndex + ONE_BASED_INDEX_OFFSET);
-			carPanels[playerIndex] = new GlassCard(null, this, sectionTitle);
-			carPanels[playerIndex].setLayout(new BoxLayout(carPanels[playerIndex], BoxLayout.Y_AXIS));
-
-			String[] carOptions = GameCatalog.carModelOptions();
-			carMenus[playerIndex] = new JComboBox(carOptions);
-			carMenus[playerIndex].addItemListener(this);
-			carMenus[playerIndex].setName(playerIndex == 0 ? COMBO_NAME_CAR1 : COMBO_NAME_CAR2);
-			carIcons[playerIndex] = new JLabel("", JLabel.CENTER);
-
-			carPanels[playerIndex].add(Box.createVerticalStrut(VERTICAL_STRUT_SMALL));
-			carPanels[playerIndex].add(carMenus[playerIndex]);
-			carPanels[playerIndex].add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
-			carPanels[playerIndex].add(carIcons[playerIndex]);
-			carPanels[playerIndex].add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
-
-			JPanel statsPanel = new JPanel();
-			statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
-			statsPanel.setOpaque(false);
-			for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
-				carStatBars[playerIndex][statIndex] = new StatBar(this);
-				carStatBars[playerIndex][statIndex].configure(
-						STAT_LABELS[statIndex],
-						STAT_BAR_LIMITS[statIndex][0],
-						STAT_BAR_LIMITS[statIndex][1],
-						STAT_VALUE_SUFFIXES[statIndex]);
-				statsPanel.add(carStatBars[playerIndex][statIndex]);
-				statsPanel.add(Box.createVerticalStrut(6));
-			}
-			carPanels[playerIndex].add(statsPanel);
-			setupBody.add(carPanels[playerIndex]);
+			carPanels[playerIndex] = buildCarSetupCard(sectionTitle, playerIndex);
+			addSetupCard(setupBody, carPanels[playerIndex], playerIndex);
 		}
 
-		trackPanel = new GlassCard(null, this, TRACK_SECTION_TITLE);
-		trackPanel.setLayout(new BoxLayout(trackPanel, BoxLayout.Y_AXIS));
-		String[] trackOptions = GameCatalog.trackOptions();
-		trackMenu = new JComboBox(trackOptions);
-		trackMenu.addItemListener(this);
-		trackMenu.setName(COMBO_NAME_TRACK);
-		trackIcon = new JLabel("", JLabel.CENTER);
-		trackPanel.add(Box.createVerticalStrut(VERTICAL_STRUT_SMALL));
-		trackPanel.add(trackMenu);
-		trackPanel.add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
-		trackPanel.add(trackIcon);
-		setupBody.add(trackPanel);
+		trackPanel = buildTrackSetupCard();
+		addSetupCard(setupBody, trackPanel, 2);
 
-		lapsPanel = new GlassCard(null, this, LAPS_SECTION_TITLE);
-		lapsPanel.setLayout(new BoxLayout(lapsPanel, BoxLayout.Y_AXIS));
-		lapMenu = new JComboBox(GameCatalog.lapCountOptions());
-		lapMenu.addItemListener(this);
-		lapMenu.setName(COMBO_NAME_LAPS);
-		lapsPanel.add(Box.createVerticalStrut(VERTICAL_STRUT_SMALL));
-		lapsPanel.add(lapMenu);
-		setupBody.add(lapsPanel);
+		lapsPanel = buildLapsSetupCard();
+		addSetupCard(setupBody, lapsPanel, 3);
 
 		racePanel.add(setupBody, BorderLayout.CENTER);
 
@@ -305,9 +266,13 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		}
 		for (int playerIndex = 0; playerIndex < MAX_HUMAN_PLAYERS; playerIndex++) {
 			StyledComboBox.apply(carMenus[playerIndex], this);
+			layoutComboBox(carMenus[playerIndex]);
 		}
 		StyledComboBox.apply(trackMenu, this);
+		layoutComboBox(trackMenu);
 		StyledComboBox.apply(lapMenu, this);
+		layoutComboBox(lapMenu);
+		updateSetupCardHeights();
 		if (racePanel.isShowing()) {
 			refreshRaceSetupPreviews();
 		}
@@ -315,6 +280,102 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		backToMenuButton.applyScaledSize(this, ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
 		revalidate();
 		repaint();
+	}
+
+	private void updateSetupCardHeights() {
+		int cardHeight = UiScale.scale(this, SETUP_CARD_HEIGHT);
+		Dimension cardSize = new Dimension(0, cardHeight);
+		for (GlassCard carPanel : carPanels) {
+			carPanel.setPreferredSize(cardSize);
+			carPanel.setMinimumSize(cardSize);
+		}
+		trackPanel.setPreferredSize(cardSize);
+		trackPanel.setMinimumSize(cardSize);
+		lapsPanel.setPreferredSize(cardSize);
+		lapsPanel.setMinimumSize(cardSize);
+	}
+
+	private void layoutComboBox(JComboBox<?> comboBox) {
+		int comboHeight = UiScale.scale(this, SETUP_COMBO_HEIGHT);
+		Dimension comboSize = new Dimension(comboBox.getPreferredSize().width, comboHeight);
+		comboBox.setPreferredSize(comboSize);
+		comboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, comboHeight));
+	}
+
+	private void addSetupCard(JPanel container, GlassCard card, int columnIndex) {
+		GridBagConstraints constraints = new GridBagConstraints();
+		constraints.gridx = columnIndex;
+		constraints.gridy = 0;
+		constraints.weightx = 1.0;
+		constraints.weighty = 1.0;
+		constraints.fill = GridBagConstraints.BOTH;
+		constraints.insets = new java.awt.Insets(0, columnIndex == 0 ? 0 : SETUP_COLUMN_GAP / 2, 0, columnIndex == 3 ? 0 : SETUP_COLUMN_GAP / 2);
+		container.add(card, constraints);
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private GlassCard buildCarSetupCard(String sectionTitle, int playerIndex) {
+		GlassCard card = new GlassCard(new BorderLayout(0, VERTICAL_STRUT_MEDIUM), this, sectionTitle);
+
+		String[] carOptions = GameCatalog.carModelOptions();
+		carMenus[playerIndex] = new JComboBox(carOptions);
+		carMenus[playerIndex].addItemListener(this);
+		carMenus[playerIndex].setName(playerIndex == 0 ? COMBO_NAME_CAR1 : COMBO_NAME_CAR2);
+		card.add(carMenus[playerIndex], BorderLayout.NORTH);
+
+		carIcons[playerIndex] = new JLabel("", JLabel.CENTER);
+		JPanel previewPanel = new JPanel(new BorderLayout());
+		previewPanel.setOpaque(false);
+		previewPanel.setPreferredSize(new Dimension(CAR_PREVIEW_WIDTH, SETUP_PREVIEW_HEIGHT));
+		previewPanel.add(carIcons[playerIndex], BorderLayout.CENTER);
+		card.add(previewPanel, BorderLayout.CENTER);
+
+		JPanel statsPanel = new JPanel();
+		statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
+		statsPanel.setOpaque(false);
+		for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
+			carStatBars[playerIndex][statIndex] = new StatBar(this);
+			carStatBars[playerIndex][statIndex].configure(
+					STAT_LABELS[statIndex],
+					STAT_BAR_LIMITS[statIndex][0],
+					STAT_BAR_LIMITS[statIndex][1],
+					STAT_VALUE_SUFFIXES[statIndex]);
+			statsPanel.add(carStatBars[playerIndex][statIndex]);
+			statsPanel.add(Box.createVerticalStrut(6));
+		}
+		card.add(statsPanel, BorderLayout.SOUTH);
+		return card;
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private GlassCard buildTrackSetupCard() {
+		GlassCard card = new GlassCard(new BorderLayout(0, VERTICAL_STRUT_MEDIUM), this, TRACK_SECTION_TITLE);
+		String[] trackOptions = GameCatalog.trackOptions();
+		trackMenu = new JComboBox(trackOptions);
+		trackMenu.addItemListener(this);
+		trackMenu.setName(COMBO_NAME_TRACK);
+		card.add(trackMenu, BorderLayout.NORTH);
+
+		trackIcon = new JLabel("", JLabel.CENTER);
+		JPanel previewPanel = new JPanel(new BorderLayout());
+		previewPanel.setOpaque(false);
+		previewPanel.setPreferredSize(new Dimension(TRACK_PREVIEW_WIDTH, SETUP_PREVIEW_HEIGHT));
+		previewPanel.add(trackIcon, BorderLayout.CENTER);
+		card.add(previewPanel, BorderLayout.CENTER);
+		return card;
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private GlassCard buildLapsSetupCard() {
+		GlassCard card = new GlassCard(new BorderLayout(), this, LAPS_SECTION_TITLE);
+		lapMenu = new JComboBox(GameCatalog.lapCountOptions());
+		lapMenu.addItemListener(this);
+		lapMenu.setName(COMBO_NAME_LAPS);
+		JPanel lapSelector = new JPanel(new BorderLayout());
+		lapSelector.setOpaque(false);
+		lapSelector.add(lapMenu, BorderLayout.NORTH);
+		card.add(lapSelector, BorderLayout.NORTH);
+		return card;
 	}
 
 	private void showMainMenu() {
@@ -326,8 +387,13 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	}
 
 	private void showRaceMenu(int players) {
-		carMenus[1].setEnabled(players != SINGLE_PLAYER_COUNT);
-		carPanels[1].setVisible(players != SINGLE_PLAYER_COUNT);
+		boolean singlePlayer = players == SINGLE_PLAYER_COUNT;
+		carMenus[1].setEnabled(!singlePlayer);
+		carPanels[1].setVisible(!singlePlayer);
+		GridBagLayout layout = (GridBagLayout) setupBody.getLayout();
+		GridBagConstraints playerTwoConstraints = layout.getConstraints(carPanels[1]);
+		playerTwoConstraints.weightx = singlePlayer ? 0.0 : 1.0;
+		layout.setConstraints(carPanels[1], playerTwoConstraints);
 		humanPlayerCount = players;
 		setContentPane(racePanel);
 		UiScale.applyQuarterScreenSize(this);
