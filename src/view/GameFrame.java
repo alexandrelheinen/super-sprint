@@ -1,11 +1,17 @@
 package view;
 
+import java.awt.BasicStroke;
 import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
@@ -19,12 +25,14 @@ import javax.imageio.ImageIO;
 import model.Car;
 import model.Circuit;
 import model.ResourcePaths;
+import model.TrackGeometry;
 import view.theme.GameTheme;
 import view.ui.UiPainter;
 
 /**
  * Race viewport rendered with a {@link BufferStrategy} on a {@link Canvas}.
- * Hosted inside {@link AppShell} — not a top-level window.
+ * Hosted inside {@link AppShell}. Simulation stays in logical track pixels;
+ * the view contain-scales (min of width/height fit) into the shell.
  */
 public class GameFrame extends Canvas implements Observer {
 
@@ -33,9 +41,11 @@ public class GameFrame extends Canvas implements Observer {
 
 	private static final long serialVersionUID = 1L;
 	private static final int BUFFER_STRATEGY_BUFFERS = 2;
-	/** Breathing room between the track walls and the canvas border. */
-	private static final int TRACK_MARGIN = 28;
-	private static final int HUD_BAR_HEIGHT = 80;
+	/** Padding around the asphalt ribbon when contain-fitting into the canvas. */
+	private static final int VIEW_PADDING_PX = 24;
+	private static final int HUD_BAR_HEIGHT = 72;
+	private static final int OUTER_TREE_COUNT = 18;
+	private static final int INFIELD_TREE_COUNT = 16;
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
 	// Cars face up on the grid, so their on-screen width is the sprite height
 	// and their nose sits half a sprite width above the slot center.
@@ -47,7 +57,6 @@ public class GameFrame extends Canvas implements Observer {
 	private static final int SPRITE_CENTER_DIVISOR = 2;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 	private static final int MS_PER_SECOND = 1000;
-
 	/** HUD text colors matching the car sprite liveries (models 1-4). */
 	private static final java.awt.Color[] CAR_MODEL_HUD_COLORS = {
 			new java.awt.Color(110, 170, 255),
@@ -81,6 +90,7 @@ public class GameFrame extends Canvas implements Observer {
 	private final int[] mapDimensions;
 	private final java.awt.Font hudFont;
 	private final Dimension preferredRaceSize;
+	private final Rectangle2D.Float viewBounds;
 	private BufferedImage staticScene;
 	private volatile boolean renderingEnabled = true;
 	private volatile Car[] hudCars;
@@ -106,10 +116,9 @@ public class GameFrame extends Canvas implements Observer {
 
 		trackTiles = loadTrackTiles(trackMap);
 		hudFont = GameTheme.FONT_HUD;
+		viewBounds = computeAsphaltViewBounds(trackMap);
 
-		preferredRaceSize = new Dimension(
-				2 * TRACK_MARGIN + mapDimensions[1] * TILE_SIZE,
-				2 * TRACK_MARGIN + mapDimensions[0] * TILE_SIZE + HUD_BAR_HEIGHT);
+		preferredRaceSize = contentSizeFor(mapDimensions[0], mapDimensions[1]);
 		setPreferredSize(preferredRaceSize);
 		setSize(preferredRaceSize);
 		setFocusable(true);
@@ -120,11 +129,35 @@ public class GameFrame extends Canvas implements Observer {
 		return new Dimension(preferredRaceSize);
 	}
 
-	/** Pixel size of a race viewport for a track with the given tile grid. */
+	/**
+	 * Baseline race content size used to size the shell. Live races contain-fit
+	 * the asphalt ribbon into whatever canvas they receive.
+	 */
 	public static Dimension contentSizeFor(int rows, int columns) {
 		return new Dimension(
-				2 * TRACK_MARGIN + columns * TILE_SIZE,
-				2 * TRACK_MARGIN + rows * TILE_SIZE + HUD_BAR_HEIGHT);
+				columns * TILE_SIZE + 2 * VIEW_PADDING_PX,
+				rows * TILE_SIZE + 2 * VIEW_PADDING_PX + HUD_BAR_HEIGHT);
+	}
+
+	/**
+	 * Axis-aligned bounds of the asphalt ribbon in track-local pixels (origin at
+	 * the top-left of the tile grid), padded so curbs stay on screen.
+	 */
+	private static Rectangle2D.Float computeAsphaltViewBounds(int[][] trackMap) {
+		Path2D unitPath = TrackGeometry.buildPreviewPath(trackMap);
+		AffineTransform toPixels = AffineTransform.getScaleInstance(TILE_SIZE, TILE_SIZE);
+		Shape centerline = toPixels.createTransformedShape(unitPath);
+		float stroke = (Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS) + VIEW_PADDING_PX * 2f;
+		Shape band = new BasicStroke(stroke, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+				.createStrokedShape(centerline);
+		Rectangle2D bounds = band.getBounds2D();
+		int trackW = trackMap[0].length * TILE_SIZE;
+		int trackH = trackMap.length * TILE_SIZE;
+		float x = (float) Math.max(0, bounds.getX());
+		float y = (float) Math.max(0, bounds.getY());
+		float w = (float) Math.min(trackW - x, bounds.getWidth());
+		float h = (float) Math.min(trackH - y, bounds.getHeight());
+		return new Rectangle2D.Float(x, y, Math.max(1f, w), Math.max(1f, h));
 	}
 
 	/**
@@ -146,12 +179,37 @@ public class GameFrame extends Canvas implements Observer {
 		totalLaps = lapCount;
 	}
 
+	/** Track-local origin: cars / finish line are relative to the tile grid. */
 	private int trackOriginX() {
-		return TRACK_MARGIN;
+		return 0;
 	}
 
 	private int trackOriginY() {
-		return TRACK_MARGIN;
+		return 0;
+	}
+
+	/**
+	 * Contain-scale the asphalt ribbon into the canvas above the HUD — uses the
+	 * smaller of width and height fit ratios so the whole track stays visible.
+	 */
+	private float viewScale() {
+		int canvasWidth = Math.max(1, getWidth());
+		int availHeight = Math.max(1, getHeight() - HUD_BAR_HEIGHT);
+		return Math.min(canvasWidth / viewBounds.width, availHeight / viewBounds.height);
+	}
+
+	private float viewOffsetX() {
+		return (getWidth() - viewBounds.width * viewScale()) / 2f - viewBounds.x * viewScale();
+	}
+
+	private float viewOffsetY() {
+		int availHeight = Math.max(1, getHeight() - HUD_BAR_HEIGHT);
+		return (availHeight - viewBounds.height * viewScale()) / 2f - viewBounds.y * viewScale();
+	}
+
+	private void applyViewTransform(Graphics2D graphics2D) {
+		graphics2D.translate(viewOffsetX(), viewOffsetY());
+		graphics2D.scale(viewScale(), viewScale());
 	}
 
 	public int getTrackNumber() {
@@ -183,6 +241,10 @@ public class GameFrame extends Canvas implements Observer {
 				BufferedImage sprite = carSprites[car.getSpriteIndex()];
 				graphics = bufferStrategy.getDrawGraphics();
 				Graphics2D graphics2D = (Graphics2D) graphics;
+				graphics2D.setRenderingHint(
+						RenderingHints.KEY_INTERPOLATION,
+						RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				applyViewTransform(graphics2D);
 
 				AffineTransform transform = new AffineTransform();
 				transform.rotate(
@@ -206,7 +268,15 @@ public class GameFrame extends Canvas implements Observer {
 				Circuit circuit = (Circuit) observable;
 				graphics = bufferStrategy.getDrawGraphics();
 				Graphics2D graphics2D = (Graphics2D) graphics;
+				graphics2D.setRenderingHint(
+						RenderingHints.KEY_INTERPOLATION,
+						RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
+				// Letterbox outside the contain-scaled race with grass tone.
+				graphics2D.setColor(RaceSceneryPainter.GRASS_DARK);
+				graphics2D.fillRect(0, 0, getWidth(), getHeight());
+
+				applyViewTransform(graphics2D);
 				graphics2D.drawImage(staticScene(), 0, 0, null);
 
 				graphics2D.setColor(java.awt.Color.YELLOW);
@@ -216,6 +286,9 @@ public class GameFrame extends Canvas implements Observer {
 						trackOriginX() + (int) circuit.getFinishLine().getX2(),
 						trackOriginY() + (int) circuit.getFinishLine().getY2());
 
+				// HUD stays in screen space under the contain-fitted track.
+				graphics2D.setTransform(new AffineTransform());
+				UiPainter.paintHudStrip(graphics2D, 0, getHeight() - HUD_BAR_HEIGHT, getWidth(), HUD_BAR_HEIGHT);
 				paintHudContent(graphics2D, circuit);
 				renderFlags[renderFlags.length - ONE_BASED_INDEX_OFFSET] = true;
 			} finally {
@@ -233,25 +306,52 @@ public class GameFrame extends Canvas implements Observer {
 	}
 
 	/**
-	 * Everything that never changes during a race (backdrop, viewport frame,
-	 * track tiles, start markers, HUD strip) is rendered once into an
-	 * offscreen image. Repainting it on every simulation tick previously took
-	 * longer than the tick interval, so the race ran in slow motion.
+	 * Static track layer in track-local pixels (tile grid). The live view
+	 * contain-fits {@link #viewBounds} into the canvas above the HUD.
 	 */
 	private BufferedImage staticScene() {
+		int trackPixelWidth = mapDimensions[1] * TILE_SIZE;
+		int trackPixelHeight = mapDimensions[0] * TILE_SIZE;
 		if (staticScene != null
-				&& staticScene.getWidth() == getWidth()
-				&& staticScene.getHeight() == getHeight()) {
+				&& staticScene.getWidth() == trackPixelWidth
+				&& staticScene.getHeight() == trackPixelHeight) {
 			return staticScene;
 		}
 
-		BufferedImage scene = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+		BufferedImage scene = new BufferedImage(trackPixelWidth, trackPixelHeight, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graphics2D = scene.createGraphics();
-		int trackPixelWidth = mapDimensions[1] * TILE_SIZE;
-		int trackPixelHeight = mapDimensions[0] * TILE_SIZE;
+		UiPainter.enableQuality(graphics2D);
+		int seed = RaceSceneryPainter.seedFor(trackMap);
 
-		UiPainter.paintScreenBackdrop(graphics2D, getWidth(), getHeight());
-		UiPainter.paintRaceViewportFrame(graphics2D, trackOriginX(), trackOriginY(), trackPixelWidth, trackPixelHeight);
+		RaceSceneryPainter.paintGrassField(graphics2D, trackPixelWidth, trackPixelHeight);
+		RaceSceneryPainter.paintGrassPatches(graphics2D, trackPixelWidth, trackPixelHeight, seed ^ 0x51ED);
+
+		// Block trees on the asphalt ribbon only (not whole tiles), so corner
+		// runoff and the outer belt can get splash-style canopies.
+		Path2D unitPath = TrackGeometry.buildPreviewPath(trackMap);
+		Shape centerline = AffineTransform.getScaleInstance(TILE_SIZE, TILE_SIZE)
+				.createTransformedShape(unitPath);
+		Shape asphaltRibbon = new BasicStroke(
+				Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS,
+				BasicStroke.CAP_ROUND,
+				BasicStroke.JOIN_ROUND).createStrokedShape(centerline);
+		RaceSceneryPainter.paintTrees(
+				graphics2D,
+				trackPixelWidth,
+				trackPixelHeight,
+				asphaltRibbon,
+				seed ^ 0xC0FFEE,
+				OUTER_TREE_COUNT,
+				0.035,
+				0.07);
+		RaceSceneryPainter.paintTreesInOpenTiles(
+				graphics2D,
+				trackMap,
+				TILE_SIZE,
+				trackOriginX(),
+				trackOriginY(),
+				seed ^ 0xBEE5,
+				INFIELD_TREE_COUNT);
 
 		for (int column = 0; column < mapDimensions[1]; column++) {
 			for (int row = 0; row < mapDimensions[0]; row++) {
@@ -264,8 +364,6 @@ public class GameFrame extends Canvas implements Observer {
 		}
 
 		paintStartGrid(graphics2D);
-
-		UiPainter.paintHudStrip(graphics2D, 0, hudBarTop(), getWidth(), HUD_BAR_HEIGHT);
 		graphics2D.dispose();
 		staticScene = scene;
 		return staticScene;
@@ -289,25 +387,21 @@ public class GameFrame extends Canvas implements Observer {
 		}
 	}
 
-	private int hudBarTop() {
-		return trackOriginY() + mapDimensions[0] * TILE_SIZE + TRACK_MARGIN;
-	}
-
 	/**
-	 * HUD line: race timer and track name on the left, one lap counter per
-	 * car on the right, tinted with the car's livery color. Text is
-	 * vertically centered in the HUD strip.
+	 * HUD line in screen space: race timer on the left, lap counters on the
+	 * right, tinted with each car's livery color.
 	 */
 	private void paintHudContent(Graphics2D graphics2D, Circuit circuit) {
 		graphics2D.setFont(hudFont);
 		java.awt.FontMetrics metrics = graphics2D.getFontMetrics();
-		int baseline = hudBarTop() + (HUD_BAR_HEIGHT - metrics.getHeight()) / 2 + metrics.getAscent();
+		int hudTop = getHeight() - HUD_BAR_HEIGHT;
+		int baseline = hudTop + (HUD_BAR_HEIGHT - metrics.getHeight()) / 2 + metrics.getAscent();
 
 		graphics2D.setColor(GameTheme.TEXT_PRIMARY);
 		String timerText = HUD_RACE_TIME_PREFIX
 				+ ((int) circuit.getRaceTimeMs() / MS_PER_SECOND)
 				+ HUD_TIME_SUFFIX;
-		graphics2D.drawString(timerText, trackOriginX(), baseline);
+		graphics2D.drawString(timerText, HUD_SIDE_PADDING, baseline);
 
 		Car[] cars = hudCars;
 		if (cars == null) {
@@ -323,7 +417,7 @@ public class GameFrame extends Canvas implements Observer {
 			}
 		}
 		int rightEdge = getWidth() - HUD_SIDE_PADDING;
-		int chipX = Math.max(trackOriginX() + metrics.stringWidth(timerText) + HUD_LAP_CHIP_GAP, rightEdge - chipsWidth);
+		int chipX = Math.max(HUD_SIDE_PADDING + metrics.stringWidth(timerText) + HUD_LAP_CHIP_GAP, rightEdge - chipsWidth);
 		for (int index = 0; index < cars.length; index++) {
 			graphics2D.setColor(CAR_MODEL_HUD_COLORS[
 					(cars[index].getModelIndex() - ONE_BASED_INDEX_OFFSET) % CAR_MODEL_HUD_COLORS.length]);
