@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Downloads GTA 2 car artwork sprites, flips them horizontally (art faces left;
 # the game expects sprites facing right like the bundled car PNG files),
-# keys out the top-left background pixel, and writes RGBA PNGs to $BUILD_DIR/sprites/carN.png.
+# keys out the top-left background pixel, crops transparent borders, and writes
+# RGBA PNGs to $BUILD_DIR/sprites/carN.png.
 set -u
 
 BUILD_DIR="${1:-build}"
@@ -18,6 +19,10 @@ fi
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
 	echo "WARNING: ffmpeg is not available; using bundled car sprites." >&2
+fi
+
+if ! python3 -c "from PIL import Image" >/dev/null 2>&1; then
+	echo "WARNING: Python Pillow is not available; sprites will not be trimmed." >&2
 fi
 
 # Source artwork (French GTA Wiki — Artworks de GTA 2):
@@ -37,6 +42,32 @@ format=rgba,hflip,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte(abs(r(X,Y)-r(0,
 EOF
 }
 
+trim_transparent_png() {
+	local input="$1"
+	local output="$2"
+	python3 - "${input}" "${output}" <<'PY'
+from PIL import Image
+import sys
+
+source_path, output_path = sys.argv[1:3]
+image = Image.open(source_path).convert("RGBA")
+bbox = image.getbbox()
+if bbox is not None:
+	image = image.crop(bbox)
+image.save(output_path)
+PY
+}
+
+finalize_sprite() {
+	local source="$1"
+	local output="$2"
+	if python3 -c "from PIL import Image" >/dev/null 2>&1; then
+		trim_transparent_png "${source}" "${output}"
+	else
+		cp "${source}" "${output}"
+	fi
+}
+
 prepare_sprite() {
 	local index="$1"
 	local url="$2"
@@ -44,12 +75,14 @@ prepare_sprite() {
 	local output="${OUT_DIR}/car${index}.png"
 	local fallback="${FALLBACK_DIR}/car${index}.png"
 	local temp_file
+	local processed_file
 
 	temp_file="$(mktemp "${TMPDIR:-/tmp}/car${index}.XXXXXX")"
+	processed_file="$(mktemp "${TMPDIR:-/tmp}/car${index}.proc.XXXXXX.png")"
 
 	if [[ ! -f "${fallback}" ]]; then
 		echo "WARNING: Missing fallback sprite ${fallback}; cannot prepare car ${index} (${name})." >&2
-		rm -f "${temp_file}"
+		rm -f "${temp_file}" "${processed_file}"
 		return 1
 	fi
 
@@ -58,15 +91,16 @@ prepare_sprite() {
 		&& curl -fsSL "${url}" -o "${temp_file}" \
 		&& ffmpeg -y -loglevel error -i "${temp_file}" \
 			-vf "$(chroma_filter "${CHROMA_TOLERANCE}")" \
-			-update 1 -frames:v 1 "${output}"; then
-		echo "Prepared car${index}.png from ${name} artwork (flipped, top-left chroma key)."
-		rm -f "${temp_file}"
+			-update 1 -frames:v 1 "${processed_file}" \
+		&& finalize_sprite "${processed_file}" "${output}"; then
+		echo "Prepared car${index}.png from ${name} artwork (flipped, chroma keyed, trimmed)."
+		rm -f "${temp_file}" "${processed_file}"
 		return 0
 	fi
 
-	echo "WARNING: Failed to download or process ${name} sprite; using bundled ${fallback}." >&2
-	cp "${fallback}" "${output}"
-	rm -f "${temp_file}"
+	echo "WARNING: Failed to download or process ${name} sprite; using trimmed bundled ${fallback}." >&2
+	finalize_sprite "${fallback}" "${output}"
+	rm -f "${temp_file}" "${processed_file}"
 	return 0
 }
 

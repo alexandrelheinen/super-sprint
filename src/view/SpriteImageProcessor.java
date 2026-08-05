@@ -61,7 +61,48 @@ public final class SpriteImageProcessor {
 						(FULL_ALPHA << ALPHA_OPAQUE_SHIFT) | (red << RED_CHANNEL_SHIFT) | (green << GREEN_CHANNEL_SHIFT) | blue);
 			}
 		}
-		return processed;
+		return trimTransparentBorder(processed);
+	}
+
+	/**
+	 * Crops fully transparent margins so collision bounds match visible pixels.
+	 */
+	public static BufferedImage trimTransparentBorder(BufferedImage source) {
+		if (source == null) {
+			return null;
+		}
+
+		int minX = source.getWidth();
+		int minY = source.getHeight();
+		int maxX = -1;
+		int maxY = -1;
+
+		for (int y = 0; y < source.getHeight(); y++) {
+			for (int x = 0; x < source.getWidth(); x++) {
+				int alpha = (source.getRGB(x, y) >> ALPHA_OPAQUE_SHIFT) & CHANNEL_MASK;
+				if (alpha == TRANSPARENT_ALPHA) {
+					continue;
+				}
+				minX = Math.min(minX, x);
+				minY = Math.min(minY, y);
+				maxX = Math.max(maxX, x);
+				maxY = Math.max(maxY, y);
+			}
+		}
+
+		if (maxX < minX || maxY < minY) {
+			return source;
+		}
+
+		int width = maxX - minX + 1;
+		int height = maxY - minY + 1;
+		BufferedImage trimmed = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				trimmed.setRGB(x, y, source.getRGB(minX + x, minY + y));
+			}
+		}
+		return trimmed;
 	}
 
 	private static boolean matchesKeyColor(

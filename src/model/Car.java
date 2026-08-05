@@ -27,7 +27,16 @@ public class Car extends Observable {
 			{17.0, 25.0, 55}
 	};
 
-	private static final int[] SPRITE_DIMENSIONS = {38, 22};
+	/**
+	 * Trimmed car sprite size in pixels (width, height) per model index.
+	 */
+	public static final int[][] CAR_MODEL_SPRITE_DIMENSIONS = {
+			{38, 18},
+			{38, 20},
+			{37, 21},
+			{36, 18}
+	};
+
 	private static final double COLLISION_BLEND = 0.1;
 	private static final double INITIAL_ANGLE = -Math.PI / 2;
 	private static final double TURN_RATE = 0.002;
@@ -49,6 +58,7 @@ public class Car extends Observable {
 	private final Circuit circuit;
 	private int motionState;
 	private final int spriteIndex;
+	private final int modelIndex;
 	private final String name;
 	private int lapCount;
 	private boolean finishLineCrossed;
@@ -63,6 +73,7 @@ public class Car extends Observable {
 		super();
 		this.circuit = circuit;
 		this.name = name;
+		this.modelIndex = modelIndex;
 		stats = CAR_MODEL_STATS[modelIndex - ONE_BASED_INDEX_OFFSET].clone();
 		try {
 			float[] startPositionPixels = Circuit.START_POSITIONS[frame.getTrackNumber() - ONE_BASED_INDEX_OFFSET][ranking
@@ -108,6 +119,18 @@ public class Car extends Observable {
 
 	public int getSpriteIndex() {
 		return spriteIndex;
+	}
+
+	public int getModelIndex() {
+		return modelIndex;
+	}
+
+	public int getSpriteWidth() {
+		return CAR_MODEL_SPRITE_DIMENSIONS[modelIndex - ONE_BASED_INDEX_OFFSET][0];
+	}
+
+	public int getSpriteHeight() {
+		return CAR_MODEL_SPRITE_DIMENSIONS[modelIndex - ONE_BASED_INDEX_OFFSET][1];
 	}
 
 	/** Forward speed in m/s. */
@@ -227,8 +250,12 @@ public class Car extends Observable {
 	}
 
 	public void collideWith(Car otherCar) {
-		Shape thisShape = new Rectangle(getX(), getY(), SPRITE_DIMENSIONS[0], SPRITE_DIMENSIONS[1]);
-		Shape otherShape = new Rectangle(otherCar.getX(), otherCar.getY(), SPRITE_DIMENSIONS[0], SPRITE_DIMENSIONS[1]);
+		Shape thisShape = new Rectangle(getX(), getY(), getSpriteWidth(), getSpriteHeight());
+		Shape otherShape = new Rectangle(
+				otherCar.getX(),
+				otherCar.getY(),
+				otherCar.getSpriteWidth(),
+				otherCar.getSpriteHeight());
 
 		AffineTransform thisTransform = new AffineTransform();
 		AffineTransform otherTransform = new AffineTransform();
