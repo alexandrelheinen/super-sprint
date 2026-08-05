@@ -16,7 +16,7 @@ public class GlassCard extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static final int CORNER_ARC = 20;
 	private static final int CARD_PADDING = 14;
-	private static final int TITLE_CLEARANCE = 8;
+	private static final int TITLE_CLEARANCE = 14;
 
 	public GlassCard(LayoutManager layout, Component context, String title) {
 		super(layout != null ? layout : new BorderLayout());

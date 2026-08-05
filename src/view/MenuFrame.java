@@ -408,6 +408,21 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		toFront();
 	}
 
+	void openRaceSetupForScreenshot() {
+		showRaceMenu(SINGLE_PLAYER_COUNT);
+	}
+
+	void openHelpForScreenshot() {
+		HelpDialog helpDialog = new HelpDialog(this);
+		helpDialog.setModalityType(java.awt.Dialog.ModalityType.MODELESS);
+		helpDialog.setVisible(true);
+	}
+
+	void openHallOfFameForScreenshot() {
+		hallFrame.showHall();
+		setVisible(false);
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent event) {
 		if (!(event.getSource() instanceof ArcadeButton button)) {

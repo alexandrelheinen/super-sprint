@@ -23,36 +23,37 @@ import model.ResourcePaths;
  */
 public final class UiScale {
 
-	private static final String KEY_REFERENCE_WIDTH = "ui.scale.reference.width";
-	private static final String KEY_REFERENCE_HEIGHT = "ui.scale.reference.height";
 	private static final String KEY_MIN_WINDOW_WIDTH = "ui.scale.min.window.width";
 	private static final String KEY_MIN_WINDOW_HEIGHT = "ui.scale.min.window.height";
 	private static final String KEY_MIN_FONT_SIZE = "ui.scale.min.font.size";
-	private static final String KEY_SCREEN_SIZE_DIVISOR = "ui.scale.screen.divisor";
-
-	public static final int REFERENCE_WIDTH = ConfigLoader.getInt(KEY_REFERENCE_WIDTH, 960);
-	public static final int REFERENCE_HEIGHT = ConfigLoader.getInt(KEY_REFERENCE_HEIGHT, 720);
+	private static final String KEY_SCREEN_WIDTH_DIVISOR = "ui.scale.screen.width.divisor";
+	private static final String KEY_SCREEN_HEIGHT_DIVISOR = "ui.scale.screen.height.divisor";
 
 	private static final int MIN_WINDOW_WIDTH = ConfigLoader.getInt(KEY_MIN_WINDOW_WIDTH, 640);
 	private static final int MIN_WINDOW_HEIGHT = ConfigLoader.getInt(KEY_MIN_WINDOW_HEIGHT, 480);
-	private static final int SCREEN_SIZE_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_SIZE_DIVISOR, 4);
+	private static final int SCREEN_WIDTH_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_WIDTH_DIVISOR, 2);
+	private static final int SCREEN_HEIGHT_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_HEIGHT_DIVISOR, 2);
 	private static final int MINIMUM_SIZE_DIVISOR = 2;
 	private static final float MIN_FONT_SIZE = ConfigLoader.getFloat(KEY_MIN_FONT_SIZE, 11f);
 
 	private UiScale() {
 	}
 
+	/**
+	 * Default window size: half the screen width and height (one quarter of total screen area).
+	 */
 	public static Dimension quarterScreenSize() {
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 		return new Dimension(
-				Math.max(MIN_WINDOW_WIDTH, screen.width / SCREEN_SIZE_DIVISOR),
-				Math.max(MIN_WINDOW_HEIGHT, screen.height / SCREEN_SIZE_DIVISOR));
+				Math.max(MIN_WINDOW_WIDTH, screen.width / SCREEN_WIDTH_DIVISOR),
+				Math.max(MIN_WINDOW_HEIGHT, screen.height / SCREEN_HEIGHT_DIVISOR));
 	}
 
 	public static float scaleFactor(Component component) {
-		int width = component.getWidth() > 0 ? component.getWidth() : REFERENCE_WIDTH;
-		int height = component.getHeight() > 0 ? component.getHeight() : REFERENCE_HEIGHT;
-		return Math.min(width / (float) REFERENCE_WIDTH, height / (float) REFERENCE_HEIGHT);
+		Dimension baseline = quarterScreenSize();
+		int width = component.getWidth() > 0 ? component.getWidth() : baseline.width;
+		int height = component.getHeight() > 0 ? component.getHeight() : baseline.height;
+		return Math.min(width / (float) baseline.width, height / (float) baseline.height);
 	}
 
 	public static int scale(Component component, int value) {

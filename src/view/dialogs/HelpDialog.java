@@ -5,6 +5,7 @@ import java.awt.Component;
 import java.awt.GridLayout;
 
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
@@ -20,13 +21,11 @@ public class HelpDialog extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String TITLE = ConfigLoader.getString("messages.help.dialog.title", "Controls & Information");
-	private static final String SUBTITLE = ConfigLoader.getString(
-			"messages.help.dialog.subtitle",
-			"Semi-pro arcade layout — memorize your racing lines and inputs");
-	private static final String PLAYER_ONE = ConfigLoader.getString("messages.help.player.one", "Player 1 — Steering");
-	private static final String PLAYER_TWO = ConfigLoader.getString("messages.help.player.two", "Player 2 — Steering");
-	private static final String INFO_TITLE = ConfigLoader.getString("messages.help.info.title", "Race Briefing");
+	private static final String TITLE = ConfigLoader.getString("messages.help.dialog.title", "Help");
+	private static final String CONTROLS_TITLE = ConfigLoader.getString("messages.help.controls.title", "Controls");
+	private static final String PLAYER_ONE = ConfigLoader.getString("messages.help.player.one", "Player 1");
+	private static final String PLAYER_TWO = ConfigLoader.getString("messages.help.player.two", "Player 2");
+	private static final String INFO_TITLE = ConfigLoader.getString("messages.help.info.title", "Information");
 	private static final String INFO_BODY = ConfigLoader.getMessage(
 			"messages.help.info.body",
 			"Software Project 2014/2015 — Sequence 6\nVersion 14.01.14\n\nConfigure laps in Race Setup before launching the grid.\nFinish first within the lap limit to enter the Hall of Fame.");
@@ -34,6 +33,7 @@ public class HelpDialog extends JDialog {
 
 	private static final int PANEL_INSET = 22;
 	private static final int SECTION_GAP = 16;
+	private static final int PLAYER_LABEL_GAP = 8;
 	private static final int BUTTON_WIDTH = 180;
 	private static final int BUTTON_HEIGHT = 48;
 
@@ -45,13 +45,17 @@ public class HelpDialog extends JDialog {
 		root.setLayout(new BorderLayout(0, SECTION_GAP));
 		root.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
 
-		root.add(ThemedPanel.createHeader(TITLE, SUBTITLE, owner), BorderLayout.NORTH);
+		root.add(ThemedPanel.createHeader(TITLE, null, owner), BorderLayout.NORTH);
+
+		GlassCard controlsCard = new GlassCard(new BorderLayout(), owner, CONTROLS_TITLE);
+		controlsCard.setOpaque(false);
 
 		JPanel keyboardRow = new JPanel(new GridLayout(1, 2, SECTION_GAP, 0));
 		keyboardRow.setOpaque(false);
-		keyboardRow.add(buildKeyboardCard(owner, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
-		keyboardRow.add(buildKeyboardCard(owner, PLAYER_TWO, KeyboardPanel.Layout.WASD));
-		root.add(keyboardRow, BorderLayout.CENTER);
+		keyboardRow.add(buildPlayerPanel(owner, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
+		keyboardRow.add(buildPlayerPanel(owner, PLAYER_TWO, KeyboardPanel.Layout.WASD));
+		controlsCard.add(keyboardRow, BorderLayout.CENTER);
+		root.add(controlsCard, BorderLayout.CENTER);
 
 		GlassCard infoCard = new GlassCard(new BorderLayout(), owner, INFO_TITLE);
 		infoCard.setOpaque(false);
@@ -82,10 +86,14 @@ public class HelpDialog extends JDialog {
 		setLocationRelativeTo(owner);
 	}
 
-	private static GlassCard buildKeyboardCard(Component owner, String title, KeyboardPanel.Layout layout) {
-		GlassCard card = new GlassCard(new BorderLayout(), owner, title);
-		card.add(new KeyboardPanel(owner, layout), BorderLayout.CENTER);
-		return card;
+	private static JPanel buildPlayerPanel(Component owner, String playerLabel, KeyboardPanel.Layout layout) {
+		JPanel panel = new JPanel(new BorderLayout(0, PLAYER_LABEL_GAP));
+		panel.setOpaque(false);
+		JLabel label = ThemedPanel.createLabel(playerLabel, owner);
+		label.setHorizontalAlignment(JLabel.CENTER);
+		panel.add(label, BorderLayout.NORTH);
+		panel.add(new KeyboardPanel(owner, layout), BorderLayout.CENTER);
+		return panel;
 	}
 
 	public void showDialog() {
