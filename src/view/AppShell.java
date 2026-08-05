@@ -68,7 +68,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static final int SETUP_COLUMN_GAP = 16;
 	private static final int SETUP_ROW_GAP = 16;
 	private static final int SETUP_COMBO_HEIGHT = 44;
-	private static final int SETUP_PREVIEW_HEIGHT = 84;
+	private static final int SETUP_PREVIEW_HEIGHT = 110;
 	private static final int SETUP_STAT_GAP = 4;
 	private static final int VERTICAL_STRUT_MEDIUM = 12;
 	private static final int ACTION_BUTTON_COLUMNS = 2;
@@ -78,9 +78,9 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static final int MAIN_BUTTON_HEIGHT = 58;
 	private static final int ACTION_BUTTON_WIDTH = 200;
 	private static final int ACTION_BUTTON_HEIGHT = 56;
-	private static final int CAR_PREVIEW_WIDTH = 130;
-	private static final int CAR_PREVIEW_HEIGHT = 72;
-	private static final int TRACK_PREVIEW_WIDTH = 170;
+	private static final int CAR_PREVIEW_WIDTH = 200;
+	private static final int CAR_PREVIEW_HEIGHT = 110;
+	private static final int TRACK_PREVIEW_WIDTH = 200;
 
 	private static final int MNEMONIC_ONE_PLAYER = 0;
 	private static final int MNEMONIC_TWO_PLAYERS = 1;
