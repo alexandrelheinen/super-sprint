@@ -6,8 +6,9 @@ physics stays valid. Visual language borrows cool asphalt banding from
 Kenney's Top-down Tanks Redux roads (CC0 inspiration only — tiles are
 original, not cropped from that pack).
 
-Future idea: replace flora + track + cars with one unified sprite set
-(or original art) instead of mixing packs / generated tiles.
+Corner kerbs use crisp alternating red/white blocks (classic Super Sprint
+rumble strips) rather than soft sine blends. Straights get thin white
+edge lines so the ribbon reads as a continuous painted track.
 """
 
 from __future__ import annotations
@@ -21,16 +22,24 @@ TILE = 219
 INNER = 26
 OUTER = 191
 
-# Cool Kenney-like asphalt palette (teal-gray), not pure Super Sprint charcoal.
-ASPHALT = np.array([142, 164, 170], dtype=np.float32)
-ASPHALT_DARK = np.array([108, 128, 134], dtype=np.float32)
-ASPHALT_MID = np.array([128, 150, 156], dtype=np.float32)
-ASPHALT_LIGHT = np.array([168, 188, 194], dtype=np.float32)
-EDGE_SHADOW = np.array([78, 96, 102], dtype=np.float32)
-EDGE_HIGHLIGHT = np.array([196, 214, 218], dtype=np.float32)
-# Softer curb accents than classic arcade red/white.
-CURB_A = np.array([214, 120, 96], dtype=np.float32)
-CURB_B = np.array([236, 232, 220], dtype=np.float32)
+# Cool Kenney-like asphalt palette (teal-gray), slightly deepened so white
+# paint / checkers stay readable on the ribbon.
+ASPHALT = np.array([132, 154, 160], dtype=np.float32)
+ASPHALT_MID = np.array([118, 140, 146], dtype=np.float32)
+ASPHALT_LIGHT = np.array([158, 178, 184], dtype=np.float32)
+EDGE_SHADOW = np.array([72, 90, 96], dtype=np.float32)
+EDGE_HIGHLIGHT = np.array([188, 206, 210], dtype=np.float32)
+# Classic Super Sprint kerb colours — solid blocks, not pastel blends.
+CURB_RED = np.array([196, 48, 52], dtype=np.float32)
+CURB_WHITE = np.array([236, 236, 236], dtype=np.float32)
+EDGE_LINE = np.array([232, 236, 238], dtype=np.float32)
+
+# Outer shoulder kerb width (px) and approximate stripe length along the arc.
+CURB_WIDTH = 11.0
+# Target stripe length in pixels along the outer radius (~classic arcade look).
+STRIPE_ARC_PX = 14.0
+EDGE_LINE_WIDTH = 2.2
+EDGE_LINE_INSET = 3.0
 
 OUT_DIR = Path(__file__).resolve().parents[1] / "src" / "sprites"
 
@@ -48,7 +57,6 @@ def lane_band(distance_from_inner: np.ndarray) -> np.ndarray:
 	"""Kenney-like longitudinal / concentric asphalt banding."""
 	width = float(OUTER - INNER)
 	u = np.clip(distance_from_inner / width, 0.0, 1.0)
-	# Soft bands across the lane.
 	wave = 0.5 + 0.5 * np.sin(u * np.pi * 5.0)
 	center = 1.0 - np.abs(u - 0.5) * 2.0
 	color = (
@@ -56,15 +64,64 @@ def lane_band(distance_from_inner: np.ndarray) -> np.ndarray:
 		+ ASPHALT_MID * (0.25 * wave)[..., None]
 		+ ASPHALT_LIGHT * (0.10 * center)[..., None]
 	)
-	# Edge darkening near inner / outer bounds.
 	edge = smoothstep(0.0, 0.08, u) * smoothstep(0.0, 0.08, 1.0 - u)
 	color = EDGE_SHADOW * (1.0 - edge)[..., None] + color * edge[..., None]
-	# Thin highlight just inside each edge.
 	inner_hi = smoothstep(0.02, 0.05, u) * (1.0 - smoothstep(0.05, 0.09, u))
 	outer_hi = smoothstep(0.02, 0.05, 1.0 - u) * (1.0 - smoothstep(0.05, 0.09, 1.0 - u))
 	hi = np.maximum(inner_hi, outer_hi)[..., None]
-	color = color * (1.0 - 0.55 * hi) + EDGE_HIGHLIGHT * (0.55 * hi)
+	color = color * (1.0 - 0.45 * hi) + EDGE_HIGHLIGHT * (0.45 * hi)
 	return color
+
+
+def paint_edge_lines_linear(
+	color: np.ndarray,
+	coord: np.ndarray,
+	inner: float,
+	outer: float,
+) -> np.ndarray:
+	"""Thin white paint lines just inside each lane edge (straights)."""
+	inner_line = smoothstep(inner + EDGE_LINE_INSET - 0.6, inner + EDGE_LINE_INSET, coord) * (
+		1.0 - smoothstep(inner + EDGE_LINE_INSET + EDGE_LINE_WIDTH - 0.4,
+						 inner + EDGE_LINE_INSET + EDGE_LINE_WIDTH + 0.6, coord)
+	)
+	outer_line = smoothstep(outer - EDGE_LINE_INSET - EDGE_LINE_WIDTH - 0.6,
+							outer - EDGE_LINE_INSET - EDGE_LINE_WIDTH + 0.4, coord) * (
+		1.0 - smoothstep(outer - EDGE_LINE_INSET, outer - EDGE_LINE_INSET + 0.6, coord)
+	)
+	line = np.maximum(inner_line, outer_line)[..., None]
+	return color * (1.0 - 0.92 * line) + EDGE_LINE * (0.92 * line)
+
+
+def paint_edge_lines_radial(color: np.ndarray, radius: np.ndarray) -> np.ndarray:
+	"""Thin white paint lines just inside each lane edge (corners)."""
+	inner_line = smoothstep(INNER + EDGE_LINE_INSET - 0.6, INNER + EDGE_LINE_INSET, radius) * (
+		1.0 - smoothstep(INNER + EDGE_LINE_INSET + EDGE_LINE_WIDTH - 0.4,
+						 INNER + EDGE_LINE_INSET + EDGE_LINE_WIDTH + 0.6, radius)
+	)
+	# Sit the outer line just inside the kerb so white paint frames the asphalt.
+	outer_edge = OUTER - CURB_WIDTH - 1.0
+	outer_line = smoothstep(outer_edge - EDGE_LINE_WIDTH - 0.6, outer_edge - EDGE_LINE_WIDTH + 0.4, radius) * (
+		1.0 - smoothstep(outer_edge, outer_edge + 0.6, radius)
+	)
+	line = np.maximum(inner_line, outer_line)[..., None]
+	return color * (1.0 - 0.92 * line) + EDGE_LINE * (0.92 * line)
+
+
+def paint_crisp_curb(color: np.ndarray, radius: np.ndarray, angle: np.ndarray) -> np.ndarray:
+	"""Classic alternating red/white rumble blocks on the outer shoulder."""
+	outer_shoulder = smoothstep(OUTER - CURB_WIDTH - 0.8, OUTER - CURB_WIDTH + 0.6, radius) * (
+		1.0 - smoothstep(OUTER - 0.6, OUTER + 1.0, radius)
+	)
+	# Arc-length stripes so blocks stay even width around the quarter-circle.
+	arc = np.abs(angle) * float(OUTER)
+	stripe = np.floor(arc / STRIPE_ARC_PX).astype(np.int32)
+	is_red = (stripe % 2) == 0
+	curb = np.where(is_red[..., None], CURB_RED, CURB_WHITE)
+	# Soft seam between blocks (sub-pixel) without washing colours together.
+	frac = (arc / STRIPE_ARC_PX) - stripe.astype(np.float32)
+	seam = np.minimum(smoothstep(0.0, 0.08, frac), smoothstep(0.0, 0.08, 1.0 - frac))
+	curb = curb * (1.0 - 0.18 * seam[..., None]) + CURB_WHITE * (0.09 * seam[..., None])
+	return color * (1.0 - outer_shoulder[..., None]) + curb * outer_shoulder[..., None]
 
 
 def paint_straight_vertical_band(img: np.ndarray) -> None:
@@ -74,6 +131,7 @@ def paint_straight_vertical_band(img: np.ndarray) -> None:
 	dist = x - float(INNER)
 	aa = smoothstep(INNER - 1.2, INNER + 0.2, x) * (1.0 - smoothstep(OUTER - 0.2, OUTER + 1.2, x))
 	color = lane_band(np.clip(dist, 0.0, OUTER - INNER))
+	color = paint_edge_lines_linear(color, x, float(INNER), float(OUTER))
 	for c in range(3):
 		img[..., c] = np.where(aa > 0, color[..., c] * aa + img[..., c] * (1.0 - aa), img[..., c])
 	img[..., 3] = np.maximum(img[..., 3], aa * 255.0)
@@ -86,6 +144,7 @@ def paint_straight_horizontal_band(img: np.ndarray) -> None:
 	dist = y - float(INNER)
 	aa = smoothstep(INNER - 1.2, INNER + 0.2, y) * (1.0 - smoothstep(OUTER - 0.2, OUTER + 1.2, y))
 	color = lane_band(np.clip(dist, 0.0, OUTER - INNER))
+	color = paint_edge_lines_linear(color, y, float(INNER), float(OUTER))
 	for c in range(3):
 		img[..., c] = np.where(aa > 0, color[..., c] * aa + img[..., c] * (1.0 - aa), img[..., c])
 	img[..., 3] = np.maximum(img[..., 3], aa * 255.0)
@@ -102,15 +161,9 @@ def paint_corner(img: np.ndarray, center_x: float, center_y: float) -> None:
 		1.0 - smoothstep(OUTER - 0.2, OUTER + 1.2, radius)
 	)
 	color = lane_band(np.clip(dist, 0.0, OUTER - INNER))
-
-	# Soft Kenney-inspired curb on the outer shoulder (replaces loud arcade hatch).
-	outer_shoulder = smoothstep(OUTER - 14.0, OUTER - 10.0, radius) * (
-		1.0 - smoothstep(OUTER - 1.5, OUTER + 1.0, radius)
-	)
 	angle = np.arctan2(dy, dx)
-	stripe = 0.5 + 0.5 * np.sin(angle * 18.0)
-	curb = CURB_A * stripe[..., None] + CURB_B * (1.0 - stripe)[..., None]
-	color = color * (1.0 - 0.85 * outer_shoulder[..., None]) + curb * (0.85 * outer_shoulder[..., None])
+	color = paint_crisp_curb(color, radius, angle)
+	color = paint_edge_lines_radial(color, radius)
 
 	for c in range(3):
 		img[..., c] = np.where(aa > 0, color[..., c] * aa + img[..., c] * (1.0 - aa), img[..., c])
