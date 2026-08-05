@@ -31,6 +31,16 @@ public class GameCatalogTest {
 	}
 
 	@Test
+	public void carModelOptionsIncludeNumberAndName() {
+		assertEquals("12 - Vintage Yellow Hot Rod", GameCatalog.carModelOptionLabel(0));
+		assertEquals("6 - Teal Vintage Sports", GameCatalog.carModelOptionLabel(8));
+		String[] options = GameCatalog.carModelOptions();
+		assertEquals(Car.CAR_MODEL_COUNT, options.length);
+		assertEquals("12 - Vintage Yellow Hot Rod", options[0]);
+		assertEquals("77 - Silver Open-Wheel Racer", options[4]);
+	}
+
+	@Test
 	public void loadsDistinctCarStatsFromProperties() {
 		assertEquals(16.5, Car.getModelStat(0, Car.STAT_ACCELERATION_INDEX));
 		assertEquals(30.0, Car.getModelStat(0, Car.STAT_MAX_SPEED_INDEX));
