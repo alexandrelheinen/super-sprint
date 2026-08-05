@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [master, 'cursor/**']
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: none
+
+      - name: Install headless display dependencies
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Compile
+        run: make compile
+
+      - name: Smoke test application launch
+        run: make smoke-test
