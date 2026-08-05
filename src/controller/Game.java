@@ -9,6 +9,8 @@ import model.ConfigLoader;
 import model.GameCatalog;
 import model.GameConfig;
 import model.HallOfFame;
+import model.ReferencePath;
+import model.TrackGeometry;
 import view.GameFrame;
 import view.MenuFrame;
 
@@ -97,6 +99,7 @@ public class Game {
 		circuit = new Circuit(gameFrame, trackMap);
 		circuit.initializeFinishLine(trackNumber);
 
+		ReferencePath aiReferencePath = TrackGeometry.buildReferencePath(trackMap);
 		for (int index = 0; index < carModels.length; index++) {
 			if (index < humanPlayers) {
 				controllers[index] = new HumanController(
@@ -104,7 +107,7 @@ public class Game {
 						circuit);
 			} else {
 				controllers[index] = new AiController(
-						carModels[index], index + ONE_BASED_INDEX_OFFSET, gameFrame, circuit);
+						carModels[index], index + ONE_BASED_INDEX_OFFSET, gameFrame, circuit, aiReferencePath);
 			}
 		}
 
