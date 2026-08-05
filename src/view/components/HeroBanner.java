@@ -28,7 +28,7 @@ public class HeroBanner extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	private static final int MIN_HEIGHT = 220;
-	private static final int TITLE_FONT_SIZE = 34;
+	private static final int TITLE_FONT_SIZE = 42;
 	private static final int SUBTITLE_OFFSET = 34;
 	private static final int CORNER_ARC = 28;
 	private static final int TITLE_BOTTOM_OFFSET = 74;

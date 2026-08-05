@@ -29,11 +29,11 @@ public final class GameTheme {
 	private static final String KEY_FONT_SIZE_HUD = "theme.font.size.hud";
 
 	private static final String DEFAULT_FONT_FAMILY = "Segoe UI";
-	private static final int DEFAULT_FONT_SIZE_TITLE = 28;
-	private static final int DEFAULT_FONT_SIZE_SUBTITLE = 16;
-	private static final int DEFAULT_FONT_SIZE_BODY = 14;
-	private static final int DEFAULT_FONT_SIZE_BUTTON = 15;
-	private static final int DEFAULT_FONT_SIZE_HUD = 20;
+	private static final int DEFAULT_FONT_SIZE_TITLE = 42;
+	private static final int DEFAULT_FONT_SIZE_SUBTITLE = 24;
+	private static final int DEFAULT_FONT_SIZE_BODY = 22;
+	private static final int DEFAULT_FONT_SIZE_BUTTON = 24;
+	private static final int DEFAULT_FONT_SIZE_HUD = 32;
 
 	public static final Color BACKGROUND_DARK = ConfigLoader.getColor(KEY_COLOR_BACKGROUND_DARK, "12,12,18");
 	public static final Color BACKGROUND_LIGHT = ConfigLoader.getColor(KEY_COLOR_BACKGROUND_LIGHT, "228,232,240");
