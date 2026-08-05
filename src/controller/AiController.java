@@ -4,7 +4,6 @@ import model.Car;
 import model.Circuit;
 import model.DubinsVehicle;
 import model.ReferencePath;
-import model.TrackGeometry;
 import view.GameFrame;
 
 public class AiController extends Controller {
@@ -24,9 +23,14 @@ public class AiController extends Controller {
 	private final TrackingLoop trackingLoop;
 	private final DubinsVehicle vehicle;
 
-	public AiController(int modelIndex, int startPosition, GameFrame frame, Circuit circuit) {
+	public AiController(
+			int modelIndex,
+			int startPosition,
+			GameFrame frame,
+			Circuit circuit,
+			ReferencePath referencePath) {
 		super(modelIndex, startPosition, frame, circuit);
-		referencePath = TrackGeometry.buildReferencePath(circuit.getTrackMap());
+		this.referencePath = referencePath;
 
 		double handling = car.getStat(Car.STAT_HANDLING_INDEX);
 		double maxTurnRate = handling * TURN_RATE_PER_HANDLING;

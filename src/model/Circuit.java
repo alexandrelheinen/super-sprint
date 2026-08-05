@@ -42,7 +42,16 @@ public class Circuit extends Observable {
 			{{127, 275}, {55, 325}, {127, 375}, {55, 425}}
 	};
 
+	/**
+	 * Simulation runs every tick; observers are only notified (and the frame
+	 * repainted) every {@code RENDER_TICK_DIVISOR} ticks so the 100 Hz physics
+	 * loop is not slowed down by full-scene rendering.
+	 */
+	public static final int RENDER_TICK_DIVISOR = 2;
+
 	private double raceTimeMs;
+	private long tickCount;
+	private boolean renderTick;
 	private final int[][] trackMap;
 	private final int[] mapDimensions;
 	private final int[] frameDimensions;
@@ -87,8 +96,19 @@ public class Circuit extends Observable {
 
 	public void tick() {
 		raceTimeMs += Game.TICK_INTERVAL_MS;
-		setChanged();
-		notifyObservers();
+		tickCount++;
+		renderTick = tickCount % RENDER_TICK_DIVISOR == 0;
+		if (renderTick) {
+			setChanged();
+			notifyObservers();
+		}
+	}
+
+	/**
+	 * @return whether observers should repaint on the current tick
+	 */
+	public boolean isRenderTick() {
+		return renderTick;
 	}
 
 	public double getRaceTimeMs() {

@@ -178,7 +178,7 @@ public class Car extends Observable {
 		motionState = MOTION_STATE_IDLE;
 		lapCount += circuit.crossFinishLine(this);
 		setChanged();
-		notifyObservers();
+		notifyRenderObservers();
 	}
 
 	public void translateByMeters(double deltaXMeters, double deltaYMeters) {
@@ -246,7 +246,17 @@ public class Car extends Observable {
 		lapCount += circuit.crossFinishLine(this);
 
 		setChanged();
-		notifyObservers();
+		notifyRenderObservers();
+	}
+
+	/**
+	 * Notifies observers only on render ticks so the 100 Hz physics loop does
+	 * not trigger a repaint on every simulation step.
+	 */
+	private void notifyRenderObservers() {
+		if (circuit.isRenderTick()) {
+			notifyObservers();
+		}
 	}
 
 	public void collideWith(Car otherCar) {

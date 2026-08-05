@@ -66,6 +66,7 @@ public class GameFrame extends JFrame implements Observer {
 	private final int[] carModels;
 	private final int[] mapDimensions;
 	private final java.awt.Font hudFont;
+	private BufferedImage staticScene;
 	private volatile boolean renderingEnabled = true;
 
 	public GameFrame(String title, int[] carModels, int[][] trackMap, int trackNumber) {
@@ -159,34 +160,11 @@ public class GameFrame extends JFrame implements Observer {
 				Circuit circuit = (Circuit) observable;
 				graphics = bufferStrategy.getDrawGraphics();
 				Graphics2D graphics2D = (Graphics2D) graphics;
-				AffineTransformOp identity = new AffineTransformOp(new AffineTransform(), AffineTransformOp.TYPE_BILINEAR);
-				int trackPixelWidth = mapDimensions[1] * TILE_SIZE;
 				int trackPixelHeight = mapDimensions[0] * TILE_SIZE;
 				int hudBarTop = TRACK_TOP_OFFSET + trackPixelHeight;
 
-				UiPainter.paintScreenBackdrop(graphics2D, getWidth(), getHeight());
-				UiPainter.paintRaceViewportFrame(graphics2D, 0, TRACK_TOP_OFFSET, trackPixelWidth, trackPixelHeight);
+				graphics2D.drawImage(staticScene(), 0, 0, null);
 
-				for (int column = 0; column < mapDimensions[1]; column++) {
-					for (int row = 0; row < mapDimensions[0]; row++) {
-						graphics2D.drawImage(
-								trackTiles[row][column],
-								identity,
-								column * TILE_SIZE,
-								TRACK_TOP_OFFSET + row * TILE_SIZE);
-					}
-				}
-
-				graphics2D.setColor(java.awt.Color.WHITE);
-				for (int slotIndex = 0; slotIndex < START_SLOT_COUNT; slotIndex++) {
-					float startX = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][slotIndex][0];
-					float startY = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][slotIndex][1];
-					graphics2D.drawLine(
-							(int) startX - START_MARKER_LEFT_OFFSET,
-							(int) startY - START_MARKER_LEFT_OFFSET,
-							(int) startX + START_MARKER_RIGHT_OFFSET,
-							(int) startY - START_MARKER_LEFT_OFFSET);
-				}
 				graphics2D.setColor(java.awt.Color.YELLOW);
 				graphics2D.drawLine(
 						(int) circuit.getFinishLine().getX1(),
@@ -194,7 +172,6 @@ public class GameFrame extends JFrame implements Observer {
 						(int) circuit.getFinishLine().getX2(),
 						(int) circuit.getFinishLine().getY2());
 
-				UiPainter.paintHudStrip(graphics2D, 0, hudBarTop, getWidth(), HUD_BAR_HEIGHT);
 				graphics2D.setFont(hudFont);
 				graphics2D.setColor(GameTheme.TEXT_PRIMARY);
 				String timerText = HUD_RACE_TIME_PREFIX
@@ -216,6 +193,55 @@ public class GameFrame extends JFrame implements Observer {
 			Toolkit.getDefaultToolkit().sync();
 			resetFlags(renderFlags);
 		}
+	}
+
+	/**
+	 * Everything that never changes during a race (backdrop, viewport frame,
+	 * track tiles, start markers, HUD strip) is rendered once into an
+	 * offscreen image. Repainting it on every simulation tick previously took
+	 * longer than the tick interval, so the race ran in slow motion.
+	 */
+	private BufferedImage staticScene() {
+		if (staticScene != null
+				&& staticScene.getWidth() == getWidth()
+				&& staticScene.getHeight() == getHeight()) {
+			return staticScene;
+		}
+
+		BufferedImage scene = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+		Graphics2D graphics2D = scene.createGraphics();
+		int trackPixelWidth = mapDimensions[1] * TILE_SIZE;
+		int trackPixelHeight = mapDimensions[0] * TILE_SIZE;
+		int hudBarTop = TRACK_TOP_OFFSET + trackPixelHeight;
+
+		UiPainter.paintScreenBackdrop(graphics2D, getWidth(), getHeight());
+		UiPainter.paintRaceViewportFrame(graphics2D, 0, TRACK_TOP_OFFSET, trackPixelWidth, trackPixelHeight);
+
+		for (int column = 0; column < mapDimensions[1]; column++) {
+			for (int row = 0; row < mapDimensions[0]; row++) {
+				graphics2D.drawImage(
+						trackTiles[row][column],
+						column * TILE_SIZE,
+						TRACK_TOP_OFFSET + row * TILE_SIZE,
+						null);
+			}
+		}
+
+		graphics2D.setColor(java.awt.Color.WHITE);
+		for (int slotIndex = 0; slotIndex < START_SLOT_COUNT; slotIndex++) {
+			float startX = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][slotIndex][0];
+			float startY = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][slotIndex][1];
+			graphics2D.drawLine(
+					(int) startX - START_MARKER_LEFT_OFFSET,
+					(int) startY - START_MARKER_LEFT_OFFSET,
+					(int) startX + START_MARKER_RIGHT_OFFSET,
+					(int) startY - START_MARKER_LEFT_OFFSET);
+		}
+
+		UiPainter.paintHudStrip(graphics2D, 0, hudBarTop, getWidth(), HUD_BAR_HEIGHT);
+		graphics2D.dispose();
+		staticScene = scene;
+		return staticScene;
 	}
 
 	private static boolean allFlagsSet(boolean[] flags) {
