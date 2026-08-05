@@ -45,7 +45,7 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 			ConfigLoader.getString("messages.hall.table.name", "Name"),
 			ConfigLoader.getString("messages.hall.table.duration", "Duration"),
 			ConfigLoader.getString("messages.hall.table.laps", "Laps"),
-			ConfigLoader.getString("messages.hall.table.mean", "Mean / lap"),
+			ConfigLoader.getString("messages.hall.table.mean", "Mean"),
 			ConfigLoader.getString("messages.hall.table.date", "Date")
 	};
 	private static final String HEADER_TITLE = ConfigLoader.getString("messages.hall.header.title", "Hall of Fame");
@@ -145,8 +145,10 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 
 		JScrollPane scrollPane = new JScrollPane(resultsTable);
 		scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
-		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		// Extra columns (duration / laps / mean) need vertical scrolling when the
+		// window is shorter than ten rows plus the header.
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		int tableViewportHeight = resultsTable.getRowHeight() * (HallOfFame.MAX_RESULTS + 1);
 		resultsTable.setPreferredScrollableViewportSize(new Dimension(0, tableViewportHeight));
 		scrollPane.getViewport().setBackground(GameTheme.PANEL_SURFACE);
@@ -174,7 +176,8 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 				hideHall();
 			}
 		});
-		UiScale.applyQuarterScreenSize(this);
+		// Wider/taller than the default menu so duration/laps/mean columns fit.
+		UiScale.applyRaceSetupSize(this);
 		applyScaledMetrics();
 		UiScale.enableDelayedResize(this, this::applyScaledMetrics);
 		setVisible(false);
@@ -240,6 +243,7 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		if (hallOfFame != null) {
 			populateTable(trackMenu.getSelectedIndex());
 		}
+		UiScale.applyRaceSetupSize(this);
 		applyScaledMetrics();
 		setVisible(true);
 		toFront();

@@ -207,7 +207,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		trackAndLapsPanel = buildTrackAndLapsSetupCard();
 		addSetupCard(setupBody, trackAndLapsPanel, 2);
 
-		// Keep setup content top-aligned inside the center region.
+		// Keep setup content at the top; card heights are equalized explicitly.
 		JPanel setupHolder = new JPanel(new BorderLayout());
 		setupHolder.setOpaque(false);
 		setupHolder.add(setupBody, BorderLayout.NORTH);
@@ -299,33 +299,34 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	}
 
 	/**
-	 * Makes every visible Race Setup card share the tallest preferred height
-	 * so columns line up, while card contents stay top-aligned.
+	 * Makes every visible Race Setup card share the tallest content height so
+	 * columns line up. Cards fill that height; their BorderLayout.NORTH bodies
+	 * keep controls stacked from the top.
 	 */
 	private void equalizeVisibleSetupCardHeights() {
 		GlassCard[] setupCards = {carPanels[0], carPanels[1], trackAndLapsPanel};
 		for (GlassCard card : setupCards) {
-			if (card.isVisible()) {
-				card.setPreferredSize(null);
-				card.setMinimumSize(null);
-				card.setMaximumSize(null);
-			}
+			card.setPreferredSize(null);
+			card.setMinimumSize(null);
+			card.setMaximumSize(null);
 		}
+		setupBody.invalidate();
 		int maxHeight = 0;
 		for (GlassCard card : setupCards) {
 			if (card.isVisible()) {
 				maxHeight = Math.max(maxHeight, card.getPreferredSize().height);
 			}
 		}
+		if (maxHeight <= 0) {
+			return;
+		}
 		for (GlassCard card : setupCards) {
 			if (!card.isVisible()) {
 				continue;
 			}
-			Dimension preferred = card.getPreferredSize();
-			Dimension equalSize = new Dimension(preferred.width, maxHeight);
+			Dimension equalSize = new Dimension(card.getPreferredSize().width, maxHeight);
 			card.setPreferredSize(equalSize);
-			card.setMinimumSize(new Dimension(0, maxHeight));
-			card.setMaximumSize(new Dimension(Integer.MAX_VALUE, maxHeight));
+			card.setMinimumSize(equalSize);
 		}
 	}
 
@@ -337,8 +338,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	}
 
 	/**
-	 * Setup cards keep their natural height and align to the top of the body
-	 * instead of stretching over the full container height.
+	 * Setup cards share a common preferred height (via
+	 * {@link #equalizeVisibleSetupCardHeights}) and stay top-anchored.
 	 */
 	private void addSetupCard(JPanel container, JPanel card, int columnIndex) {
 		GridBagConstraints constraints = new GridBagConstraints();

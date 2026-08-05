@@ -54,17 +54,19 @@ public class StatBar extends JComponent {
 
 	@Override
 	public Dimension getPreferredSize() {
-		return new Dimension(Math.max(120, super.getPreferredSize().width), UiScale.scale(context, BAR_HEIGHT + 18));
+		// Fixed size — do not call super.getPreferredSize()/getMinimumSize() here.
+		// Those can recurse through BoxLayout when preferred size is unset.
+		return new Dimension(120, UiScale.scale(context, BAR_HEIGHT + 18));
 	}
 
 	@Override
 	public Dimension getMinimumSize() {
-		return getPreferredSize();
+		return new Dimension(120, UiScale.scale(context, BAR_HEIGHT + 18));
 	}
 
 	@Override
 	public Dimension getMaximumSize() {
-		return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+		return new Dimension(Integer.MAX_VALUE, UiScale.scale(context, BAR_HEIGHT + 18));
 	}
 
 	@Override
