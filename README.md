@@ -60,7 +60,7 @@ src/
   controller/   Game loop, input, AI (Main entry point)
   model/        Car physics, track logic, Hall of Fame persistence
   view/         Swing menus and race rendering
-  sprites/      Bundled PNG assets (cars, tracks, UI)
+  sprites/      Bundled PNG assets (cars, tracks, UI, Kenney trees)
   data/         Seed Hall of Fame file copied on first run
 docs/           Markdown documentation and UML diagrams
 build/          Compiled classes and prepared car sprites (generated)

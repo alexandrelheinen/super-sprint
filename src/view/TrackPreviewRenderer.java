@@ -25,7 +25,7 @@ public final class TrackPreviewRenderer {
 	private static final int CORNER_ARC = 16;
 	private static final int BORDER_ARC = 14;
 	private static final Color ASPHALT = new Color(48, 52, 58);
-	private static final int TREE_COUNT = 7;
+	private static final int TREE_COUNT = 10;
 
 	private TrackPreviewRenderer() {
 	}

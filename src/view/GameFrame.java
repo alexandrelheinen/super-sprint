@@ -43,8 +43,8 @@ public class GameFrame extends Canvas implements Observer {
 	/** Padding around the asphalt ribbon when contain-fitting into the canvas. */
 	private static final int VIEW_PADDING_PX = 24;
 	private static final int HUD_BAR_HEIGHT = 72;
-	private static final int OUTER_TREE_COUNT = 18;
-	private static final int INFIELD_TREE_COUNT = 16;
+	private static final int OUTER_TREE_COUNT = 22;
+	private static final int INFIELD_TREE_COUNT = 18;
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
 	// Cars face up on the grid, so their on-screen width is the sprite height
 	// and their nose sits half a sprite width above the slot center.
@@ -341,8 +341,8 @@ public class GameFrame extends Canvas implements Observer {
 				asphaltRibbon,
 				seed ^ 0xC0FFEE,
 				OUTER_TREE_COUNT,
-				0.035,
-				0.07);
+				0.045,
+				0.095);
 		RaceSceneryPainter.paintTreesInOpenTiles(
 				graphics2D,
 				trackMap,
