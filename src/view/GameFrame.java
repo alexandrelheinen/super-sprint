@@ -55,9 +55,19 @@ public class GameFrame extends Canvas implements Observer {
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
 	// Cars face up on the grid, so their on-screen width is the sprite height
 	// and their nose sits half a sprite width above the slot center.
-	private static final int START_MARKER_HALF_WIDTH = Circuit.CAR_ANCHOR_HALF_HEIGHT_PX + 6;
-	private static final int START_MARKER_NOSE_OFFSET = Circuit.CAR_ANCHOR_HALF_WIDTH_PX + 6;
-	private static final int START_MARKER_TICK_LENGTH = 8;
+	private static final int START_MARKER_HALF_WIDTH = Circuit.CAR_ANCHOR_HALF_HEIGHT_PX + 4;
+	private static final int START_MARKER_NOSE_OFFSET = Circuit.CAR_ANCHOR_HALF_WIDTH_PX + 5;
+	private static final int START_MARKER_TICK_LENGTH = 10;
+	private static final int START_MARKER_STROKE = 2;
+	/** Soft painted look: asphalt shadow under translucent chalk-white. */
+	private static final Color START_MARKER_SHADOW = new Color(36, 48, 52, 110);
+	private static final Color START_MARKER_PAINT = new Color(214, 222, 224, 155);
+	private static final int FINISH_CHECKER_ROWS = 2;
+	private static final int FINISH_CHECKER_COLS = 14;
+	private static final int FINISH_BAND_HEIGHT = 12;
+	private static final Color FINISH_CHECKER_DARK = new Color(28, 32, 34);
+	private static final Color FINISH_CHECKER_LIGHT = new Color(236, 238, 240);
+	private static final Color FINISH_EDGE_ACCENT = new Color(240, 196, 48, 200);
 	private static final int HUD_SIDE_PADDING = 24;
 	private static final int HUD_LAP_CHIP_GAP = 18;
 	private static final int SPRITE_CENTER_DIVISOR = 2;
@@ -244,14 +254,7 @@ public class GameFrame extends Canvas implements Observer {
 
 			applyViewTransform(graphics2D);
 			graphics2D.drawImage(staticScene(), 0, 0, null);
-
-			graphics2D.setColor(Color.YELLOW);
-			graphics2D.drawLine(
-					trackOriginX() + (int) circuit.getFinishLine().getX1(),
-					trackOriginY() + (int) circuit.getFinishLine().getY1(),
-					trackOriginX() + (int) circuit.getFinishLine().getX2(),
-					trackOriginY() + (int) circuit.getFinishLine().getY2());
-
+			paintFinishLine(graphics2D, circuit);
 			paintCarsInView(graphics2D);
 
 			graphics2D.setTransform(new AffineTransform());
@@ -368,13 +371,7 @@ public class GameFrame extends Canvas implements Observer {
 
 				applyViewTransform(graphics2D);
 				graphics2D.drawImage(staticScene(), 0, 0, null);
-
-				graphics2D.setColor(java.awt.Color.YELLOW);
-				graphics2D.drawLine(
-						trackOriginX() + (int) circuit.getFinishLine().getX1(),
-						trackOriginY() + (int) circuit.getFinishLine().getY1(),
-						trackOriginX() + (int) circuit.getFinishLine().getX2(),
-						trackOriginY() + (int) circuit.getFinishLine().getY2());
+				paintFinishLine(graphics2D, circuit);
 
 				// HUD stays in screen space under the contain-fitted track.
 				graphics2D.setTransform(new AffineTransform());
@@ -555,21 +552,80 @@ public class GameFrame extends Canvas implements Observer {
 	}
 
 	/**
-	 * Draws one grid marker per start slot: a line just ahead of the car's
-	 * nose (cars face up) with a short tick trailing down each side.
+	 * Checkered start/finish band across the start lane, centered on the
+	 * finish-line geometry used for lap detection.
+	 */
+	private void paintFinishLine(Graphics2D graphics2D, Circuit circuit) {
+		if (circuit == null || circuit.getFinishLine() == null) {
+			return;
+		}
+		int x1 = trackOriginX() + Math.round((float) circuit.getFinishLine().getX1());
+		int x2 = trackOriginX() + Math.round((float) circuit.getFinishLine().getX2());
+		int y = trackOriginY() + Math.round((float) circuit.getFinishLine().getY1());
+		int left = Math.min(x1, x2);
+		int width = Math.abs(x2 - x1);
+		if (width < 1) {
+			return;
+		}
+		int top = y - FINISH_BAND_HEIGHT / 2;
+		int cellWidth = Math.max(1, width / FINISH_CHECKER_COLS);
+		int cellHeight = Math.max(1, FINISH_BAND_HEIGHT / FINISH_CHECKER_ROWS);
+
+		Object previousAa = graphics2D.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+		graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+		for (int row = 0; row < FINISH_CHECKER_ROWS; row++) {
+			for (int col = 0; col < FINISH_CHECKER_COLS; col++) {
+				int cellX = left + col * cellWidth;
+				int cellW = (col == FINISH_CHECKER_COLS - 1) ? (left + width - cellX) : cellWidth;
+				boolean dark = ((row + col) & 1) == 0;
+				graphics2D.setColor(dark ? FINISH_CHECKER_DARK : FINISH_CHECKER_LIGHT);
+				graphics2D.fillRect(cellX, top + row * cellHeight, cellW, cellHeight);
+			}
+		}
+		graphics2D.setColor(FINISH_EDGE_ACCENT);
+		graphics2D.fillRect(left, top - 1, width, 1);
+		graphics2D.fillRect(left, top + FINISH_BAND_HEIGHT, width, 1);
+		graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, previousAa);
+	}
+
+	/**
+	 * Draws one grid marker per start slot as soft painted brackets on the
+	 * asphalt: a chalk-white stroke over a faint dark underlay so the marks
+	 * read as worn track paint instead of UI chrome.
 	 */
 	private void paintStartGrid(Graphics2D graphics2D) {
-		graphics2D.setColor(java.awt.Color.WHITE);
+		Object previousAa = graphics2D.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+		graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		for (int slotIndex = 0; slotIndex < START_SLOT_COUNT; slotIndex++) {
 			int centerX = trackOriginX() + Math.round(Circuit.startSlotCenterX(slotIndex));
 			int noseY = trackOriginY() + Math.round(Circuit.startSlotCenterY(slotIndex))
 					- START_MARKER_NOSE_OFFSET;
 			int leftX = centerX - START_MARKER_HALF_WIDTH;
 			int rightX = centerX + START_MARKER_HALF_WIDTH;
-			graphics2D.fillRect(leftX, noseY, rightX - leftX, 2);
-			graphics2D.fillRect(leftX, noseY, 2, START_MARKER_TICK_LENGTH);
-			graphics2D.fillRect(rightX - 2, noseY, 2, START_MARKER_TICK_LENGTH);
+			paintStartMarkerStroke(graphics2D, leftX, rightX, noseY, START_MARKER_SHADOW, 3);
+			paintStartMarkerStroke(graphics2D, leftX, rightX, noseY, START_MARKER_PAINT, START_MARKER_STROKE);
 		}
+		graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, previousAa);
+	}
+
+	private void paintStartMarkerStroke(
+			Graphics2D graphics2D,
+			int leftX,
+			int rightX,
+			int noseY,
+			Color color,
+			int stroke) {
+		graphics2D.setColor(color);
+		int width = rightX - leftX;
+		graphics2D.fillRoundRect(leftX, noseY, width, stroke, stroke, stroke);
+		graphics2D.fillRoundRect(leftX, noseY, stroke, START_MARKER_TICK_LENGTH, stroke, stroke);
+		graphics2D.fillRoundRect(
+				rightX - stroke,
+				noseY,
+				stroke,
+				START_MARKER_TICK_LENGTH,
+				stroke,
+				stroke);
 	}
 
 	/**
