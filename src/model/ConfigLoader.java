@@ -2,7 +2,8 @@ package model;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -155,9 +156,9 @@ public final class ConfigLoader {
 	}
 
 	private static void loadInto(Properties target, Path configFile) {
-		try (InputStream input = Files.newInputStream(configFile)) {
+		try (Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
 			Properties fileProperties = new Properties();
-			fileProperties.load(input);
+			fileProperties.load(reader);
 			target.putAll(fileProperties);
 		} catch (IOException exception) {
 			System.err.println("Could not load config file " + configFile + ": " + exception.getMessage());

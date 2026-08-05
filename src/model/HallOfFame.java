@@ -50,9 +50,10 @@ public class HallOfFame extends Observable {
 				}
 			}
 		} catch (Exception exception) {
-			JOptionPane.showMessageDialog(
-					null,
-					exception.getMessage() + MSG_CREATE_FILE_SUFFIX);
+			System.err.println(
+					"Could not load Hall of Fame from " + hallOfFameFile + ": "
+							+ exception.getMessage()
+							+ MSG_CREATE_FILE_SUFFIX.trim());
 			initializeDefaultRecords();
 		}
 

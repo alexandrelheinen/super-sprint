@@ -19,7 +19,7 @@ public class ThemedPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static final int SECTION_BORDER_WIDTH = 2;
 	private static final int HEADER_SUBTITLE_GAP = 6;
-	private static final int SECTION_TITLE_TOP_INSET = 10;
+	private static final int SECTION_TITLE_TOP_INSET = 16;
 	private static final int SECTION_TITLE_SIDE_INSET = 8;
 
 	public ThemedPanel() {
