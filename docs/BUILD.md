@@ -35,7 +35,7 @@ make compile
 
 Sources live under `src/` in packages `controller`, `model`, and `view`. Class files are written to `build/` mirroring the package structure.
 
-During compilation, `scripts/prepare-car-sprites.sh` slices the 3×3 sheet `src/sprites/cars.png` into nine sprites (`car_00.png` … `car_08.png`), replaces the cyan background with transparency, trims empty margins, rotates each car to face right, scales to race size, and writes mean-color metadata to `cars.properties`. The source sheet is kept; derived sprites are written to `build/sprites/` and mirrored under `src/sprites/` as bundled fallbacks.
+During compilation, `scripts/prepare-car-sprites.sh` slices the 3×3 sheet `src/sprites/cars.png` into nine race sprites (`car_00.png` … `car_08.png`) and nine larger menu sprites (`car_00_menu.png` … `car_08_menu.png`). Cyan-ish background pixels are removed with a soft alpha matte (border unmix / spill suppression), empty margins are trimmed, each car is rotated to face right, then scaled to race and menu sizes. Mean-color and size metadata are written to `cars.properties`. The source sheet is kept; derived sprites are written to `build/sprites/` and mirrored under `src/sprites/` as bundled fallbacks.
 
 Equivalent manual command:
 
