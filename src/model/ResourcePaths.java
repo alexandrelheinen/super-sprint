@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 import javax.imageio.ImageIO;
 
@@ -18,12 +19,16 @@ public final class ResourcePaths {
 	private static final Path SEED_HALL_OF_FAME = Paths.get("src", "data", "hall_of_fame.dat");
 	private static final String APP_DATA_DIR_NAME = "super-sprint-supelec";
 	private static final String HALL_OF_FAME_FILE_NAME = "hall_of_fame.dat";
-	private static final String CAR_SPRITE_PREFIX = "car";
-	private static final String CAR_SPRITE_SUFFIX = ".png";
 	private static final String XDG_DATA_HOME_ENV = "XDG_DATA_HOME";
 	private static final String USER_HOME_PROPERTY = "user.home";
 	private static final String LOCAL_SHARE_DIR = ".local";
 	private static final String SHARE_DIR = "share";
+
+	/** Zero-padded width for indexed sprite stems (`car_00.png`, `track_01.png`). */
+	public static final int SPRITE_INDEX_DIGITS = 2;
+	private static final String CAR_SPRITE_STEM = "car";
+	private static final String TRACK_TILE_STEM = "track";
+	private static final String TRACK_PREVIEW_STEM = "track_preview";
 
 	private ResourcePaths() {
 	}
@@ -48,13 +53,40 @@ public final class ResourcePaths {
 		return BUNDLED_SPRITE_DIR.resolve(fileName).toString();
 	}
 
+	/**
+	 * Builds {@code stem_XX.png} with a zero-based, zero-padded index
+	 * (e.g. {@code car_00.png}, {@code track_03.png}).
+	 */
+	public static String indexedSpriteFile(String stem, int zeroBasedIndex) {
+		if (zeroBasedIndex < 0) {
+			throw new IllegalArgumentException("Sprite index must be >= 0: " + zeroBasedIndex);
+		}
+		return String.format(Locale.ROOT, "%s_%0" + SPRITE_INDEX_DIGITS + "d.png", stem, zeroBasedIndex);
+	}
+
+	public static String carSpriteFileName(int modelIndex) {
+		return indexedSpriteFile(CAR_SPRITE_STEM, modelIndex);
+	}
+
+	public static String trackTileFileName(int tileType) {
+		return indexedSpriteFile(TRACK_TILE_STEM, tileType);
+	}
+
+	public static String trackPreviewFileName(int trackIndex) {
+		return indexedSpriteFile(TRACK_PREVIEW_STEM, trackIndex);
+	}
+
 	public static String carSpritePath(int modelIndex) {
-		String fileName = CAR_SPRITE_PREFIX + modelIndex + CAR_SPRITE_SUFFIX;
+		String fileName = carSpriteFileName(modelIndex);
 		Path prepared = PREPARED_SPRITE_DIR.resolve(fileName);
 		if (Files.exists(prepared)) {
 			return prepared.toString();
 		}
 		return bundledSprite(fileName);
+	}
+
+	public static String trackTilePath(int tileType) {
+		return bundledSprite(trackTileFileName(tileType));
 	}
 
 	public static BufferedImage loadCarSprite(int modelIndex) throws IOException {

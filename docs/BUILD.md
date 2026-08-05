@@ -35,7 +35,7 @@ make compile
 
 Sources live under `src/` in packages `controller`, `model`, and `view`. Class files are written to `build/` mirroring the package structure.
 
-During compilation, `scripts/prepare-car-sprites.sh` downloads GTA 2 car artwork (A-Type, B-Type, Z-Type, T-Rex) from the GTA Wiki, horizontally flips each image so it faces right in-game, and writes PNGs to `build/sprites/carN.png`. If a download or conversion fails, a warning is printed and the bundled `src/sprites/carN.png` fallback is copied instead.
+During compilation, `scripts/prepare-car-sprites.sh` downloads GTA 2 car artwork (A-Type, B-Type, Z-Type, T-Rex) from the GTA Wiki, horizontally flips each image so it faces right in-game, and writes PNGs to `build/sprites/car_XX.png` (zero-based, two-digit). If a download or conversion fails, a warning is printed and the bundled `src/sprites/car_XX.png` fallback is copied instead.
 
 Equivalent manual command:
 

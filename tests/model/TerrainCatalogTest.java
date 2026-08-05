@@ -23,15 +23,15 @@ class TerrainCatalogTest {
 	@Test
 	void eachConfiguredTrackHasATerrain() {
 		assertEquals(Circuit.TRACK_COUNT, GameCatalog.TRACK_TERRAINS.length);
-		assertEquals(Terrain.GRASS, GameCatalog.trackTerrain(1));
-		assertEquals(Terrain.AUTUMN, GameCatalog.trackTerrain(2));
-		assertEquals(Terrain.FOREST, GameCatalog.trackTerrain(3));
-		assertEquals(Terrain.DESERT, GameCatalog.trackTerrain(4));
+		assertEquals(Terrain.GRASS, GameCatalog.trackTerrain(0));
+		assertEquals(Terrain.AUTUMN, GameCatalog.trackTerrain(1));
+		assertEquals(Terrain.FOREST, GameCatalog.trackTerrain(2));
+		assertEquals(Terrain.DESERT, GameCatalog.trackTerrain(3));
 	}
 
 	@Test
 	void rejectsOutOfRangeTrackTerrainLookup() {
-		assertThrows(IllegalArgumentException.class, () -> GameCatalog.trackTerrain(0));
-		assertThrows(IllegalArgumentException.class, () -> GameCatalog.trackTerrain(Circuit.TRACK_COUNT + 1));
+		assertThrows(IllegalArgumentException.class, () -> GameCatalog.trackTerrain(-1));
+		assertThrows(IllegalArgumentException.class, () -> GameCatalog.trackTerrain(Circuit.TRACK_COUNT));
 	}
 }

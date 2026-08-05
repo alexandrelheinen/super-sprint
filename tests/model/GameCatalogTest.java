@@ -10,14 +10,18 @@ public class GameCatalogTest {
 
 	@Test
 	public void resolvesValidCarAndTrackNames() {
-		assertEquals(GameCatalog.CAR_MODEL_NAMES[0], GameCatalog.carModelName(1));
-		assertEquals(GameCatalog.TRACK_NAMES[Circuit.TRACK_COUNT - 1], GameCatalog.trackName(Circuit.TRACK_COUNT));
+		assertEquals(GameCatalog.CAR_MODEL_NAMES[0], GameCatalog.carModelName(0));
+		assertEquals(
+				GameCatalog.TRACK_NAMES[Circuit.TRACK_COUNT - 1],
+				GameCatalog.trackName(Circuit.TRACK_COUNT - 1));
 	}
 
 	@Test
 	public void rejectsOutOfRangeIndices() {
-		assertThrows(IllegalArgumentException.class, () -> GameCatalog.carModelName(0));
-		assertThrows(IllegalArgumentException.class, () -> GameCatalog.trackName(Circuit.TRACK_COUNT + 1));
+		assertThrows(IllegalArgumentException.class, () -> GameCatalog.carModelName(-1));
+		assertThrows(IllegalArgumentException.class, () -> GameCatalog.carModelName(Car.CAR_MODEL_COUNT));
+		assertThrows(IllegalArgumentException.class, () -> GameCatalog.trackName(-1));
+		assertThrows(IllegalArgumentException.class, () -> GameCatalog.trackName(Circuit.TRACK_COUNT));
 	}
 
 	@Test

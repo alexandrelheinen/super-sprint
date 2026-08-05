@@ -2,7 +2,7 @@
 # Downloads GTA 2 car artwork sprites, flips them horizontally (art faces left;
 # the game expects sprites facing right like the bundled car PNG files),
 # keys out the top-left background pixel, crops transparent borders, and writes
-# RGBA PNGs to $BUILD_DIR/sprites/carN.png.
+# RGBA PNGs to $BUILD_DIR/sprites/car_XX.png (zero-based, two-digit index).
 set -u
 
 BUILD_DIR="${1:-build}"
@@ -26,7 +26,7 @@ if ! python3 -c "from PIL import Image" >/dev/null 2>&1; then
 fi
 
 # Source artwork (French GTA Wiki — Artworks de GTA 2):
-# 1 A-Type, 2 B-Type, 3 Z-Type, 4 T-Rex
+# 0 A-Type, 1 B-Type, 2 Z-Type, 3 T-Rex
 URLS=(
 	"https://static.wikia.nocookie.net/gta/images/7/75/A-TypeRL.jpg/revision/latest/scale-to-width-down/${TARGET_WIDTH}?cb=20090709121326&path-prefix=fr"
 	"https://static.wikia.nocookie.net/gta/images/b/b7/B-TypeRL.jpg/revision/latest/scale-to-width-down/${TARGET_WIDTH}?cb=20090709121500&path-prefix=fr"
@@ -34,6 +34,11 @@ URLS=(
 	"https://static.wikia.nocookie.net/gta/images/1/14/T-RexRL.jpg/revision/latest/scale-to-width-down/${TARGET_WIDTH}?cb=20090725135132&path-prefix=fr"
 )
 NAMES=("A-Type" "B-Type" "Z-Type" "T-Rex")
+
+sprite_file_name() {
+	local index="$1"
+	printf 'car_%02d.png' "${index}"
+}
 
 chroma_filter() {
 	local tolerance="$1"
@@ -72,13 +77,15 @@ prepare_sprite() {
 	local index="$1"
 	local url="$2"
 	local name="$3"
-	local output="${OUT_DIR}/car${index}.png"
-	local fallback="${FALLBACK_DIR}/car${index}.png"
+	local file_name
+	file_name="$(sprite_file_name "${index}")"
+	local output="${OUT_DIR}/${file_name}"
+	local fallback="${FALLBACK_DIR}/${file_name}"
 	local temp_file
 	local processed_file
 
-	temp_file="$(mktemp "${TMPDIR:-/tmp}/car${index}.XXXXXX")"
-	processed_file="$(mktemp "${TMPDIR:-/tmp}/car${index}.proc.XXXXXX.png")"
+	temp_file="$(mktemp "${TMPDIR:-/tmp}/car_${index}.XXXXXX")"
+	processed_file="$(mktemp "${TMPDIR:-/tmp}/car_${index}.proc.XXXXXX.png")"
 
 	if [[ ! -f "${fallback}" ]]; then
 		echo "WARNING: Missing fallback sprite ${fallback}; cannot prepare car ${index} (${name})." >&2
@@ -93,7 +100,7 @@ prepare_sprite() {
 			-vf "$(chroma_filter "${CHROMA_TOLERANCE}")" \
 			-update 1 -frames:v 1 "${processed_file}" \
 		&& finalize_sprite "${processed_file}" "${output}"; then
-		echo "Prepared car${index}.png from ${name} artwork (flipped, chroma keyed, trimmed)."
+		echo "Prepared ${file_name} from ${name} artwork (flipped, chroma keyed, trimmed)."
 		rm -f "${temp_file}" "${processed_file}"
 		return 0
 	fi
@@ -104,8 +111,8 @@ prepare_sprite() {
 	return 0
 }
 
-for index in 1 2 3 4; do
-	prepare_sprite "${index}" "${URLS[$((index - 1))]}" "${NAMES[$((index - 1))]}"
+for index in 0 1 2 3; do
+	prepare_sprite "${index}" "${URLS[$index]}" "${NAMES[$index]}"
 done
 
 touch "${OUT_DIR}/.sprites-stamp"

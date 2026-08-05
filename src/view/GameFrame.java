@@ -66,8 +66,6 @@ public class GameFrame extends Canvas implements Observer {
 			new java.awt.Color(240, 110, 110)
 	};
 
-	private static final String SPRITE_TRACK_PREFIX = "track";
-	private static final String SPRITE_TRACK_SUFFIX = ".png";
 	private static final String HUD_RACE_TIME_PREFIX = "TIME ";
 	private static final String HUD_TIME_SUFFIX = "s";
 	private static final String HUD_LAP_SEPARATOR = "/";
@@ -424,7 +422,7 @@ public class GameFrame extends Canvas implements Observer {
 		int chipX = Math.max(HUD_SIDE_PADDING + metrics.stringWidth(timerText) + HUD_LAP_CHIP_GAP, rightEdge - chipsWidth);
 		for (int index = 0; index < cars.length; index++) {
 			graphics2D.setColor(CAR_MODEL_HUD_COLORS[
-					(cars[index].getModelIndex() - ONE_BASED_INDEX_OFFSET) % CAR_MODEL_HUD_COLORS.length]);
+					cars[index].getModelIndex() % CAR_MODEL_HUD_COLORS.length]);
 			graphics2D.drawString(lapTexts[index], chipX, baseline);
 			chipX += metrics.stringWidth(lapTexts[index]) + HUD_LAP_CHIP_GAP;
 		}
@@ -458,8 +456,7 @@ public class GameFrame extends Canvas implements Observer {
 		for (int column = 0; column < mapDimensions[1]; column++) {
 			for (int row = 0; row < mapDimensions[0]; row++) {
 				try {
-					tiles[row][column] = ImageIO.read(new File(ResourcePaths.bundledSprite(
-							SPRITE_TRACK_PREFIX + map[row][column] + SPRITE_TRACK_SUFFIX)));
+					tiles[row][column] = ImageIO.read(new File(ResourcePaths.trackTilePath(map[row][column])));
 				} catch (Exception exception) {
 					System.err.println(ERROR_TRACK_TILES + exception.getMessage());
 				}

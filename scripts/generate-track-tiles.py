@@ -68,7 +68,7 @@ def lane_band(distance_from_inner: np.ndarray) -> np.ndarray:
 
 
 def paint_straight_vertical_band(img: np.ndarray) -> None:
-	"""Asphalt strip with x in [INNER, OUTER) — track1 / TILE_STRAIGHT_HORIZONTAL."""
+	"""Asphalt strip with x in [INNER, OUTER) — track_00 / TILE_STRAIGHT_HORIZONTAL."""
 	xs = np.arange(TILE, dtype=np.float32)[None, :]
 	x = np.broadcast_to(xs, (TILE, TILE))
 	dist = x - float(INNER)
@@ -80,7 +80,7 @@ def paint_straight_vertical_band(img: np.ndarray) -> None:
 
 
 def paint_straight_horizontal_band(img: np.ndarray) -> None:
-	"""Asphalt strip with y in [INNER, OUTER) — track2 / TILE_STRAIGHT_VERTICAL."""
+	"""Asphalt strip with y in [INNER, OUTER) — track_01 / TILE_STRAIGHT_VERTICAL."""
 	ys = np.arange(TILE, dtype=np.float32)[:, None]
 	y = np.broadcast_to(ys, (TILE, TILE))
 	dist = y - float(INNER)
@@ -123,31 +123,36 @@ def save(img: np.ndarray, name: str) -> None:
 	print(f"Wrote {out}")
 
 
+def tile_name(zero_based_index: int) -> str:
+	return f"track_{zero_based_index:02d}.png"
+
+
 def main() -> None:
 	OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-	t1 = blank()
-	paint_straight_vertical_band(t1)
-	save(t1, "track1.png")
+	# Zero-based tile ids match Circuit.TILE_* and ResourcePaths.trackTileFileName.
+	t0 = blank()
+	paint_straight_vertical_band(t0)
+	save(t0, tile_name(0))
 
-	t2 = blank()
-	paint_straight_horizontal_band(t2)
-	save(t2, "track2.png")
+	t1 = blank()
+	paint_straight_horizontal_band(t1)
+	save(t1, tile_name(1))
 
 	# Corner centers match Circuit.enforceTrackBoundaries.
 	corners = {
-		3: (0.0, float(TILE)),          # BOTTOM_RIGHT
-		4: (float(TILE), float(TILE)),  # TOP_RIGHT
-		5: (float(TILE), 0.0),          # TOP_LEFT
-		6: (0.0, 0.0),                  # BOTTOM_LEFT
+		2: (0.0, float(TILE)),          # BOTTOM_RIGHT
+		3: (float(TILE), float(TILE)),  # TOP_RIGHT
+		4: (float(TILE), 0.0),          # TOP_LEFT
+		5: (0.0, 0.0),                  # BOTTOM_LEFT
 	}
 	for index, center in corners.items():
 		tile = blank()
 		paint_corner(tile, center[0], center[1])
-		save(tile, f"track{index}.png")
+		save(tile, tile_name(index))
 
 	# Open / grass cell — fully transparent (scenery shows through).
-	save(blank(), "track7.png")
+	save(blank(), tile_name(6))
 
 
 if __name__ == "__main__":

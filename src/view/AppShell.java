@@ -55,7 +55,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static final int MAX_CARS = GameConfig.MAX_CARS;
 	private static final int STAT_COUNT = Car.STAT_COUNT;
 	private static final int DEFAULT_SELECTED_INDEX = 0;
-	private static final int DEFAULT_SELECTED_TRACK = 1;
+	private static final int DEFAULT_SELECTED_TRACK = 0;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 	private static final int SINGLE_PLAYER_COUNT = 1;
 
@@ -635,7 +635,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 				}
 				Random random = new Random();
 				for (int aiIndex = humanPlayerCount; aiIndex < MAX_CARS; aiIndex++) {
-					carModels[aiIndex] = random.nextInt(Car.CAR_MODEL_COUNT) + ONE_BASED_INDEX_OFFSET;
+					carModels[aiIndex] = random.nextInt(Car.CAR_MODEL_COUNT);
 				}
 				new Game(carModels, selectedTrack, humanPlayerCount, selectedLapCount, hallOfFame, this);
 				break;
@@ -649,17 +649,17 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 	private void updateCarPreview(int playerIndex, int modelIndex) {
 		carIcons[playerIndex].setIcon(
-				UiScale.scaledCarIcon(this, modelIndex + ONE_BASED_INDEX_OFFSET, CAR_PREVIEW_WIDTH, CAR_PREVIEW_HEIGHT));
+				UiScale.scaledCarIcon(this, modelIndex, CAR_PREVIEW_WIDTH, CAR_PREVIEW_HEIGHT));
 		for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
 			carStatBars[playerIndex][statIndex].setValue(Car.getModelStat(modelIndex, statIndex));
 		}
-		selectedCarModels[playerIndex] = modelIndex + ONE_BASED_INDEX_OFFSET;
+		selectedCarModels[playerIndex] = modelIndex;
 	}
 
 	private void updateTrackPreview(int trackIndex) {
-		selectedTrack = trackIndex + ONE_BASED_INDEX_OFFSET;
+		selectedTrack = trackIndex;
 		trackIcon.setIcon(new ImageIcon(TrackPreviewRenderer.render(
-				trackIndex + ONE_BASED_INDEX_OFFSET,
+				trackIndex,
 				Game.TRACK_MAPS[trackIndex],
 				UiScale.scale(this, TRACK_PREVIEW_WIDTH),
 				UiScale.scale(this, SETUP_PREVIEW_HEIGHT))));

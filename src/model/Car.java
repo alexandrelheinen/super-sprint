@@ -74,9 +74,9 @@ public class Car extends Observable {
 		this.circuit = circuit;
 		this.name = name;
 		this.modelIndex = modelIndex;
-		stats = CAR_MODEL_STATS[modelIndex - ONE_BASED_INDEX_OFFSET].clone();
+		stats = CAR_MODEL_STATS[modelIndex].clone();
 		try {
-			float[] startPositionPixels = Circuit.START_POSITIONS[frame.getTrackNumber() - ONE_BASED_INDEX_OFFSET][ranking
+			float[] startPositionPixels = Circuit.START_POSITIONS[frame.getTrackNumber()][ranking
 					- ONE_BASED_INDEX_OFFSET].clone();
 			positionMeters = new double[] {
 					WorldUnits.pxToM(startPositionPixels[0]),
@@ -126,11 +126,11 @@ public class Car extends Observable {
 	}
 
 	public int getSpriteWidth() {
-		return CAR_MODEL_SPRITE_DIMENSIONS[modelIndex - ONE_BASED_INDEX_OFFSET][0];
+		return CAR_MODEL_SPRITE_DIMENSIONS[modelIndex][0];
 	}
 
 	public int getSpriteHeight() {
-		return CAR_MODEL_SPRITE_DIMENSIONS[modelIndex - ONE_BASED_INDEX_OFFSET][1];
+		return CAR_MODEL_SPRITE_DIMENSIONS[modelIndex][1];
 	}
 
 	/** Forward speed in m/s. */

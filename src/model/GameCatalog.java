@@ -4,7 +4,6 @@ public final class GameCatalog {
 
 	private static final String LAP_LABEL_SINGULAR = " lap";
 	private static final String LAP_LABEL_PLURAL = " laps";
-	private static final int ONE_BASED_INDEX_OFFSET = 1;
 
 	public static final String[] CAR_MODEL_NAMES = GameConfig.CAR_MODEL_NAMES;
 	public static final String[] TRACK_NAMES = GameConfig.TRACK_NAMES;
@@ -15,20 +14,22 @@ public final class GameCatalog {
 	private GameCatalog() {
 	}
 
+	/** Zero-based car model index. */
 	public static String carModelName(int modelIndex) {
 		validateIndex(modelIndex, Car.CAR_MODEL_COUNT, "car model");
-		return CAR_MODEL_NAMES[modelIndex - ONE_BASED_INDEX_OFFSET];
+		return CAR_MODEL_NAMES[modelIndex];
 	}
 
+	/** Zero-based track index. */
 	public static String trackName(int trackIndex) {
 		validateIndex(trackIndex, Circuit.TRACK_COUNT, "track");
-		return TRACK_NAMES[trackIndex - ONE_BASED_INDEX_OFFSET];
+		return TRACK_NAMES[trackIndex];
 	}
 
-	/** One-based track index → terrain / biome for scenery. */
+	/** Zero-based track index → terrain / biome for scenery. */
 	public static Terrain trackTerrain(int trackIndex) {
 		validateIndex(trackIndex, Circuit.TRACK_COUNT, "track");
-		return TRACK_TERRAINS[trackIndex - ONE_BASED_INDEX_OFFSET];
+		return TRACK_TERRAINS[trackIndex];
 	}
 
 	public static String[] carModelOptions() {
@@ -43,7 +44,7 @@ public final class GameCatalog {
 		String[] options = new String[LAP_COUNT_OPTIONS.length];
 		for (int index = 0; index < LAP_COUNT_OPTIONS.length; index++) {
 			int laps = LAP_COUNT_OPTIONS[index];
-			options[index] = laps + (laps == ONE_BASED_INDEX_OFFSET ? LAP_LABEL_SINGULAR : LAP_LABEL_PLURAL);
+			options[index] = laps + (laps == 1 ? LAP_LABEL_SINGULAR : LAP_LABEL_PLURAL);
 		}
 		return options;
 	}
@@ -74,7 +75,7 @@ public final class GameCatalog {
 	}
 
 	private static void validateIndex(int index, int count, String label) {
-		if (index < ONE_BASED_INDEX_OFFSET || index > count) {
+		if (index < 0 || index >= count) {
 			throw new IllegalArgumentException("Invalid " + label + " index: " + index);
 		}
 	}

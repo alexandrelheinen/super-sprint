@@ -11,13 +11,14 @@ public class Circuit extends Observable {
 	public static final int TRACK_COUNT = GameConfig.TRACK_NAMES.length;
 	public static final int START_SLOT_COUNT = GameConfig.MAX_CARS;
 
-	public static final int TILE_STRAIGHT_HORIZONTAL = 1;
-	public static final int TILE_STRAIGHT_VERTICAL = 2;
-	public static final int TILE_CORNER_BOTTOM_RIGHT = 3;
-	public static final int TILE_CORNER_TOP_RIGHT = 4;
-	public static final int TILE_CORNER_TOP_LEFT = 5;
-	public static final int TILE_CORNER_BOTTOM_LEFT = 6;
-	public static final int TILE_OPEN = 7;
+	/** Tile type ids are zero-based and match {@code track_XX.png} filenames. */
+	public static final int TILE_STRAIGHT_HORIZONTAL = 0;
+	public static final int TILE_STRAIGHT_VERTICAL = 1;
+	public static final int TILE_CORNER_BOTTOM_RIGHT = 2;
+	public static final int TILE_CORNER_TOP_RIGHT = 3;
+	public static final int TILE_CORNER_TOP_LEFT = 4;
+	public static final int TILE_CORNER_BOTTOM_LEFT = 5;
+	public static final int TILE_OPEN = 6;
 
 	public static final int INNER_RADIUS = 26;
 	public static final int OUTER_RADIUS = 191;
