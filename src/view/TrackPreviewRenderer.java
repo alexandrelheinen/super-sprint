@@ -33,9 +33,9 @@ public final class TrackPreviewRenderer {
 	private TrackPreviewRenderer() {
 	}
 
-	/** Renders using the configured terrain for the one-based track index. */
-	public static BufferedImage render(int trackIndexOneBased, int[][] trackMap, int width, int height) {
-		return render(trackMap, width, height, GameCatalog.trackTerrain(trackIndexOneBased));
+	/** Renders using the configured terrain for the zero-based track index. */
+	public static BufferedImage render(int trackIndex, int[][] trackMap, int width, int height) {
+		return render(trackMap, width, height, GameCatalog.trackTerrain(trackIndex));
 	}
 
 	public static BufferedImage render(int[][] trackMap, int width, int height, Terrain terrain) {

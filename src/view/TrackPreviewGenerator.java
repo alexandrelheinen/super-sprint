@@ -8,12 +8,12 @@ import java.nio.file.Paths;
 import javax.imageio.ImageIO;
 
 import controller.Game;
+import model.ResourcePaths;
 
 public final class TrackPreviewGenerator {
 
 	private static final int PREVIEW_WIDTH = 150;
 	private static final int PREVIEW_HEIGHT = 100;
-	private static final int ONE_BASED_INDEX_OFFSET = 1;
 
 	private TrackPreviewGenerator() {
 	}
@@ -23,11 +23,10 @@ public final class TrackPreviewGenerator {
 		Files.createDirectories(outputDirectory);
 
 		for (int trackIndex = 0; trackIndex < Game.TRACK_MAPS.length; trackIndex++) {
-			Path outputFile = outputDirectory.resolve(
-					"track_preview" + (trackIndex + ONE_BASED_INDEX_OFFSET) + ".png");
+			Path outputFile = outputDirectory.resolve(ResourcePaths.trackPreviewFileName(trackIndex));
 			ImageIO.write(
 					TrackPreviewRenderer.render(
-							trackIndex + ONE_BASED_INDEX_OFFSET,
+							trackIndex,
 							Game.TRACK_MAPS[trackIndex],
 							PREVIEW_WIDTH,
 							PREVIEW_HEIGHT),

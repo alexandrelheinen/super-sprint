@@ -80,7 +80,7 @@ public class Game {
 		Controller.resetPlayerCount();
 		GameCatalog.validateLapCount(laps);
 		this.trackIndex = trackNumber;
-		trackMap = Game.TRACK_MAPS[trackNumber - ONE_BASED_INDEX_OFFSET];
+		trackMap = Game.TRACK_MAPS[trackNumber];
 		this.lapCount = laps;
 		this.hallOfFame = hallOfFame;
 		this.appShell = appShell;
@@ -145,7 +145,6 @@ public class Game {
 		gameTimer.purge();
 
 		double raceTimeMs = circuit.getRaceTimeMs();
-		int track = trackIndex - ONE_BASED_INDEX_OFFSET;
 
 		SwingUtilities.invokeLater(() -> {
 			detachRenderObservers();
@@ -156,7 +155,7 @@ public class Game {
 					humanPlayerCount,
 					raceTimeMs,
 					lapCount,
-					track);
+					trackIndex);
 		});
 	}
 
