@@ -110,3 +110,5 @@ GitHub Actions (`.github/workflows/ci.yml`) compiles the project and runs a head
 ## License
 
 This project is released under the [MIT License](LICENSE).
+
+Application icon: [Race](https://www.flaticon.com/free-icon/race_4552572) designed by [Magnific](https://www.flaticon.com/authors/magnific) from [Flaticon](https://www.flaticon.com). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
