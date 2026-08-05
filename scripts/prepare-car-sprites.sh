@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Downloads GTA 2 car artwork sprites, flips them horizontally (art faces left;
-# the game expects sprites facing right like the bundled voiture*.png files),
-# and writes PNGs to $BUILD_DIR/images/voitureN.png.
+# the game expects sprites facing right like the bundled car PNG files),
+# and writes PNGs to $BUILD_DIR/sprites/voitureN.png.
 set -u
 
 BUILD_DIR="${1:-build}"
-OUT_DIR="${BUILD_DIR}/images"
-FALLBACK_DIR="images"
+OUT_DIR="${BUILD_DIR}/sprites"
+FALLBACK_DIR="src/sprites"
 TARGET_WIDTH="${CAR_SPRITE_WIDTH:-40}"
 
 mkdir -p "${OUT_DIR}"

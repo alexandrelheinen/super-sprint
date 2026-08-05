@@ -24,7 +24,7 @@ This repository is a Java Swing game (**Super Sprint Supélec**). Before making 
 controller.Main
 ```
 
-Run the game with `make run` from the repository root (assets load from relative paths).
+Run the game with `make run` from the repository root. Bundled assets load from `src/sprites/`; prepared car sprites may be written to `build/sprites/`.
 
 ## When unsure
 

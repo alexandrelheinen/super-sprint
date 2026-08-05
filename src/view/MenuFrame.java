@@ -26,6 +26,7 @@ import controller.Game;
 import model.Car;
 import model.Circuit;
 import model.HallOfFame;
+import model.ResourcePaths;
 
 public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
@@ -66,7 +67,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 		mainPanel = new JPanel();
 		JPanel imagePanel = new JPanel();
-		imagePanel.add(new JLabel(new ImageIcon("images/menu.png")));
+		imagePanel.add(new JLabel(new ImageIcon(ResourcePaths.bundledSprite("menu.png"))));
 
 		JPanel buttonPanel = new JPanel(new GridLayout(2, 2));
 		mainButtons = new JButton[] {
@@ -169,7 +170,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 		add(racePanel);
 		showMainMenu();
-		setIconImage(new ImageIcon("images/icon.png").getImage());
+		setIconImage(new ImageIcon(ResourcePaths.bundledSprite("icon.png")).getImage());
 		mainPanel.setBackground(Color.BLACK);
 		imagePanel.setBackground(Color.BLACK);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -258,7 +259,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		if (name.contains("car")) {
 			int playerIndex = name.contains("1") ? 0 : 1;
 			int modelIndex = box.getSelectedIndex();
-			carIcons[playerIndex].setIcon(new ImageIcon(AssetPaths.carSpritePath(modelIndex + 1)));
+			carIcons[playerIndex].setIcon(new ImageIcon(ResourcePaths.carSpritePath(modelIndex + 1)));
 			int[] stats = Car.CAR_MODEL_STATS[modelIndex];
 			for (int statIndex = 0; statIndex < 3; statIndex++) {
 				carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
@@ -268,7 +269,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		} else {
 			int trackIndex = box.getSelectedIndex();
 			selectedTrack = trackIndex + 1;
-			trackIcon.setIcon(new ImageIcon("images/mini_circuit" + (trackIndex + 1) + ".png"));
+			trackIcon.setIcon(new ImageIcon(ResourcePaths.bundledSprite("mini_circuit" + (trackIndex + 1) + ".png")));
 		}
 	}
 }

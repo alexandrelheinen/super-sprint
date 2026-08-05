@@ -35,7 +35,7 @@ The implementation deliberately focuses on core gameplay:
 - Up to **four cars** per race (human and/or AI).
 - **Four track layouts** built from reusable tile types.
 - **No network multiplayer**, sound, or advanced particle effects.
-- Leaderboard stored locally in `halloffame.dat` via Java serialization.
+- Leaderboard stored in the Linux user data directory (`~/.local/share/super-sprint-supelec/` by default).
 
 These constraints kept the project achievable within the academic schedule while still covering analysis, design, and integration work.
 
@@ -75,7 +75,7 @@ Higher handling increases turn rate; top speed is enforced each physics step.
 
 ### 2.4 Tracks
 
-Each track is a grid of **tile types** (values 1–7) mapped to PNG assets (`images/trackN.png`). Types represent straights, corners, and special pieces. Four predefined layouts are stored in `Game.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
+Each track is a grid of **tile types** (values 1–7) mapped to PNG assets under `src/sprites/` (`trackN.png`). Types represent straights, corners, and special pieces. Four predefined layouts are stored in `Game.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
 
 The finish line is a geometric segment near the first grid slot; crossing direction determines valid lap increments.
 
@@ -148,7 +148,7 @@ This approach was chosen as a lightweight alternative to full path planning, suf
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
-Each track keeps ten best times. `Result` stores player name, time in milliseconds, and timestamp. Data is serialized to `halloffame.dat` at the repository root. On first run (or corrupt file), default placeholder entries are created.
+Each track keeps ten best times. `Result` stores player name, time in milliseconds, and timestamp. On Linux, data is serialized to `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from `src/data/hall_of_fame.dat` on first run. On first run failure (or corrupt file), default placeholder entries are created.
 
 When a human player wins, `Game` passes the race time to `tryAddResult`; if the AI wins, an artificially large time is recorded so human entries are not overwritten spuriously.
 
@@ -169,12 +169,12 @@ All user-visible strings were translated to English during the 2026 refactor; th
 - **Language:** Java (originally Java 7/8 era; currently validated on **JDK 17+**).
 - **UI:** Swing (`JFrame`, `JComboBox`, `JTable`, …).
 - **Build (2015):** manual `javac` invocation.
-- **Build (current):** GNU Make (`Makefile`), see [BUILD.md](../BUILD.md).
+- **Build (current):** GNU Make (`Makefile`), see [BUILD.md](BUILD.md).
 - **CI (current):** GitHub Actions workflow compiling and smoke-launching the app headlessly with Xvfb.
 
 ### 5.2 Asset pipeline
 
-Graphics are static PNG files under `images/`:
+Graphics are static PNG files under `src/sprites/`:
 
 - Car sprites: `voiture1.png` … `voiture4.png`
 - Track tiles: `track1.png` … `track7.png`
@@ -206,7 +206,7 @@ The CI pipeline verifies:
 1. **Compilation** — all sources under `src/` compile without errors.
 2. **Launch smoke test** — the JVM starts, Swing initializes under a virtual framebuffer, and the process remains alive for several seconds without crashing.
 
-Contributors should run `make compile` and `make smoke-test` before opening pull requests (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+Contributors should run `make compile` and `make smoke-test` before opening pull requests (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ---
 
@@ -220,7 +220,7 @@ Issues present in the original submission and still relevant:
 | Tight view coupling | Model classes notify Swing frames directly. |
 | AI tuning | PD gains are heuristic; AI can cut corners or stall on some tiles. |
 | Collision model | Rotated-rectangle approximation is imprecise at high speed. |
-| Serialization | `halloffame.dat` breaks if `Result` fields change without migration. |
+| Serialization | User Hall of Fame file breaks if `Result` fields change without migration. |
 | Headless CI | Smoke test confirms startup only, not gameplay correctness. |
 
 Possible extensions: unit tests for physics and lap detection, replays, additional tracks, sound, modern build tool (Gradle), and replacing serialization with JSON.
@@ -240,8 +240,8 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 1. Original French PDF project report (2015 evaluation submission — not stored in this repository).
 2. Course materials: Supélec *Projet Logiciel*, Sequence 6, 2014/2015.
 3. Inspiration: *Super Sprint* (arcade, 1985).
-4. Repository documentation: [README.md](../README.md), [BUILD.md](../BUILD.md), [CONTRIBUTING.md](../CONTRIBUTING.md).
-5. UML diagram: [diagram/classes.ucls](../diagram/classes.ucls), [diagram/classes.png](../diagram/classes.png).
+4. Repository documentation: [README.md](README.md), [BUILD.md](BUILD.md), [CONTRIBUTING.md](CONTRIBUTING.md).
+5. UML diagram: [diagram/classes.ucls](diagram/classes.ucls), [diagram/classes.png](diagram/classes.png).
 
 ---
 
