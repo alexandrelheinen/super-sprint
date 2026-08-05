@@ -4,6 +4,7 @@ import java.util.Timer;
 
 import javax.swing.SwingUtilities;
 
+import model.Car;
 import model.Circuit;
 import model.ConfigLoader;
 import model.GameCatalog;
@@ -110,6 +111,12 @@ public class Game {
 						carModels[index], index + ONE_BASED_INDEX_OFFSET, gameFrame, circuit, aiReferencePath);
 			}
 		}
+
+		Car[] cars = new Car[controllers.length];
+		for (int index = 0; index < controllers.length; index++) {
+			cars[index] = controllers[index].getCar();
+		}
+		gameFrame.attachRaceStatus(cars, laps);
 
 		gameTimer = new Timer(true);
 		gameTimer.scheduleAtFixedRate(
