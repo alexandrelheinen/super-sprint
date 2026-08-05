@@ -43,13 +43,15 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 	private static final String[] COLUMN_NAMES = {
 			ConfigLoader.getString("messages.hall.table.rank", "Rank"),
 			ConfigLoader.getString("messages.hall.table.name", "Name"),
-			ConfigLoader.getString("messages.hall.table.time", "Time"),
+			ConfigLoader.getString("messages.hall.table.duration", "Duration"),
+			ConfigLoader.getString("messages.hall.table.laps", "Laps"),
+			ConfigLoader.getString("messages.hall.table.mean", "Mean / lap"),
 			ConfigLoader.getString("messages.hall.table.date", "Date")
 	};
 	private static final String HEADER_TITLE = ConfigLoader.getString("messages.hall.header.title", "Hall of Fame");
 	private static final String HEADER_SUBTITLE = ConfigLoader.getString(
 			"messages.hall.header.subtitle",
-			"Best lap times by track");
+			"Best mean lap times by track");
 	private static final String TRACK_LABEL = ConfigLoader.getString("messages.hall.section.track", "Track");
 	private static final String LEADERBOARD_TITLE = ConfigLoader.getString("messages.hall.section.leaderboard", "Leaderboard");
 	private static final String CLOSE_BUTTON_LABEL = ConfigLoader.getString("messages.hall.button.close", "Close");
@@ -108,9 +110,11 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		resultsTable.setBackground(GameTheme.PANEL_SURFACE);
 		resultsTable.setFillsViewportHeight(true);
 		resultsTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		resultsTable.getColumnModel().getColumn(0).setPreferredWidth(UiScale.scale(this, 56));
-		resultsTable.getColumnModel().getColumn(1).setPreferredWidth(UiScale.scale(this, 120));
+		resultsTable.getColumnModel().getColumn(0).setPreferredWidth(UiScale.scale(this, 52));
+		resultsTable.getColumnModel().getColumn(1).setPreferredWidth(UiScale.scale(this, 100));
 		resultsTable.getColumnModel().getColumn(2).setPreferredWidth(UiScale.scale(this, 80));
+		resultsTable.getColumnModel().getColumn(3).setPreferredWidth(UiScale.scale(this, 52));
+		resultsTable.getColumnModel().getColumn(4).setPreferredWidth(UiScale.scale(this, 90));
 		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(this, TABLE_ROW_HEIGHT)));
 		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		resultsTable.setDefaultRenderer(Object.class, new ThemedCellRenderer());
@@ -205,7 +209,9 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 				tableModel.addRow(new Object[] {
 						Integer.toString(rankIndex + ONE_BASED_INDEX_OFFSET),
 						result.getName(),
-						result.getTimeMs() / MS_PER_SECOND + TIME_SUFFIX,
+						formatSeconds(result.getDurationMs()) + TIME_SUFFIX,
+						Integer.toString(result.getLapCount()),
+						formatSeconds(result.getMeanLapTimeMs()) + TIME_SUFFIX,
 						result.getDate()
 				});
 			} catch (RuntimeException exception) {
@@ -213,10 +219,16 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 						Integer.toString(rankIndex + ONE_BASED_INDEX_OFFSET),
 						EMPTY_CELL,
 						EMPTY_CELL,
+						EMPTY_CELL,
+						EMPTY_CELL,
 						EMPTY_CELL
 				});
 			}
 		}
+	}
+
+	private static String formatSeconds(double durationMs) {
+		return String.format("%.2f", durationMs / MS_PER_SECOND);
 	}
 
 	@Override

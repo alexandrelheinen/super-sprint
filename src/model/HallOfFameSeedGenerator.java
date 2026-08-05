@@ -20,13 +20,15 @@ public final class HallOfFameSeedGenerator {
 		Path outputFile = Path.of(args.length > 0 ? args[0] : "src/data/hall_of_fame.dat");
 		Files.createDirectories(outputFile.getParent());
 
+		int defaultLaps = GameConfig.DEFAULT_LAP_COUNT;
 		try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(outputFile.toFile()))) {
 			String[] defaultNames = GameConfig.HALL_DEFAULT_NAMES;
 			for (int trackIndex = 0; trackIndex < Circuit.TRACK_COUNT; trackIndex++) {
 				for (int rankIndex = 0; rankIndex < HallOfFame.MAX_RESULTS; rankIndex++) {
 					output.writeObject(new Result(
 							defaultNames[rankIndex],
-							DEFAULT_BASE_TIME_MS + (long) DEFAULT_TIME_STEP_MS * rankIndex));
+							DEFAULT_BASE_TIME_MS + (long) DEFAULT_TIME_STEP_MS * rankIndex,
+							defaultLaps));
 				}
 			}
 		}

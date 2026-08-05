@@ -47,8 +47,8 @@ These constraints kept the project achievable within the academic schedule while
 1. **Main menu** — choose single-player, two-player, Hall of Fame, or help.
 2. **Race setup** — select car model(s), track, then start the race.
 3. **Race** — real-time top-down view, lap counter, elapsed time, collisions.
-4. **End of race** — if a human player finishes first within the lap limit, prompt for a Hall of Fame name when the time qualifies; otherwise show a message when the AI wins.
-5. **Hall of Fame** — view top ten times per track.
+4. **End of race** — show a race completion window with the winner, total time, and mean-lap leaderboard placement; human winners who place can enter a name.
+5. **Hall of Fame** — view top ten mean lap times per track (name, duration, laps, mean, date).
 
 ### 2.2 Controls
 
@@ -147,9 +147,9 @@ This approach was chosen as a lightweight alternative to full path planning, suf
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
-Each track keeps ten best times. `Result` stores player name, time in milliseconds, and timestamp. On Linux, data is serialized to `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from `src/data/hall_of_fame.dat` on first run. On first run failure (or corrupt file), default placeholder entries are created.
+Each track keeps ten best results ranked by **mean lap time** (total duration ÷ lap count), so races with different lap counts stay comparable. `Result` stores player name, total duration in milliseconds, lap count, and timestamp. On Linux, data is serialized to `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from `src/data/hall_of_fame.dat` on first run. On first run failure (or corrupt / incompatible file — `Result` `serialVersionUID` is `2`), default placeholder entries are created.
 
-When a human player wins, `Game` passes the race time to `tryAddResult`; if the AI wins, an artificially large time is recorded so human entries are not overwritten spuriously.
+When a race ends, `Game` opens `RaceCompletionDialog`. Human winners who place may save via `HallOfFame.addResult`; computer wins are shown but never written to the board.
 
 ### 4.5 View layer
 
