@@ -33,6 +33,11 @@ class TerrainCatalogTest {
 		assertEquals(Terrain.SAND, GameCatalog.trackTerrain(1));
 		assertEquals(Terrain.GRASS, GameCatalog.trackTerrain(2));
 		assertEquals(Terrain.SAND, GameCatalog.trackTerrain(3));
+		for (int index = 0; index < Circuit.TRACK_COUNT; index++) {
+			assertEquals(
+					Terrain.fromId(ConfigLoader.getString("track." + index + ".terrain", "")),
+					GameCatalog.trackTerrain(index));
+		}
 	}
 
 	@Test

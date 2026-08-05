@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generates track preview PNGs from Game.TRACK_MAPS tile data.
+# Generates track preview PNGs from track maps loaded via GameConfig / tracks.properties.
 set -eu
 
 BUILD_DIR="${1:-build}"

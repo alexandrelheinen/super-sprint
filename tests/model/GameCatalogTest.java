@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import controller.Game;
+
 public class GameCatalogTest {
 
 	@Test
@@ -14,6 +16,25 @@ public class GameCatalogTest {
 		assertEquals(
 				GameCatalog.TRACK_NAMES[Circuit.TRACK_COUNT - 1],
 				GameCatalog.trackName(Circuit.TRACK_COUNT - 1));
+	}
+
+	@Test
+	public void loadsTracksFromPropertiesLikeCars() {
+		assertEquals(4, Circuit.TRACK_COUNT);
+		assertEquals("Meadow Oval", GameCatalog.trackName(0));
+		assertEquals("Desert Elbow", GameCatalog.trackName(1));
+		assertEquals("Lakeside Cove", GameCatalog.trackName(2));
+		assertEquals("Dune Horseshoe", GameCatalog.trackName(3));
+		for (int index = 0; index < Circuit.TRACK_COUNT; index++) {
+			assertEquals(index, Integer.parseInt(ConfigLoader.getString("track." + index + ".index", "-1")));
+			assertEquals(
+					ConfigLoader.getString("track." + index + ".name", ""),
+					GameCatalog.trackName(index));
+			int[][] map = GameCatalog.trackMap(index);
+			assertEquals(Game.TRACK_MAPS[index], map);
+			assertEquals(3, map.length);
+			assertEquals(4, map[0].length);
+		}
 	}
 
 	@Test

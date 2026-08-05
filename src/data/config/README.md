@@ -5,8 +5,14 @@ without changing Java source code.
 
 | File | Purpose |
 |------|---------|
+<<<<<<< HEAD
 | `cars.properties` | Per-car index, racing number, name, mean color, race/menu sprite sizes, and stats (generated from `cars.png`) |
 | `catalog.properties` | Track names, per-track terrains (`grass`/`sand`), lap options, Hall of Fame seed names |
+=======
+| `cars.properties` | Per-car index, racing number, name, mean color, sprite size, and stats (generated from `cars.png`) |
+| `tracks.properties` | Per-track index, name, terrain (`grass`/`sand`), and tile map rows |
+| `catalog.properties` | Lap options and Hall of Fame seed names |
+>>>>>>> 0ecf702 (Define tracks in tracks.properties like cars)
 | `game.properties` | Window title and race rules (max cars, human players) |
 | `theme.properties` | UI colors (RGB), glass surfaces, HUD strip, and font family/sizes |
 | `ui.properties` | Reference resolution and minimum window/font sizes |
