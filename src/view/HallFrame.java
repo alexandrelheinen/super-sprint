@@ -72,7 +72,7 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		tableModel = new DefaultTableModel(COLUMN_NAMES, 0);
 		resultsTable = new JTable(tableModel);
 		resultsTable.setEnabled(false);
-		resultsTable.setRowHeight(UiScale.scale(this, 24));
+		resultsTable.setRowHeight(Math.max(1, UiScale.scale(this, 24)));
 		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
 		resultsTable.setGridColor(GameTheme.BORDER_SOFT);
@@ -111,7 +111,7 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 	private void applyScaledMetrics() {
 		closeButton.applyScaledSize(this, 140, 46);
 		trackMenu.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
-		resultsTable.setRowHeight(UiScale.scale(this, 24));
+		resultsTable.setRowHeight(Math.max(1, UiScale.scale(this, 24)));
 		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		resultsTable.getTableHeader().setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, this));
 		revalidate();
