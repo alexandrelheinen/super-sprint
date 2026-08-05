@@ -2,9 +2,10 @@ package view;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 
-import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -21,48 +22,36 @@ import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
 /**
- * Help screen: player keyboards sit side by side above the information text.
+ * Help screen: Player 1 / Player 2 keyboards sit side by side above an enriched
+ * How to play guide.
  */
 public class HelpPanel extends BackgroundPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String DEFAULT_INFO_BODY =
-			"Super Sprint Supélec is a top-down arcade racer on modular tracks.\n\n"
-					+ "Race setup\n"
-					+ "• Choose Single Player or Multiplayer from the main menu.\n"
-					+ "• Pick a car model, track, and lap count before starting.\n"
-					+ "• Empty grid slots are filled by AI opponents.\n\n"
-					+ "On the track\n"
-					+ "• Stay on the asphalt — leaving the lane cuts your speed.\n"
-					+ "• Cross the yellow finish line in the racing direction to count laps.\n"
-					+ "• Cars can bump each other; contact mixes speed and heading briefly.\n\n"
-					+ "Winning & Hall of Fame\n"
-					+ "• First to complete the chosen lap count wins.\n"
-					+ "• Human winners who place can save a name to the Hall of Fame.\n"
-					+ "• Rankings use mean lap time (total time ÷ laps), so different race lengths stay comparable.\n\n"
-					+ "Project\n"
-					+ "Software Project 2014/2015 — Sequence 6 (Supélec). Maintained with English UI and a single-window shell.";
-
 	private static final String TITLE = ConfigLoader.getString("messages.help.dialog.title", "Help");
 	private static final String CONTROLS_TITLE = ConfigLoader.getString("messages.help.controls.title", "Controls");
 	private static final String PLAYER_ONE = ConfigLoader.getString("messages.help.player.one", "Player 1");
 	private static final String PLAYER_TWO = ConfigLoader.getString("messages.help.player.two", "Player 2");
+	private static final String LEGEND = ConfigLoader.getString(
+			"messages.help.controls.legend",
+			"↑ / W accelerate   ·   ↓ / S brake   ·   ← → / A D steer");
 	private static final String INFO_TITLE = ConfigLoader.getString("messages.help.info.title", "How to play");
-	private static final String INFO_BODY = ConfigLoader.getMessage("messages.help.info.body", DEFAULT_INFO_BODY);
 	private static final String CLOSE = ConfigLoader.getString("messages.help.button.close", "Back to Menu");
+	private static final String INFO_BODY = buildInfoBody();
 
-	private static final int PANEL_INSET = 18;
-	private static final int SECTION_GAP = 12;
-	private static final int PLAYER_LABEL_GAP = 6;
+	private static final int PANEL_INSET = 14;
+	private static final int SECTION_GAP = 8;
+	private static final int PLAYER_LABEL_GAP = 2;
 	private static final int BUTTON_WIDTH = 200;
 	private static final int BUTTON_HEIGHT = 54;
 	private static final int SCROLL_UNIT = 16;
-	private static final int HELP_KEY_SIZE = 36;
+	private static final int HELP_KEY_SIZE = 28;
 
 	private final ArcadeButton closeButton;
-	private final JTextArea infoArea;
 	private final JPanel keyboardRow;
+	private final JLabel legendLabel;
+	private final JTextArea infoArea;
 
 	public HelpPanel(Component scaleContext, Runnable onClose) {
 		super(BackgroundPanel.Style.SCREEN);
@@ -74,12 +63,25 @@ public class HelpPanel extends BackgroundPanel {
 		JPanel body = new JPanel(new BorderLayout(0, SECTION_GAP));
 		body.setOpaque(false);
 
-		GlassCard controlsCard = new GlassCard(new BorderLayout(), scaleContext, CONTROLS_TITLE);
+		JPanel controlsCard = new JPanel(new BorderLayout(0, 4));
 		controlsCard.setOpaque(false);
-		keyboardRow = new JPanel(new GridLayout(1, 2, SECTION_GAP, 0));
+		controlsCard.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+				ThemedPanel.sectionBorder(CONTROLS_TITLE, scaleContext),
+				new EmptyBorder(4, 10, 8, 10)));
+
+		keyboardRow = new JPanel(new GridLayout(1, 2, 20, 0));
 		keyboardRow.setOpaque(false);
 		rebuildKeyboards(scaleContext);
 		controlsCard.add(keyboardRow, BorderLayout.CENTER);
+
+		legendLabel = ThemedPanel.createLabel(LEGEND, scaleContext);
+		legendLabel.setHorizontalAlignment(JLabel.CENTER);
+		legendLabel.setForeground(GameTheme.TEXT_MUTED);
+		applyLegendFont(scaleContext);
+		JPanel legendRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		legendRow.setOpaque(false);
+		legendRow.add(legendLabel);
+		controlsCard.add(legendRow, BorderLayout.SOUTH);
 		body.add(controlsCard, BorderLayout.NORTH);
 
 		GlassCard infoCard = new GlassCard(new BorderLayout(), scaleContext, INFO_TITLE);
@@ -90,10 +92,9 @@ public class HelpPanel extends BackgroundPanel {
 		infoArea.setFocusable(false);
 		infoArea.setLineWrap(true);
 		infoArea.setWrapStyleWord(true);
-		infoArea.setRows(Math.min(16, INFO_BODY.split("\n", -1).length + 2));
-		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
+		infoArea.setFont(scaledInfoFont(scaleContext));
 		infoArea.setForeground(GameTheme.TEXT_PRIMARY);
-		infoArea.setBorder(new EmptyBorder(8, 10, 14, 10));
+		infoArea.setBorder(new EmptyBorder(6, 10, 12, 10));
 		infoCard.add(wrapScroll(infoArea), BorderLayout.CENTER);
 		body.add(infoCard, BorderLayout.CENTER);
 
@@ -109,7 +110,8 @@ public class HelpPanel extends BackgroundPanel {
 
 	public void applyScaledMetrics(Component scaleContext) {
 		closeButton.applyScaledSize(scaleContext, BUTTON_WIDTH, BUTTON_HEIGHT);
-		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
+		infoArea.setFont(scaledInfoFont(scaleContext));
+		applyLegendFont(scaleContext);
 		rebuildKeyboards(scaleContext);
 		revalidate();
 		repaint();
@@ -120,6 +122,60 @@ public class HelpPanel extends BackgroundPanel {
 		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
 		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_TWO, KeyboardPanel.Layout.WASD));
 		keyboardRow.revalidate();
+	}
+
+	private void applyLegendFont(Component context) {
+		Font body = GameTheme.scaled(GameTheme.FONT_BODY, context);
+		float size = Math.max(11f, body.getSize2D() * 0.68f);
+		legendLabel.setFont(body.deriveFont(Font.PLAIN, size));
+	}
+
+	private static Font scaledInfoFont(Component context) {
+		Font body = GameTheme.scaled(GameTheme.FONT_BODY, context);
+		float size = Math.max(13f, body.getSize2D() * 0.8f);
+		return body.deriveFont(Font.PLAIN, size);
+	}
+
+	private static String buildInfoBody() {
+		return section(
+				"messages.help.info.goal.title",
+				"Goal",
+				"messages.help.info.goal.body",
+				"Be first to finish the chosen lap count on a modular top-down track.")
+				+ "\n\n"
+				+ section(
+						"messages.help.info.setup.title",
+						"Race setup",
+						"messages.help.info.setup.body",
+						"Pick Single Player or Multiplayer, then choose car model(s), track, and laps.")
+				+ "\n\n"
+				+ section(
+						"messages.help.info.driving.title",
+						"On the track",
+						"messages.help.info.driving.body",
+						"Stay on the asphalt — leaving the lane cuts speed. Cross the yellow finish line to count a lap.")
+				+ "\n\n"
+				+ section(
+						"messages.help.info.collisions.title",
+						"Bumps",
+						"messages.help.info.collisions.body",
+						"Cars can nudge each other. Contact briefly mixes speed and heading.")
+				+ "\n\n"
+				+ section(
+						"messages.help.info.scoring.title",
+						"Winning & Hall of Fame",
+						"messages.help.info.scoring.body",
+						"First to finish wins. Hall of Fame ranks by mean lap time.")
+				+ "\n\n"
+				+ ConfigLoader.getString(
+						"messages.help.info.project",
+						"Software Project 2014/2015 — Sequence 6 (Supélec). English UI in a single-window shell.");
+	}
+
+	private static String section(String titleKey, String titleFallback, String bodyKey, String bodyFallback) {
+		return ConfigLoader.getString(titleKey, titleFallback)
+				+ "\n"
+				+ ConfigLoader.getMessage(bodyKey, bodyFallback);
 	}
 
 	private static JScrollPane wrapScroll(Component view) {
@@ -138,13 +194,13 @@ public class HelpPanel extends BackgroundPanel {
 		panel.setOpaque(false);
 		JLabel label = ThemedPanel.createLabel(playerLabel, owner);
 		label.setHorizontalAlignment(JLabel.CENTER);
-		label.setFont(GameTheme.scaled(GameTheme.FONT_BODY, owner));
+		Font labelFont = GameTheme.scaled(GameTheme.FONT_BODY, owner);
+		label.setFont(labelFont.deriveFont(Font.BOLD, Math.max(12f, labelFont.getSize2D() * 0.78f)));
 		panel.add(label, BorderLayout.NORTH);
-		JPanel keyboardHolder = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
+		JPanel keyboardHolder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		keyboardHolder.setOpaque(false);
 		keyboardHolder.add(new KeyboardPanel(owner, layout, HELP_KEY_SIZE));
 		panel.add(keyboardHolder, BorderLayout.CENTER);
-		panel.add(Box.createVerticalStrut(4), BorderLayout.SOUTH);
 		return panel;
 	}
 }
