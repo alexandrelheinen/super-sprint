@@ -4,9 +4,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Toolkit;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -18,8 +17,8 @@ import model.ConfigLoader;
 import model.ResourcePaths;
 
 /**
- * Helpers for sizing Swing windows relative to the screen and scaling content
- * when the user resizes a frame after initial layout.
+ * Helpers for a fixed application window size and content scaling relative to
+ * that baseline. The shell is never resized after {@link #lockFixedShellSize}.
  */
 public final class UiScale {
 
@@ -28,19 +27,24 @@ public final class UiScale {
 	private static final String KEY_MIN_FONT_SIZE = "ui.scale.min.font.size";
 	private static final String KEY_SCREEN_WIDTH_DIVISOR = "ui.scale.screen.width.divisor";
 	private static final String KEY_SCREEN_HEIGHT_DIVISOR = "ui.scale.screen.height.divisor";
+	private static final String KEY_SHELL_WIDTH_RATIO = "ui.scale.shell.width.ratio";
+	private static final String KEY_SHELL_HEIGHT_RATIO = "ui.scale.shell.height.ratio";
 
 	private static final int MIN_WINDOW_WIDTH = ConfigLoader.getInt(KEY_MIN_WINDOW_WIDTH, 640);
 	private static final int MIN_WINDOW_HEIGHT = ConfigLoader.getInt(KEY_MIN_WINDOW_HEIGHT, 480);
 	private static final int SCREEN_WIDTH_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_WIDTH_DIVISOR, 2);
 	private static final int SCREEN_HEIGHT_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_HEIGHT_DIVISOR, 2);
-	private static final int MINIMUM_SIZE_DIVISOR = 2;
+	private static final float SHELL_WIDTH_RATIO = ConfigLoader.getFloat(KEY_SHELL_WIDTH_RATIO, 0.55f);
+	private static final float SHELL_HEIGHT_RATIO = ConfigLoader.getFloat(KEY_SHELL_HEIGHT_RATIO, 0.72f);
 	private static final float MIN_FONT_SIZE = ConfigLoader.getFloat(KEY_MIN_FONT_SIZE, 14f);
+
+	private static Dimension lockedContentSize;
 
 	private UiScale() {
 	}
 
 	/**
-	 * Default window size: half the screen width and height (one quarter of total screen area).
+	 * Baseline used for font/control scaling (half the screen on each axis).
 	 */
 	public static Dimension quarterScreenSize() {
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
@@ -49,11 +53,52 @@ public final class UiScale {
 				Math.max(MIN_WINDOW_HEIGHT, screen.height / SCREEN_HEIGHT_DIVISOR));
 	}
 
+	/**
+	 * Content area large enough for menus and the largest race track.
+	 */
+	public static Dimension fixedShellContentSize(Dimension largestRaceContent) {
+		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+		Dimension menu = new Dimension(
+				Math.max(MIN_WINDOW_WIDTH, (int) (screen.width * SHELL_WIDTH_RATIO)),
+				Math.max(MIN_WINDOW_HEIGHT, (int) (screen.height * SHELL_HEIGHT_RATIO)));
+		Dimension race = largestRaceContent != null ? largestRaceContent : menu;
+		return new Dimension(
+				Math.max(menu.width, race.width),
+				Math.max(menu.height, race.height));
+	}
+
+	/**
+	 * Sizes the frame once to the fixed shell dimensions and disables resizing
+	 * for the lifetime of the window.
+	 */
+	public static void lockFixedShellSize(JFrame frame, Dimension largestRaceContent) {
+		lockedContentSize = fixedShellContentSize(largestRaceContent);
+		frame.setResizable(false);
+		// Realize peer so insets are valid before applying the outer size.
+		frame.pack();
+		Insets insets = frame.getInsets();
+		Dimension outer = new Dimension(
+				lockedContentSize.width + insets.left + insets.right,
+				lockedContentSize.height + insets.top + insets.bottom);
+		frame.setSize(outer);
+		frame.setMinimumSize(outer);
+		frame.setMaximumSize(outer);
+		frame.setPreferredSize(outer);
+		frame.setLocationRelativeTo(null);
+	}
+
+	public static Dimension lockedContentSize() {
+		return lockedContentSize != null ? new Dimension(lockedContentSize) : quarterScreenSize();
+	}
+
 	public static float scaleFactor(Component component) {
 		Dimension baseline = quarterScreenSize();
-		int width = component.getWidth() > 0 ? component.getWidth() : baseline.width;
-		int height = component.getHeight() > 0 ? component.getHeight() : baseline.height;
-		return Math.min(width / (float) baseline.width, height / (float) baseline.height);
+		Dimension size = lockedContentSize != null
+				? lockedContentSize
+				: new Dimension(
+						component.getWidth() > 0 ? component.getWidth() : baseline.width,
+						component.getHeight() > 0 ? component.getHeight() : baseline.height);
+		return Math.min(size.width / (float) baseline.width, size.height / (float) baseline.height);
 	}
 
 	public static int scale(Component component, int value) {
@@ -91,38 +136,6 @@ public final class UiScale {
 		int scaledHeight = scale(component, height);
 		Image image = icon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
 		return new ImageIcon(image);
-	}
-
-	public static void applyQuarterScreenSize(JFrame frame) {
-		Dimension size = quarterScreenSize();
-		frame.setSize(size);
-		frame.setMinimumSize(new Dimension(size.width / MINIMUM_SIZE_DIVISOR, size.height / MINIMUM_SIZE_DIVISOR));
-		frame.setLocationRelativeTo(null);
-	}
-
-	/**
-	 * Slightly taller than {@link #quarterScreenSize()} so dense screens like
-	 * Race Setup can show their full content without clipping.
-	 */
-	public static void applyRaceSetupSize(JFrame frame) {
-		Dimension baseline = quarterScreenSize();
-		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-		int width = Math.max(baseline.width, (int) (screen.width * 0.55));
-		int height = Math.max(baseline.height, (int) (screen.height * 0.72));
-		frame.setSize(width, height);
-		frame.setMinimumSize(new Dimension(baseline.width / MINIMUM_SIZE_DIVISOR, baseline.height / MINIMUM_SIZE_DIVISOR));
-		frame.setLocationRelativeTo(null);
-	}
-
-	public static void enableDelayedResize(JFrame frame, Runnable onResize) {
-		frame.setResizable(false);
-		frame.addComponentListener(new ComponentAdapter() {
-			@Override
-			public void componentResized(ComponentEvent event) {
-				onResize.run();
-			}
-		});
-		SwingUtilitiesHelper.invokeLater(() -> frame.setResizable(true));
 	}
 
 	public static void fitLabelIcon(JLabel label, Component context, String spritePath, int width, int height) {
