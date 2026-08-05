@@ -9,6 +9,8 @@ public final class GameCatalog {
 			"Serpent Pass",
 			"Metro Chicane"
 	};
+	public static final int[] LAP_COUNT_OPTIONS = {1, 2, 3, 5, 7, 10};
+	public static final int DEFAULT_LAP_COUNT = 3;
 
 	private GameCatalog() {
 	}
@@ -29,6 +31,40 @@ public final class GameCatalog {
 
 	public static String[] trackOptions() {
 		return TRACK_NAMES.clone();
+	}
+
+	public static String[] lapCountOptions() {
+		String[] options = new String[LAP_COUNT_OPTIONS.length];
+		for (int index = 0; index < LAP_COUNT_OPTIONS.length; index++) {
+			int laps = LAP_COUNT_OPTIONS[index];
+			options[index] = laps + (laps == 1 ? " lap" : " laps");
+		}
+		return options;
+	}
+
+	public static int lapCountAt(int optionIndex) {
+		if (optionIndex < 0 || optionIndex >= LAP_COUNT_OPTIONS.length) {
+			throw new IllegalArgumentException("Invalid lap count option index: " + optionIndex);
+		}
+		return LAP_COUNT_OPTIONS[optionIndex];
+	}
+
+	public static int defaultLapCountOptionIndex() {
+		for (int index = 0; index < LAP_COUNT_OPTIONS.length; index++) {
+			if (LAP_COUNT_OPTIONS[index] == DEFAULT_LAP_COUNT) {
+				return index;
+			}
+		}
+		return 0;
+	}
+
+	public static void validateLapCount(int laps) {
+		for (int option : LAP_COUNT_OPTIONS) {
+			if (option == laps) {
+				return;
+			}
+		}
+		throw new IllegalArgumentException("Invalid lap count: " + laps);
 	}
 
 	private static void validateIndex(int index, int count, String label) {

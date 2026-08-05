@@ -35,7 +35,6 @@ import view.theme.GameTheme;
 public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 	private static final long serialVersionUID = 1L;
-	private static final int LAP_COUNT = 3;
 
 	private final HallFrame hallFrame;
 	private final HallOfFame hallOfFame;
@@ -57,10 +56,15 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private final JComboBox trackMenu;
 	private final JLabel trackIcon;
 
+	private final ThemedPanel lapsPanel;
+	@SuppressWarnings("rawtypes")
+	private final JComboBox lapMenu;
+
 	private final ArcadeButton startButton;
 	private final ArcadeButton backToMenuButton;
 
 	private int selectedTrack = 1;
+	private int selectedLapCount = GameCatalog.DEFAULT_LAP_COUNT;
 	private final int[] selectedCarModels = new int[2];
 	private int humanPlayerCount;
 
@@ -105,10 +109,10 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		racePanel.setBorder(new EmptyBorder(18, 18, 18, 18));
 		((ThemedPanel) racePanel).styleSurface(GameTheme.BACKGROUND_LIGHT);
 
-		JPanel raceHeader = ThemedPanel.createHeader("Race Setup", "Choose cars, track, and launch the grid", this);
+		JPanel raceHeader = ThemedPanel.createHeader("Race Setup", "Choose cars, track, laps, and launch the grid", this);
 		racePanel.add(raceHeader, BorderLayout.NORTH);
 
-		JPanel setupBody = new JPanel(new GridLayout(1, 3, 18, 0));
+		JPanel setupBody = new JPanel(new GridLayout(1, 4, 18, 0));
 		setupBody.setOpaque(false);
 
 		carPanels = new ThemedPanel[2];
@@ -163,6 +167,17 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		trackPanel.add(Box.createVerticalStrut(12));
 		trackPanel.add(trackIcon);
 		setupBody.add(trackPanel);
+
+		lapsPanel = new ThemedPanel();
+		lapsPanel.setLayout(new BoxLayout(lapsPanel, BoxLayout.Y_AXIS));
+		lapsPanel.setBorder(ThemedPanel.sectionBorder("Laps", this));
+		lapMenu = new JComboBox(GameCatalog.lapCountOptions());
+		lapMenu.addItemListener(this);
+		lapMenu.setName("laps");
+		lapsPanel.add(Box.createVerticalStrut(8));
+		lapsPanel.add(lapMenu);
+		setupBody.add(lapsPanel);
+
 		racePanel.add(setupBody, BorderLayout.CENTER);
 
 		JPanel actionPanel = new JPanel(new GridLayout(1, 2, 14, 0));
@@ -189,6 +204,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		carMenus[0].setSelectedIndex(0);
 		carMenus[1].setSelectedIndex(0);
 		trackMenu.setSelectedIndex(0);
+		lapMenu.setSelectedIndex(GameCatalog.defaultLapCountOptionIndex());
+		selectedLapCount = GameCatalog.lapCountAt(lapMenu.getSelectedIndex());
 	}
 
 	private void applyScaledMetrics() {
@@ -204,6 +221,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 			}
 		}
 		styleComboBox(trackMenu);
+		styleComboBox(lapMenu);
 		if (trackMenu.getSelectedIndex() >= 0) {
 			updateTrackPreview(trackMenu.getSelectedIndex());
 		}
@@ -277,7 +295,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 								+ "Player 1: arrow keys\n"
 								+ "Player 2: W/A/S/D keys\n"
 								+ "_______________________________________\n"
-								+ "The race always lasts 3 laps.");
+								+ "Choose the number of laps in the race setup screen.");
 				break;
 			case 10:
 				setVisible(false);
@@ -289,7 +307,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 				for (int aiIndex = humanPlayerCount; aiIndex < 4; aiIndex++) {
 					carModels[aiIndex] = random.nextInt(4) + 1;
 				}
-				new Game(carModels, selectedTrack, humanPlayerCount, LAP_COUNT, hallOfFame, this);
+				new Game(carModels, selectedTrack, humanPlayerCount, selectedLapCount, hallOfFame, this);
 				break;
 			case 11:
 				showMainMenu();
@@ -330,6 +348,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		if (name.contains("car")) {
 			int playerIndex = name.contains("1") ? 0 : 1;
 			updateCarPreview(playerIndex, box.getSelectedIndex());
+		} else if ("laps".equals(name)) {
+			selectedLapCount = GameCatalog.lapCountAt(box.getSelectedIndex());
 		} else {
 			updateTrackPreview(box.getSelectedIndex());
 		}
