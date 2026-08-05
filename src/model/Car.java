@@ -143,6 +143,21 @@ public class Car extends Observable {
 		this.angle = angle;
 	}
 
+	/**
+	 * Applies an externally integrated pose (e.g. Dubins tracker) and updates lap detection.
+	 */
+	public void applyKinematicState(double xMeters, double yMeters, float angle, float speedMs) {
+		positionMeters[0] = xMeters;
+		positionMeters[1] = yMeters;
+		this.angle = angle;
+		this.speedMs = speedMs;
+		accelerationMs2 = 0.0;
+		motionState = MOTION_STATE_IDLE;
+		lapCount += circuit.crossFinishLine(this);
+		setChanged();
+		notifyObservers();
+	}
+
 	public void translateByMeters(double deltaXMeters, double deltaYMeters) {
 		positionMeters[0] += deltaXMeters;
 		positionMeters[1] += deltaYMeters;

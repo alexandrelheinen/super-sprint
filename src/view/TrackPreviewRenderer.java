@@ -24,7 +24,7 @@ public final class TrackPreviewRenderer {
 	}
 
 	public static BufferedImage render(int[][] trackMap, int width, int height) {
-		Path2D trackPath = TrackPreviewPathBuilder.buildTrackPath(trackMap);
+		java.awt.geom.Path2D trackPath = TrackPreviewPathBuilder.buildTrackPath(trackMap);
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = image.createGraphics();
 		UiPainter.enableQuality(graphics);
