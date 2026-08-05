@@ -9,7 +9,7 @@ Super Sprint Supélec is a desktop Java Swing game inspired by [Super Sprint](ht
 | Package     | Role                                      |
 |-------------|-------------------------------------------|
 | `model`     | Game state, physics, persistence          |
-| `view`      | Swing UI frames and rendering             |
+| `view`      | Swing UI (single AppShell window)         |
 | `controller`| Game loop, input handling, AI logic       |
 
 Assets live under `src/sprites/` and `src/data/`. Documentation and UML diagrams live under `docs/`. Runtime Hall of Fame data is stored in the Linux user data directory (see `model.ResourcePaths`).
@@ -53,7 +53,7 @@ Follow standard Java conventions ([Oracle Code Conventions](https://www.oracle.c
 src/
   controller/   # Main, Game, Controller hierarchy, game tick task
   model/        # Car, Circuit, HallOfFame, Result, ResourcePaths
-  view/         # MenuFrame, GameFrame, HallFrame
+  view/         # AppShell, GameFrame (race canvas), screen panels
   sprites/      # Bundled PNG assets
   data/         # Seed Hall of Fame serialization file
 docs/           # Markdown documentation and UML diagrams

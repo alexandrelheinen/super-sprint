@@ -11,9 +11,8 @@ import model.GameConfig;
 import model.HallOfFame;
 import model.ReferencePath;
 import model.TrackGeometry;
+import view.AppShell;
 import view.GameFrame;
-import view.MenuFrame;
-import view.dialogs.RaceCompletionDialog;
 
 public class Game {
 
@@ -60,7 +59,7 @@ public class Game {
 	};
 
 	private final HallOfFame hallOfFame;
-	private final MenuFrame menuFrame;
+	private final AppShell appShell;
 	private final GameFrame gameFrame;
 	private final Controller[] controllers;
 	private final Timer gameTimer;
@@ -77,21 +76,17 @@ public class Game {
 			int humanPlayers,
 			int laps,
 			HallOfFame hallOfFame,
-			MenuFrame menuFrame) {
+			AppShell appShell) {
 		Controller.resetPlayerCount();
 		GameCatalog.validateLapCount(laps);
 		this.trackIndex = trackNumber;
 		trackMap = Game.TRACK_MAPS[trackNumber - ONE_BASED_INDEX_OFFSET];
 		this.lapCount = laps;
 		this.hallOfFame = hallOfFame;
-		this.menuFrame = menuFrame;
+		this.appShell = appShell;
 		this.humanPlayerCount = humanPlayers;
 
-		gameFrame = new GameFrame(
-				GAME_TITLE_PREFIX + GameCatalog.trackName(trackNumber),
-				carModels,
-				trackMap,
-				trackNumber);
+		gameFrame = new GameFrame(carModels, trackMap, trackNumber);
 		controllers = new Controller[carModels.length];
 		circuit = new Circuit(gameFrame, trackMap);
 		circuit.initializeFinishLine(trackNumber);
@@ -113,6 +108,8 @@ public class Game {
 			cars[index] = controllers[index].getCar();
 		}
 		gameFrame.attachRaceStatus(cars, laps);
+
+		appShell.showRace(gameFrame, GAME_TITLE_PREFIX + GameCatalog.trackName(trackNumber));
 
 		gameTimer = new Timer(true);
 		gameTimer.scheduleAtFixedRate(
@@ -153,16 +150,13 @@ public class Game {
 		SwingUtilities.invokeLater(() -> {
 			detachRenderObservers();
 			gameFrame.shutdown();
-			RaceCompletionDialog dialog = new RaceCompletionDialog(
-					menuFrame,
+			appShell.showRaceComplete(
 					hallOfFame,
 					winnerIndex,
 					humanPlayerCount,
 					raceTimeMs,
 					lapCount,
 					track);
-			dialog.showDialog();
-			menuFrame.showMenu();
 		});
 	}
 

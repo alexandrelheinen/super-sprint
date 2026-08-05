@@ -74,7 +74,7 @@ The codebase follows **Model–View–Controller**:
 
 ```mermaid
 flowchart LR
-  MenuFrame --> Game
+  AppShell --> Game
   Game --> GameFrame
   Game --> Circuit
   Game --> Controller
@@ -82,12 +82,12 @@ flowchart LR
   Car --> Circuit
   GameFrame --> Car
   GameFrame --> Circuit
-  HallOfFame --> HallFrame
-  MenuFrame --> HallOfFame
+  HallOfFame --> HallPanel
+  AppShell --> HallOfFame
 ```
 
 - **Model** — `Car`, `Circuit`, `HallOfFame`, `Result`, `ResourcePaths`
-- **View** — `MenuFrame`, `GameFrame`, `HallFrame`
+- **View** — `AppShell` (single window), `GameFrame` (race canvas), screen panels
 - **Controller** — `Game`, `Controller`, `HumanController`, `AiController`, `GameTickTask`
 
 See [docs/REPORT.md](docs/REPORT.md) for the full design document (English translation of the original French project report).

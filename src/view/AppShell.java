@@ -1,11 +1,13 @@
 package view;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -20,9 +22,9 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.SwingUtilities;
 
 import controller.Game;
 import model.Car;
@@ -37,11 +39,14 @@ import view.components.HeroBanner;
 import view.components.StatBar;
 import view.components.StyledComboBox;
 import view.components.ThemedPanel;
-import view.dialogs.HelpDialog;
 import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
-public class MenuFrame extends JFrame implements ActionListener, ItemListener {
+/**
+ * Single application window. Menus, Hall of Fame, help, race completion, and
+ * the race viewport are all shown by swapping content inside this frame.
+ */
+public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 	private static final long serialVersionUID = 1L;
 
@@ -76,7 +81,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final int CAR_PREVIEW_WIDTH = 130;
 	private static final int CAR_PREVIEW_HEIGHT = 72;
 	private static final int TRACK_PREVIEW_WIDTH = 170;
-	private static final int TRACK_PREVIEW_HEIGHT = 110;
 
 	private static final int MNEMONIC_ONE_PLAYER = 0;
 	private static final int MNEMONIC_TWO_PLAYERS = 1;
@@ -89,6 +93,12 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String COMBO_NAME_CAR2 = "car2";
 	private static final String COMBO_NAME_TRACK = "track";
 	private static final String COMBO_NAME_LAPS = "laps";
+
+	private static final String CARD_MAIN = "main";
+	private static final String CARD_SETUP = "setup";
+	private static final String CARD_HALL = "hall";
+	private static final String CARD_HELP = "help";
+	private static final String CARD_RACE_COMPLETE = "raceComplete";
 
 	private static final String HERO_TITLE = ConfigLoader.getString("messages.menu.hero.title", "SUPER SPRINT");
 	private static final String HERO_BRAND = ConfigLoader.getString("messages.menu.hero.brand", "Supélec");
@@ -113,17 +123,19 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 			{30.0, 60.0}
 	};
 	private static final String[] STAT_VALUE_SUFFIXES = {" m/s²", " m/s", ""};
-
 	private static final String SPRITE_ICON = "icon.png";
 
-	private final HallFrame hallFrame;
+	private final CardLayout cards = new CardLayout();
+	private final JPanel cardRoot = new JPanel(cards);
+	private final HallPanel hallPanel;
+	private final HelpPanel helpPanel;
 	private final HallOfFame hallOfFame;
 
 	private final BackgroundPanel mainPanel;
 	private final JPanel buttonPanel;
 	private final ArcadeButton[] mainButtons;
 
-	private final BackgroundPanel racePanel;
+	private final BackgroundPanel raceSetupPanel;
 	private final JPanel setupBody;
 	private final GlassCard[] carPanels;
 	@SuppressWarnings("rawtypes")
@@ -148,13 +160,16 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private int selectedLapCount = GameCatalog.DEFAULT_LAP_COUNT;
 	private final int[] selectedCarModels = new int[MAX_HUMAN_PLAYERS];
 	private int humanPlayerCount;
+	private String activeCard = CARD_MAIN;
+	private GameFrame activeRaceView;
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	public MenuFrame() throws FileNotFoundException {
+	public AppShell() throws FileNotFoundException {
 		super(WINDOW_TITLE);
 
-		hallFrame = new HallFrame(this);
-		hallOfFame = new HallOfFame(hallFrame);
+		hallPanel = new HallPanel(this, this::showMainMenu);
+		helpPanel = new HelpPanel(this, this::showMainMenu);
+		hallOfFame = new HallOfFame(hallPanel, this::showHallOfFame);
 
 		mainPanel = new BackgroundPanel(BackgroundPanel.Style.MENU);
 		mainPanel.setLayout(new BorderLayout(0, MAIN_PANEL_VERTICAL_GAP));
@@ -181,12 +196,12 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		mainPanel.add(heroPanel, BorderLayout.CENTER);
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-		racePanel = new BackgroundPanel(BackgroundPanel.Style.SCREEN);
-		racePanel.setLayout(new BorderLayout(RACE_PANEL_GAP, RACE_PANEL_GAP));
-		racePanel.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
+		raceSetupPanel = new BackgroundPanel(BackgroundPanel.Style.SCREEN);
+		raceSetupPanel.setLayout(new BorderLayout(RACE_PANEL_GAP, RACE_PANEL_GAP));
+		raceSetupPanel.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
 
 		JPanel raceHeader = ThemedPanel.createHeader(RACE_SETUP_TITLE, null, this);
-		racePanel.add(raceHeader, BorderLayout.NORTH);
+		raceSetupPanel.add(raceHeader, BorderLayout.NORTH);
 
 		setupBody = new JPanel(new GridBagLayout());
 		setupBody.setOpaque(false);
@@ -203,15 +218,13 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 			addSetupCard(setupBody, carPanels[playerIndex], playerIndex);
 		}
 
-		// Track and laps share one top-aligned column card.
 		trackAndLapsPanel = buildTrackAndLapsSetupCard();
 		addSetupCard(setupBody, trackAndLapsPanel, 2);
 
-		// Keep setup content at the top; card heights are equalized explicitly.
 		JPanel setupHolder = new JPanel(new BorderLayout());
 		setupHolder.setOpaque(false);
 		setupHolder.add(setupBody, BorderLayout.NORTH);
-		racePanel.add(setupHolder, BorderLayout.CENTER);
+		raceSetupPanel.add(setupHolder, BorderLayout.CENTER);
 
 		JPanel actionPanel = new JPanel(new GridLayout(1, ACTION_BUTTON_COLUMNS, ACTION_BUTTON_GAP, 0));
 		actionPanel.setOpaque(false);
@@ -223,16 +236,19 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		backToMenuButton.addActionListener(this);
 		actionPanel.add(backToMenuButton);
 		actionPanel.add(startButton);
-		racePanel.add(actionPanel, BorderLayout.SOUTH);
+		raceSetupPanel.add(actionPanel, BorderLayout.SOUTH);
 
 		initializeRaceSetupDefaults();
 
-		setContentPane(mainPanel);
-		showMainMenu();
+		cardRoot.add(mainPanel, CARD_MAIN);
+		cardRoot.add(raceSetupPanel, CARD_SETUP);
+		cardRoot.add(hallPanel, CARD_HALL);
+		cardRoot.add(helpPanel, CARD_HELP);
+
+		setContentPane(cardRoot);
 		setIconImage(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		UiScale.applyQuarterScreenSize(this);
-		applyScaledMetrics();
+		showMainMenu();
 		UiScale.enableDelayedResize(this, this::applyScaledMetrics);
 		setVisible(true);
 	}
@@ -276,11 +292,13 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		StyledComboBox.apply(lapMenu, this);
 		layoutComboBox(lapMenu);
 		updateSetupCardHeights();
-		if (racePanel.isShowing()) {
+		if (CARD_SETUP.equals(activeCard)) {
 			refreshRaceSetupPreviews();
 		}
 		startButton.applyScaledSize(this, ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
 		backToMenuButton.applyScaledSize(this, ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
+		hallPanel.applyScaledMetrics(this);
+		helpPanel.applyScaledMetrics(this);
 		revalidate();
 		repaint();
 	}
@@ -298,11 +316,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		equalizeVisibleSetupCardHeights();
 	}
 
-	/**
-	 * Makes every visible Race Setup card share the tallest content height so
-	 * columns line up. Cards fill that height; their BorderLayout.NORTH bodies
-	 * keep controls stacked from the top.
-	 */
 	private void equalizeVisibleSetupCardHeights() {
 		GlassCard[] setupCards = {carPanels[0], carPanels[1], trackAndLapsPanel};
 		for (GlassCard card : setupCards) {
@@ -337,10 +350,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		comboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, comboHeight));
 	}
 
-	/**
-	 * Setup cards share a common preferred height (via
-	 * {@link #equalizeVisibleSetupCardHeights}) and stay top-anchored.
-	 */
 	private void addSetupCard(JPanel container, JPanel card, int columnIndex) {
 		GridBagConstraints constraints = new GridBagConstraints();
 		constraints.gridx = columnIndex;
@@ -349,7 +358,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		constraints.weighty = 0.0;
 		constraints.anchor = GridBagConstraints.NORTH;
 		constraints.fill = GridBagConstraints.HORIZONTAL;
-		constraints.insets = new java.awt.Insets(
+		constraints.insets = new Insets(
 				0,
 				columnIndex == 0 ? 0 : SETUP_COLUMN_GAP / 2,
 				0,
@@ -445,15 +454,26 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		return card;
 	}
 
-	private void showMainMenu() {
-		setContentPane(mainPanel);
-		UiScale.applyQuarterScreenSize(this);
-		applyScaledMetrics();
+	private void showCard(String cardName) {
+		clearRaceView();
+		if (!cardRoot.equals(getContentPane())) {
+			setContentPane(cardRoot);
+		}
+		activeCard = cardName;
+		cards.show(cardRoot, cardName);
 		revalidate();
 		repaint();
 	}
 
-	private void showRaceMenu(int players) {
+	public void showMainMenu() {
+		setTitle(WINDOW_TITLE);
+		showCard(CARD_MAIN);
+		UiScale.applyQuarterScreenSize(this);
+		applyScaledMetrics();
+		toFront();
+	}
+
+	private void showRaceSetup(int players) {
 		boolean singlePlayer = players == SINGLE_PLAYER_COUNT;
 		carMenus[1].setEnabled(!singlePlayer);
 		carPanels[1].setVisible(!singlePlayer);
@@ -462,34 +482,106 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		playerTwoConstraints.weightx = singlePlayer ? 0.0 : 1.0;
 		layout.setConstraints(carPanels[1], playerTwoConstraints);
 		humanPlayerCount = players;
-		setContentPane(racePanel);
+		setTitle(WINDOW_TITLE + " — " + RACE_SETUP_TITLE);
+		showCard(CARD_SETUP);
 		UiScale.applyRaceSetupSize(this);
 		applyScaledMetrics();
-		revalidate();
-		repaint();
 		refreshRaceSetupPreviews();
 		SwingUtilities.invokeLater(this::refreshRaceSetupPreviews);
 	}
 
-	public void showMenu() {
-		showMainMenu();
-		setVisible(true);
+	public void showHallOfFame() {
+		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.hall.header.title", "Hall of Fame"));
+		hallPanel.refreshOnShow();
+		showCard(CARD_HALL);
+		UiScale.applyRaceSetupSize(this);
+		applyScaledMetrics();
 		toFront();
 	}
 
+	public void showHelp() {
+		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.help.dialog.title", "Help"));
+		showCard(CARD_HELP);
+		UiScale.applyRaceSetupSize(this);
+		applyScaledMetrics();
+	}
+
+	/**
+	 * Installs the race canvas as the sole content of this window and sizes the
+	 * frame to the track.
+	 */
+	public void showRace(GameFrame raceView, String raceTitle) {
+		clearRaceView();
+		activeRaceView = raceView;
+		activeCard = null;
+		setTitle(raceTitle);
+		JPanel raceHost = new JPanel(new BorderLayout());
+		raceHost.setOpaque(true);
+		raceHost.setBackground(GameTheme.BACKGROUND_DARK);
+		raceHost.add(raceView, BorderLayout.CENTER);
+		setContentPane(raceHost);
+		Dimension raceSize = raceView.getPreferredRaceSize();
+		Insets insets = getInsets();
+		setSize(
+				raceSize.width + insets.left + insets.right,
+				raceSize.height + insets.top + insets.bottom);
+		setMinimumSize(new Dimension(raceSize.width / 2, raceSize.height / 2));
+		setLocationRelativeTo(null);
+		revalidate();
+		repaint();
+		raceView.realizeBufferStrategy();
+		toFront();
+	}
+
+	public void showRaceComplete(
+			HallOfFame hallOfFame,
+			int winnerIndex,
+			int humanPlayerCount,
+			double durationMs,
+			int lapCount,
+			int trackIndex) {
+		clearRaceView();
+		RaceCompletePanel panel = new RaceCompletePanel(
+				this,
+				hallOfFame,
+				winnerIndex,
+				humanPlayerCount,
+				durationMs,
+				lapCount,
+				trackIndex,
+				this::showMainMenu);
+		// Replace any previous completion card so each finish gets fresh state.
+		Component[] components = cardRoot.getComponents();
+		for (Component component : components) {
+			if (component instanceof RaceCompletePanel) {
+				cardRoot.remove(component);
+			}
+		}
+		cardRoot.add(panel, CARD_RACE_COMPLETE);
+		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.race.complete.title", "Race Complete"));
+		showCard(CARD_RACE_COMPLETE);
+		UiScale.applyQuarterScreenSize(this);
+		panel.applyScaledMetrics(this);
+		applyScaledMetrics();
+	}
+
+	private void clearRaceView() {
+		if (activeRaceView != null) {
+			activeRaceView.shutdown();
+			activeRaceView = null;
+		}
+	}
+
 	void openRaceSetupForScreenshot() {
-		showRaceMenu(SINGLE_PLAYER_COUNT);
+		showRaceSetup(SINGLE_PLAYER_COUNT);
 	}
 
 	void openHelpForScreenshot() {
-		HelpDialog helpDialog = new HelpDialog(this);
-		helpDialog.setModalityType(java.awt.Dialog.ModalityType.MODELESS);
-		helpDialog.setVisible(true);
+		showHelp();
 	}
 
 	void openHallOfFameForScreenshot() {
-		hallFrame.showHall();
-		setVisible(false);
+		showHallOfFame();
 	}
 
 	@Override
@@ -499,19 +591,18 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		}
 		switch (button.getMnemonic()) {
 			case MNEMONIC_ONE_PLAYER:
-				showRaceMenu(SINGLE_PLAYER_COUNT);
+				showRaceSetup(SINGLE_PLAYER_COUNT);
 				break;
 			case MNEMONIC_TWO_PLAYERS:
-				showRaceMenu(MAX_HUMAN_PLAYERS);
+				showRaceSetup(MAX_HUMAN_PLAYERS);
 				break;
 			case MNEMONIC_HALL_OF_FAME:
-				hallFrame.showHall();
+				showHallOfFame();
 				break;
 			case MNEMONIC_HELP:
-				new HelpDialog(this).showDialog();
+				showHelp();
 				break;
 			case MNEMONIC_START_RACE:
-				setVisible(false);
 				int[] carModels = new int[MAX_CARS];
 				for (int playerIndex = 0; playerIndex < humanPlayerCount; playerIndex++) {
 					carModels[playerIndex] = selectedCarModels[playerIndex];

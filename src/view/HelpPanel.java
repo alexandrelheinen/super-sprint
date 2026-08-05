@@ -1,12 +1,12 @@
-package view.dialogs;
+package view;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.GridLayout;
 
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
 import model.ConfigLoader;
@@ -17,7 +17,10 @@ import view.components.ThemedPanel;
 import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
-public class HelpDialog extends JDialog {
+/**
+ * Help screen content hosted inside {@link AppShell}.
+ */
+public class HelpPanel extends BackgroundPanel {
 
 	private static final long serialVersionUID = 1L;
 
@@ -37,41 +40,40 @@ public class HelpDialog extends JDialog {
 	private static final int BUTTON_WIDTH = 200;
 	private static final int BUTTON_HEIGHT = 54;
 
-	public HelpDialog(Component owner) {
-		super(javax.swing.SwingUtilities.getWindowAncestor(owner), TITLE, ModalityType.APPLICATION_MODAL);
-		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+	private final ArcadeButton closeButton;
+	private final JTextArea infoArea;
 
-		BackgroundPanel root = new BackgroundPanel(BackgroundPanel.Style.SCREEN);
-		root.setLayout(new BorderLayout(0, SECTION_GAP));
-		root.setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
+	public HelpPanel(Component scaleContext, Runnable onClose) {
+		super(BackgroundPanel.Style.SCREEN);
+		setLayout(new BorderLayout(0, SECTION_GAP));
+		setBorder(new EmptyBorder(PANEL_INSET, PANEL_INSET, PANEL_INSET, PANEL_INSET));
 
-		root.add(ThemedPanel.createHeader(TITLE, null, owner), BorderLayout.NORTH);
+		add(ThemedPanel.createHeader(TITLE, null, scaleContext), BorderLayout.NORTH);
 
-		GlassCard controlsCard = new GlassCard(new BorderLayout(), owner, CONTROLS_TITLE);
+		GlassCard controlsCard = new GlassCard(new BorderLayout(), scaleContext, CONTROLS_TITLE);
 		controlsCard.setOpaque(false);
 
 		JPanel keyboardRow = new JPanel(new GridLayout(1, 2, SECTION_GAP, 0));
 		keyboardRow.setOpaque(false);
-		keyboardRow.add(buildPlayerPanel(owner, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
-		keyboardRow.add(buildPlayerPanel(owner, PLAYER_TWO, KeyboardPanel.Layout.WASD));
+		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
+		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_TWO, KeyboardPanel.Layout.WASD));
 		controlsCard.add(keyboardRow, BorderLayout.CENTER);
-		root.add(controlsCard, BorderLayout.CENTER);
+		add(controlsCard, BorderLayout.CENTER);
 
-		GlassCard infoCard = new GlassCard(new BorderLayout(), owner, INFO_TITLE);
+		GlassCard infoCard = new GlassCard(new BorderLayout(), scaleContext, INFO_TITLE);
 		infoCard.setOpaque(false);
-		javax.swing.JTextArea infoArea = new javax.swing.JTextArea(INFO_BODY);
+		infoArea = new JTextArea(INFO_BODY);
 		infoArea.setEditable(false);
 		infoArea.setOpaque(false);
 		infoArea.setLineWrap(true);
 		infoArea.setWrapStyleWord(true);
-		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, owner));
+		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, scaleContext));
 		infoArea.setForeground(GameTheme.TEXT_PRIMARY);
 		infoArea.setBorder(new EmptyBorder(8, 4, 8, 4));
 		infoCard.add(infoArea, BorderLayout.CENTER);
 
-		ArcadeButton closeButton = new ArcadeButton(CLOSE, false);
-		closeButton.applyScaledSize(owner, BUTTON_WIDTH, BUTTON_HEIGHT);
-		closeButton.addActionListener(event -> dispose());
+		closeButton = new ArcadeButton(CLOSE, false);
+		closeButton.addActionListener(event -> onClose.run());
 		JPanel footer = new JPanel(new BorderLayout());
 		footer.setOpaque(false);
 		footer.add(closeButton, BorderLayout.EAST);
@@ -80,17 +82,14 @@ public class HelpDialog extends JDialog {
 		south.setOpaque(false);
 		south.add(infoCard, BorderLayout.CENTER);
 		south.add(footer, BorderLayout.SOUTH);
-		root.add(south, BorderLayout.SOUTH);
+		add(south, BorderLayout.SOUTH);
+	}
 
-		setContentPane(root);
-		pack();
-		java.awt.Dimension packed = getSize();
-		java.awt.Dimension baseline = view.UiScale.quarterScreenSize();
-		setSize(
-				Math.max(packed.width, (int) (baseline.width * 0.72)),
-				Math.max(packed.height, (int) (baseline.height * 0.78)));
-		setMinimumSize(new java.awt.Dimension(packed.width, packed.height));
-		setLocationRelativeTo(owner);
+	public void applyScaledMetrics(Component scaleContext) {
+		closeButton.applyScaledSize(scaleContext, BUTTON_WIDTH, BUTTON_HEIGHT);
+		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_SUBTITLE, scaleContext));
+		revalidate();
+		repaint();
 	}
 
 	private static JPanel buildPlayerPanel(Component owner, String playerLabel, KeyboardPanel.Layout layout) {
@@ -105,9 +104,5 @@ public class HelpDialog extends JDialog {
 		keyboardHolder.add(new KeyboardPanel(owner, layout));
 		panel.add(keyboardHolder, BorderLayout.CENTER);
 		return panel;
-	}
-
-	public void showDialog() {
-		setVisible(true);
 	}
 }

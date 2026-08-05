@@ -1,8 +1,9 @@
 package view;
 
+import java.awt.Canvas;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
@@ -14,8 +15,6 @@ import java.util.Observable;
 import java.util.Observer;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
 
 import model.Car;
 import model.Circuit;
@@ -23,14 +22,18 @@ import model.ResourcePaths;
 import view.theme.GameTheme;
 import view.ui.UiPainter;
 
-public class GameFrame extends JFrame implements Observer {
+/**
+ * Race viewport rendered with a {@link BufferStrategy} on a {@link Canvas}.
+ * Hosted inside {@link AppShell} — not a top-level window.
+ */
+public class GameFrame extends Canvas implements Observer {
 
 	public static final int TILE_SIZE = 219;
 	public static final int[] CAR_RENDER_OFFSET = {0, 0};
 
 	private static final long serialVersionUID = 1L;
 	private static final int BUFFER_STRATEGY_BUFFERS = 2;
-	/** Breathing room between the track walls and the window border. */
+	/** Breathing room between the track walls and the canvas border. */
 	private static final int TRACK_MARGIN = 28;
 	private static final int HUD_BAR_HEIGHT = 80;
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
@@ -53,7 +56,6 @@ public class GameFrame extends JFrame implements Observer {
 			new java.awt.Color(240, 110, 110)
 	};
 
-	private static final String SPRITE_ICON = "icon.png";
 	private static final String SPRITE_TRACK_PREFIX = "track";
 	private static final String SPRITE_TRACK_SUFFIX = ".png";
 	private static final String HUD_RACE_TIME_PREFIX = "TIME ";
@@ -78,13 +80,13 @@ public class GameFrame extends JFrame implements Observer {
 	private final int[] carModels;
 	private final int[] mapDimensions;
 	private final java.awt.Font hudFont;
+	private final Dimension preferredRaceSize;
 	private BufferedImage staticScene;
 	private volatile boolean renderingEnabled = true;
 	private volatile Car[] hudCars;
 	private volatile int totalLaps;
 
-	public GameFrame(String title, int[] carModels, int[][] trackMap, int trackNumber) {
-		super(title);
+	public GameFrame(int[] carModels, int[][] trackMap, int trackNumber) {
 		this.trackMap = trackMap;
 		this.trackNumber = trackNumber;
 		this.carModels = carModels.clone();
@@ -103,23 +105,30 @@ public class GameFrame extends JFrame implements Observer {
 		System.out.println(LOG_SPRITE_SEPARATOR);
 
 		trackTiles = loadTrackTiles(trackMap);
-
 		hudFont = GameTheme.FONT_HUD;
 
-		setIconImage(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		pack();
-		java.awt.Insets insets = getInsets();
-		setSize(
-				insets.left + insets.right + 2 * TRACK_MARGIN + mapDimensions[1] * TILE_SIZE,
-				insets.top + insets.bottom
-						+ 2 * TRACK_MARGIN
-						+ mapDimensions[0] * TILE_SIZE
-						+ HUD_BAR_HEIGHT);
-		setLocationRelativeTo(null);
-		setVisible(true);
-		setResizable(false);
+		preferredRaceSize = new Dimension(
+				2 * TRACK_MARGIN + mapDimensions[1] * TILE_SIZE,
+				2 * TRACK_MARGIN + mapDimensions[0] * TILE_SIZE + HUD_BAR_HEIGHT);
+		setPreferredSize(preferredRaceSize);
+		setSize(preferredRaceSize);
+		setFocusable(true);
+		setIgnoreRepaint(true);
+	}
+
+	public Dimension getPreferredRaceSize() {
+		return new Dimension(preferredRaceSize);
+	}
+
+	/**
+	 * Creates the buffer strategy once this canvas is displayable inside the shell.
+	 */
+	public void realizeBufferStrategy() {
+		if (!isDisplayable()) {
+			throw new IllegalStateException("Race canvas must be displayable before creating a buffer strategy");
+		}
 		createBufferStrategy(BUFFER_STRATEGY_BUFFERS);
+		requestFocusInWindow();
 	}
 
 	/**
@@ -131,11 +140,11 @@ public class GameFrame extends JFrame implements Observer {
 	}
 
 	private int trackOriginX() {
-		return getInsets().left + TRACK_MARGIN;
+		return TRACK_MARGIN;
 	}
 
 	private int trackOriginY() {
-		return getInsets().top + TRACK_MARGIN;
+		return TRACK_MARGIN;
 	}
 
 	public int getTrackNumber() {
@@ -148,7 +157,6 @@ public class GameFrame extends JFrame implements Observer {
 
 	public void shutdown() {
 		renderingEnabled = false;
-		setVisible(false);
 	}
 
 	@Override
@@ -307,7 +315,7 @@ public class GameFrame extends JFrame implements Observer {
 				chipsWidth += HUD_LAP_CHIP_GAP;
 			}
 		}
-		int rightEdge = getWidth() - getInsets().right - HUD_SIDE_PADDING;
+		int rightEdge = getWidth() - HUD_SIDE_PADDING;
 		int chipX = Math.max(trackOriginX() + metrics.stringWidth(timerText) + HUD_LAP_CHIP_GAP, rightEdge - chipsWidth);
 		for (int index = 0; index < cars.length; index++) {
 			graphics2D.setColor(CAR_MODEL_HUD_COLORS[
