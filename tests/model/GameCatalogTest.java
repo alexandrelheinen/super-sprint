@@ -31,6 +31,28 @@ public class GameCatalogTest {
 	}
 
 	@Test
+	public void loadsDistinctCarStatsFromProperties() {
+		assertEquals(16.5, Car.getModelStat(0, Car.STAT_ACCELERATION_INDEX));
+		assertEquals(30.0, Car.getModelStat(0, Car.STAT_MAX_SPEED_INDEX));
+		assertEquals(44.0, Car.getModelStat(0, Car.STAT_HANDLING_INDEX));
+		assertEquals(19.5, Car.getModelStat(4, Car.STAT_ACCELERATION_INDEX));
+		assertEquals(38.0, Car.getModelStat(4, Car.STAT_MAX_SPEED_INDEX));
+		assertEquals(10.0, Car.getModelStat(5, Car.STAT_ACCELERATION_INDEX));
+		assertEquals(56.0, Car.getModelStat(6, Car.STAT_HANDLING_INDEX));
+		for (int index = 0; index < Car.CAR_MODEL_COUNT; index++) {
+			assertEquals(
+					ConfigLoader.getDouble("car." + index + ".acceleration", -1),
+					Car.getModelStat(index, Car.STAT_ACCELERATION_INDEX));
+			assertEquals(
+					ConfigLoader.getDouble("car." + index + ".maxSpeed", -1),
+					Car.getModelStat(index, Car.STAT_MAX_SPEED_INDEX));
+			assertEquals(
+					ConfigLoader.getDouble("car." + index + ".handling", -1),
+					Car.getModelStat(index, Car.STAT_HANDLING_INDEX));
+		}
+	}
+
+	@Test
 	public void rejectsOutOfRangeIndices() {
 		assertThrows(IllegalArgumentException.class, () -> GameCatalog.carModelName(-1));
 		assertThrows(IllegalArgumentException.class, () -> GameCatalog.carModelName(Car.CAR_MODEL_COUNT));

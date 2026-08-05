@@ -5,7 +5,7 @@ without changing Java source code.
 
 | File | Purpose |
 |------|---------|
-| `cars.properties` | Per-car index, racing number, name, mean sprite color, and sprite size (generated from `cars.png`) |
+| `cars.properties` | Per-car index, racing number, name, mean color, sprite size, and stats (generated from `cars.png`) |
 | `catalog.properties` | Track names, per-track terrains (`grass`/`sand`), lap options, Hall of Fame seed names |
 | `game.properties` | Window title and race rules (max cars, human players) |
 | `theme.properties` | UI colors (RGB), glass surfaces, HUD strip, and font family/sizes |
