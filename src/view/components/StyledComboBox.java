@@ -12,17 +12,25 @@ import view.theme.GameTheme;
 public final class StyledComboBox {
 
 	private static final int COMBO_HEIGHT = 36;
-	private static final String PROTOTYPE_VALUE = "Track 00 — Championship Circuit";
+	/** Fallback width hint when callers do not supply a prototype. */
+	private static final String DEFAULT_PROTOTYPE = "A-Type";
 
 	private StyledComboBox() {
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public static void apply(javax.swing.JComboBox comboBox, Component context) {
+		apply(comboBox, context, DEFAULT_PROTOTYPE);
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	public static void apply(javax.swing.JComboBox comboBox, Component context, String prototypeValue) {
 		comboBox.setFont(GameTheme.scaled(GameTheme.FONT_BODY, context));
 		comboBox.setBackground(GameTheme.PANEL_SURFACE);
 		comboBox.setForeground(GameTheme.TEXT_PRIMARY);
-		comboBox.setPrototypeDisplayValue(PROTOTYPE_VALUE);
+		if (prototypeValue != null && !prototypeValue.isEmpty()) {
+			comboBox.setPrototypeDisplayValue(prototypeValue);
+		}
 		comboBox.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(GameTheme.ACCENT_BLUE, 1),
 				new EmptyBorder(6, 10, 6, 10)));
