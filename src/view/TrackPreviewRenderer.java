@@ -49,6 +49,7 @@ public final class TrackPreviewRenderer {
 		double alignX = paddingX + (drawableWidth - spanX * scale) / 2.0;
 		double alignY = paddingY + (drawableHeight - spanY * scale) / 2.0;
 
+		java.awt.geom.AffineTransform baseTransform = graphics.getTransform();
 		graphics.translate(alignX - bounds.getX() * scale, alignY - bounds.getY() * scale);
 		graphics.scale(scale, scale);
 
@@ -56,6 +57,7 @@ public final class TrackPreviewRenderer {
 		graphics.setColor(GameTheme.ACCENT_BLUE_BRIGHT);
 		graphics.draw(trackPath);
 
+		graphics.setTransform(baseTransform);
 		graphics.setColor(GameTheme.ACCENT_YELLOW);
 		graphics.setStroke(new BasicStroke(2f));
 		graphics.drawRoundRect(1, 1, width - 2, height - 2, 14, 14);
