@@ -17,6 +17,20 @@ public class GameCatalogTest {
 	}
 
 	@Test
+	public void exposesNineCarsWithNumbersAndColors() {
+		assertEquals(9, Car.CAR_MODEL_COUNT);
+		assertEquals(12, GameCatalog.carModelNumber(0));
+		assertEquals("Vintage Yellow Hot Rod", GameCatalog.carModelName(0));
+		assertEquals(6, GameCatalog.carModelNumber(8));
+		assertEquals("Teal Vintage Sports", GameCatalog.carModelName(8));
+		for (int index = 0; index < Car.CAR_MODEL_COUNT; index++) {
+			assertEquals(index, Integer.parseInt(ConfigLoader.getString("car." + index + ".index", "-1")));
+			assertEquals(GameCatalog.carModelNumber(index), GameCatalog.CAR_MODEL_NUMBERS[index]);
+			assertEquals(GameCatalog.carModelColor(index), GameCatalog.CAR_MODEL_COLORS[index]);
+		}
+	}
+
+	@Test
 	public void rejectsOutOfRangeIndices() {
 		assertThrows(IllegalArgumentException.class, () -> GameCatalog.carModelName(-1));
 		assertThrows(IllegalArgumentException.class, () -> GameCatalog.carModelName(Car.CAR_MODEL_COUNT));

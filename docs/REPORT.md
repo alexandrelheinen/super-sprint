@@ -61,7 +61,7 @@ Steering input only affects heading when the car is moving. Releasing accelerate
 
 ### 2.3 Car models
 
-Four models differ by three statistics (stored in `Car.CAR_MODEL_STATS`):
+Nine liveries differ by three statistics (stored in `Car.CAR_MODEL_STATS`):
 
 | Model | Acceleration | Top speed | Handling |
 |-------|-------------|-----------|----------|
@@ -173,7 +173,7 @@ All user-visible strings were translated to English during the 2026 refactor; th
 
 Graphics are static PNG files under `src/sprites/`:
 
-- Car sprites: `car_00.png` … `car_03.png` (zero-based, two-digit snake_case)
+- Car sprites: `cars.png` (3×3 sheet) sliced at build into `car_00.png` … `car_08.png`
 - Track tiles: `track_00.png` … `track_06.png` (same naming; wide Super Sprint lane geometry; Kenney-inspired asphalt from `scripts/generate-track-tiles.py`)
 - Terrain scenery: Kenney Top-down Tanks Redux grass/sand tiles + green/brown trees (CC0; zip vendored under `third_party/`, extracted to `build/sprites/kenney/` at build)
 - UI: `icon.png`, splash, generated `track_preview_XX.png`

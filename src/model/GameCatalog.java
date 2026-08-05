@@ -1,11 +1,15 @@
 package model;
 
+import java.awt.Color;
+
 public final class GameCatalog {
 
 	private static final String LAP_LABEL_SINGULAR = " lap";
 	private static final String LAP_LABEL_PLURAL = " laps";
 
 	public static final String[] CAR_MODEL_NAMES = GameConfig.CAR_MODEL_NAMES;
+	public static final int[] CAR_MODEL_NUMBERS = GameConfig.CAR_MODEL_NUMBERS;
+	public static final Color[] CAR_MODEL_COLORS = GameConfig.CAR_MODEL_COLORS;
 	public static final String[] TRACK_NAMES = GameConfig.TRACK_NAMES;
 	public static final Terrain[] TRACK_TERRAINS = GameConfig.TRACK_TERRAINS;
 	public static final int[] LAP_COUNT_OPTIONS = GameConfig.LAP_COUNT_OPTIONS;
@@ -18,6 +22,18 @@ public final class GameCatalog {
 	public static String carModelName(int modelIndex) {
 		validateIndex(modelIndex, Car.CAR_MODEL_COUNT, "car model");
 		return CAR_MODEL_NAMES[modelIndex];
+	}
+
+	/** Racing number painted on the car livery. */
+	public static int carModelNumber(int modelIndex) {
+		validateIndex(modelIndex, Car.CAR_MODEL_COUNT, "car model");
+		return CAR_MODEL_NUMBERS[modelIndex];
+	}
+
+	/** Mean sprite color used for HUD / UI accents. */
+	public static Color carModelColor(int modelIndex) {
+		validateIndex(modelIndex, Car.CAR_MODEL_COUNT, "car model");
+		return CAR_MODEL_COLORS[modelIndex];
 	}
 
 	/** Zero-based track index. */

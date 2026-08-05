@@ -6,7 +6,7 @@ This project is a plain Java application (no Maven/Gradle). All build and run co
 
 - **JDK 17+** with `javac` and `java` on your `PATH`
 - **GNU Make**
-- **curl** and **ffmpeg** (download and prepare car sprites at build time; bundled sprites are used if preparation fails)
+- **Python 3** with **Pillow** (`python3-pil` or `pip install Pillow`) to slice `src/sprites/cars.png` at build time
 - **Xvfb** (optional, only for headless smoke testing on Linux CI or servers)
 
 Check your setup:
@@ -35,7 +35,7 @@ make compile
 
 Sources live under `src/` in packages `controller`, `model`, and `view`. Class files are written to `build/` mirroring the package structure.
 
-During compilation, `scripts/prepare-car-sprites.sh` downloads GTA 2 car artwork (A-Type, B-Type, Z-Type, T-Rex) from the GTA Wiki, horizontally flips each image so it faces right in-game, and writes PNGs to `build/sprites/car_XX.png` (zero-based, two-digit). If a download or conversion fails, a warning is printed and the bundled `src/sprites/car_XX.png` fallback is copied instead.
+During compilation, `scripts/prepare-car-sprites.sh` slices the 3×3 sheet `src/sprites/cars.png` into nine sprites (`car_00.png` … `car_08.png`), replaces the cyan background with transparency, trims empty margins, rotates each car to face right, scales to race size, and writes mean-color metadata to `cars.properties`. The source sheet is kept; derived sprites are written to `build/sprites/` and mirrored under `src/sprites/` as bundled fallbacks.
 
 Equivalent manual command:
 
@@ -91,7 +91,7 @@ Subsequent runs read and write leaderboard data from that user file only.
 |---------|--------------|-----|
 | `Could not find or load main class controller.Main` | Not compiled or wrong directory | Run `make compile` from repo root |
 | Missing sprites / file not found | Wrong working directory | Always run from repository root |
-| Car sprite download failed | Network blocked or missing ffmpeg | Warnings appear during `make compile`; bundled `src/sprites/car_XX.png` are copied to `build/sprites/` |
+| Car sprite preparation failed | Missing Pillow or `cars.png` | Install Pillow (`pip install Pillow` / `python3-pil`) and ensure `src/sprites/cars.png` exists |
 | HeadlessException on CI | No display | Use `make smoke-test` (includes Xvfb) |
 | Deprecation warnings for Observer | Legacy observer pattern | Warnings are expected; see CONTRIBUTING.md |
 

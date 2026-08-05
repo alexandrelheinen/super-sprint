@@ -10,7 +10,7 @@ The chosen theme is a simplified clone of the arcade game [Super Sprint](http://
 
 ## Features
 
-- Top-down arcade racing with four car models and four track layouts
+- Top-down arcade racing with nine car liveries and four track layouts
 - One- or two-player local multiplayer (remaining slots filled by AI opponents)
 - Configurable lap counts with race timer
 - Hall of Fame leaderboard stored in the Linux user data directory
@@ -20,7 +20,7 @@ The chosen theme is a simplified clone of the arcade game [Super Sprint](http://
 
 - JDK 17 or newer
 - GNU Make
-- curl and ffmpeg (car sprite preparation at build time)
+- Python 3 with Pillow (slices `src/sprites/cars.png` at build time)
 - A graphical environment to play (X11 on Linux, native display on macOS/Windows)
 
 ## Quick start

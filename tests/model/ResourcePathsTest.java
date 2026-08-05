@@ -14,7 +14,7 @@ class ResourcePathsTest {
 	@Test
 	void formatsZeroBasedSnakeCaseSpriteNames() {
 		assertEquals("car_00.png", ResourcePaths.carSpriteFileName(0));
-		assertEquals("car_03.png", ResourcePaths.carSpriteFileName(3));
+		assertEquals("car_08.png", ResourcePaths.carSpriteFileName(8));
 		assertEquals("track_00.png", ResourcePaths.trackTileFileName(0));
 		assertEquals("track_06.png", ResourcePaths.trackTileFileName(6));
 		assertEquals("track_preview_00.png", ResourcePaths.trackPreviewFileName(0));
