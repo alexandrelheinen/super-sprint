@@ -20,6 +20,9 @@ public class GameTickTask extends TimerTask {
 
 	@Override
 	public void run() {
+		if (!game.isRunning()) {
+			return;
+		}
 		circuit.tick();
 		game.checkRaceFinished();
 		for (int index = 0; index < controllers.length; index++) {

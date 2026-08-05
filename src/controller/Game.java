@@ -2,17 +2,19 @@ package controller;
 
 import java.util.Timer;
 
-import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import model.Circuit;
 import model.HallOfFame;
 import view.GameFrame;
+import view.MenuFrame;
 
 public class Game {
 
 	public static final int TICK_INTERVAL_MS = 10;
 
 	private final HallOfFame hallOfFame;
+	private final MenuFrame menuFrame;
 	private final GameFrame gameFrame;
 	private final Controller[] controllers;
 	private final Timer gameTimer;
@@ -30,12 +32,19 @@ public class Game {
 			{{4, 3, 4, 3}, {1, 5, 6, 1}, {5, 2, 2, 6}}
 	};
 
-	public Game(int[] carModels, int trackNumber, int humanPlayers, int laps, HallOfFame hallOfFame) {
+	public Game(
+			int[] carModels,
+			int trackNumber,
+			int humanPlayers,
+			int laps,
+			HallOfFame hallOfFame,
+			MenuFrame menuFrame) {
 		Controller.resetPlayerCount();
 		this.trackIndex = trackNumber;
 		trackMap = Game.TRACK_MAPS[trackNumber - 1];
 		this.lapCount = laps;
 		this.hallOfFame = hallOfFame;
+		this.menuFrame = menuFrame;
 		this.humanPlayerCount = humanPlayers;
 
 		gameFrame = new GameFrame("Super Sprint Supelec", carModels, trackMap, trackNumber);
@@ -52,7 +61,7 @@ public class Game {
 			}
 		}
 
-		gameTimer = new Timer();
+		gameTimer = new Timer(true);
 		gameTimer.scheduleAtFixedRate(
 				new GameTickTask(controllers, circuit, this),
 				(long) 5 * TICK_INTERVAL_MS,
@@ -60,30 +69,52 @@ public class Game {
 		running = true;
 	}
 
+	public boolean isRunning() {
+		return running;
+	}
+
 	public void checkRaceFinished() {
+		if (!running) {
+			return;
+		}
 		for (int index = 0; index < controllers.length; index++) {
 			if (controllers[index].getCar().getLapCount() <= lapCount) {
 				continue;
 			}
-			if (running) {
-				finishGame(index);
-			}
+			finishGame(index);
 			return;
 		}
 	}
 
 	private void finishGame(int winnerIndex) {
+		if (!running) {
+			return;
+		}
 		running = false;
 		gameTimer.cancel();
 		gameTimer.purge();
+
 		double raceTimeMs = circuit.getRaceTimeMs();
-		if (winnerIndex < humanPlayerCount) {
-			hallOfFame.tryAddResult(raceTimeMs, trackIndex - 1);
-		} else {
-			hallOfFame.tryAddResult(raceTimeMs * 1000.0, trackIndex - 1);
-			JOptionPane.showMessageDialog(null, "The computer won.");
+		int track = trackIndex - 1;
+		boolean humanWon = winnerIndex < humanPlayerCount;
+
+		SwingUtilities.invokeLater(() -> {
+			detachRenderObservers();
+			gameFrame.shutdown();
+			if (humanWon) {
+				hallOfFame.tryAddResult(raceTimeMs, track);
+			} else {
+				hallOfFame.tryAddResult(raceTimeMs * 1000.0, track);
+				javax.swing.JOptionPane.showMessageDialog(menuFrame, "The computer won.");
+			}
+			menuFrame.showMenu();
+		});
+	}
+
+	private void detachRenderObservers() {
+		circuit.deleteObservers();
+		for (Controller controller : controllers) {
+			controller.getCar().deleteObservers();
 		}
-		gameFrame.setVisible(false);
-		gameFrame.dispose();
 	}
 }
