@@ -9,15 +9,24 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
+import javax.imageio.ImageIO;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -133,6 +142,8 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	};
 	private static final String[] STAT_VALUE_SUFFIXES = {" m/s²", " m/s", ""};
 	private static final String SPRITE_ICON = "icon.png";
+	/** Window / taskbar icon sizes derived from the bundled 512×512 PNG. */
+	private static final int[] WINDOW_ICON_SIZES = {16, 32, 48, 64, 128, 256, 512};
 
 	private final CardLayout cards = new CardLayout();
 	private final JPanel cardRoot = new JPanel(cards);
@@ -263,7 +274,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		cardRoot.add(helpPanel, CARD_HELP);
 
 		setContentPane(cardRoot);
-		setIconImage(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
+		setIconImages(loadWindowIcons());
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setResizable(false);
 		setVisible(true);
@@ -280,6 +291,37 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 			maxColumns = Math.max(maxColumns, map[0].length);
 		}
 		return GameFrame.contentSizeFor(maxRows, maxColumns);
+	}
+
+	/**
+	 * Loads the bundled Flaticon race PNG and builds crisp multi-resolution
+	 * window icons (taskbar / title bar pick the nearest size).
+	 */
+	private static List<Image> loadWindowIcons() {
+		List<Image> icons = new ArrayList<>();
+		try {
+			BufferedImage master = ImageIO.read(new File(ResourcePaths.bundledSprite(SPRITE_ICON)));
+			if (master == null) {
+				icons.add(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
+				return icons;
+			}
+			for (int size : WINDOW_ICON_SIZES) {
+				BufferedImage scaled = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+				Graphics2D graphics = scaled.createGraphics();
+				graphics.setRenderingHint(
+						RenderingHints.KEY_INTERPOLATION,
+						RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+				graphics.setRenderingHint(
+						RenderingHints.KEY_RENDERING,
+						RenderingHints.VALUE_RENDER_QUALITY);
+				graphics.drawImage(master, 0, 0, size, size, null);
+				graphics.dispose();
+				icons.add(scaled);
+			}
+		} catch (IOException exception) {
+			icons.add(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
+		}
+		return icons;
 	}
 
 	private void initializeRaceSetupDefaults() {
