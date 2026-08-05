@@ -23,11 +23,19 @@ public class KeyboardPanel extends JPanel {
 		WASD
 	}
 
-	public KeyboardPanel(Component context, Layout layout) {
-		setOpaque(false);
-		setLayout(new GridLayout(2, 3, KEY_GAP, KEY_GAP));
+	private final int keySize;
+	private final int keyGap;
 
-		int keySize = UiScale.scale(context, DEFAULT_KEY_SIZE);
+	public KeyboardPanel(Component context, Layout layout) {
+		this(context, layout, DEFAULT_KEY_SIZE);
+	}
+
+	public KeyboardPanel(Component context, Layout layout, int unscaledKeySize) {
+		setOpaque(false);
+		keySize = UiScale.scale(context, unscaledKeySize);
+		keyGap = UiScale.scale(context, KEY_GAP);
+		setLayout(new GridLayout(2, 3, keyGap, keyGap));
+
 		if (layout == Layout.ARROWS) {
 			add(spacer(keySize));
 			add(sized(KeyCap.arrowUp(context), keySize));
@@ -43,6 +51,16 @@ public class KeyboardPanel extends JPanel {
 			add(sized(new KeyCap(context, "S"), keySize));
 			add(sized(new KeyCap(context, "D"), keySize));
 		}
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		return new Dimension(3 * keySize + 2 * keyGap, 2 * keySize + keyGap);
+	}
+
+	@Override
+	public Dimension getMinimumSize() {
+		return getPreferredSize();
 	}
 
 	private static JPanel spacer(int size) {
