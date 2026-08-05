@@ -65,7 +65,14 @@ public final class UiPainter {
 		graphics.fillRoundRect(x + 12, y, width - 24, 3, 2, 2);
 	}
 
-	public static void paintTitleGlow(Graphics2D graphics, String title, int centerX, int baselineY, int fontSize) {
+	private static final int TITLE_UNDERLINE_GAP = 8;
+	private static final int TITLE_UNDERLINE_HEIGHT = 3;
+
+	/**
+	 * Paints the glowing title and its yellow underline. Returns the Y coordinate
+	 * just below the underline so callers can place secondary text underneath.
+	 */
+	public static int paintTitleGlow(Graphics2D graphics, String title, int centerX, int baselineY, int fontSize) {
 		enableQuality(graphics);
 		graphics.setFont(graphics.getFont().deriveFont(java.awt.Font.BOLD, fontSize));
 		int textWidth = graphics.getFontMetrics().stringWidth(title);
@@ -74,8 +81,10 @@ public final class UiPainter {
 		graphics.drawString(title, textX + 2, baselineY + 2);
 		graphics.setColor(GameTheme.TEXT_PRIMARY);
 		graphics.drawString(title, textX, baselineY);
+		int underlineTop = baselineY + TITLE_UNDERLINE_GAP;
 		graphics.setColor(GameTheme.ACCENT_YELLOW);
-		graphics.fillRect(centerX - textWidth / 2, baselineY + 8, textWidth, 3);
+		graphics.fillRect(centerX - textWidth / 2, underlineTop, textWidth, TITLE_UNDERLINE_HEIGHT);
+		return underlineTop + TITLE_UNDERLINE_HEIGHT;
 	}
 
 	public static void paintHudStrip(Graphics2D graphics, int x, int y, int width, int height) {
