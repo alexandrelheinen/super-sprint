@@ -34,11 +34,15 @@ public class GameFrame extends JFrame implements Observer {
 	private static final int FRAME_TITLE_BAR_HEIGHT = 50;
 	private static final int FRAME_BOTTOM_MARGIN = 20;
 	private static final int BUFFER_STRATEGY_BUFFERS = 2;
-	private static final int TRACK_TOP_OFFSET = 10;
+	private static final int TRACK_ORIGIN_X = 0;
+	private static final int TRACK_ORIGIN_Y = 10;
 	private static final int HUD_BAR_HEIGHT = 64;
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
-	private static final int START_MARKER_LEFT_OFFSET = 20;
-	private static final int START_MARKER_RIGHT_OFFSET = 17;
+	// Cars face up on the grid, so their on-screen width is the sprite height
+	// and their nose sits half a sprite width above the slot center.
+	private static final int START_MARKER_HALF_WIDTH = Circuit.CAR_ANCHOR_HALF_HEIGHT_PX + 6;
+	private static final int START_MARKER_NOSE_OFFSET = Circuit.CAR_ANCHOR_HALF_WIDTH_PX + 6;
+	private static final int START_MARKER_TICK_LENGTH = 8;
 	private static final int HUD_LEFT_OFFSET = 20;
 	private static final int HUD_TEXT_TOP_PADDING = 18;
 	private static final int SPRITE_CENTER_DIVISOR = 2;
@@ -99,7 +103,7 @@ public class GameFrame extends JFrame implements Observer {
 				FRAME_HORIZONTAL_MARGIN + mapDimensions[1] * TILE_SIZE,
 				FRAME_TITLE_BAR_HEIGHT
 						+ FRAME_BOTTOM_MARGIN
-						+ TRACK_TOP_OFFSET
+						+ TRACK_ORIGIN_Y
 						+ mapDimensions[0] * TILE_SIZE
 						+ HUD_BAR_HEIGHT);
 		setVisible(true);
@@ -147,8 +151,8 @@ public class GameFrame extends JFrame implements Observer {
 				graphics2D.drawImage(
 						sprite,
 						rotation,
-						car.getX() - CAR_RENDER_OFFSET[0] / SPRITE_CENTER_DIVISOR,
-						car.getY() - CAR_RENDER_OFFSET[1] / SPRITE_CENTER_DIVISOR);
+						TRACK_ORIGIN_X + car.getX() - CAR_RENDER_OFFSET[0] / SPRITE_CENTER_DIVISOR,
+						TRACK_ORIGIN_Y + car.getY() - CAR_RENDER_OFFSET[1] / SPRITE_CENTER_DIVISOR);
 				renderFlags[car.getSpriteIndex()] = true;
 			} finally {
 				if (graphics != null) {
@@ -161,16 +165,16 @@ public class GameFrame extends JFrame implements Observer {
 				graphics = bufferStrategy.getDrawGraphics();
 				Graphics2D graphics2D = (Graphics2D) graphics;
 				int trackPixelHeight = mapDimensions[0] * TILE_SIZE;
-				int hudBarTop = TRACK_TOP_OFFSET + trackPixelHeight;
+				int hudBarTop = TRACK_ORIGIN_Y + trackPixelHeight;
 
 				graphics2D.drawImage(staticScene(), 0, 0, null);
 
 				graphics2D.setColor(java.awt.Color.YELLOW);
 				graphics2D.drawLine(
-						(int) circuit.getFinishLine().getX1(),
-						(int) circuit.getFinishLine().getY1(),
-						(int) circuit.getFinishLine().getX2(),
-						(int) circuit.getFinishLine().getY2());
+						TRACK_ORIGIN_X + (int) circuit.getFinishLine().getX1(),
+						TRACK_ORIGIN_Y + (int) circuit.getFinishLine().getY1(),
+						TRACK_ORIGIN_X + (int) circuit.getFinishLine().getX2(),
+						TRACK_ORIGIN_Y + (int) circuit.getFinishLine().getY2());
 
 				graphics2D.setFont(hudFont);
 				graphics2D.setColor(GameTheme.TEXT_PRIMARY);
@@ -212,36 +216,45 @@ public class GameFrame extends JFrame implements Observer {
 		Graphics2D graphics2D = scene.createGraphics();
 		int trackPixelWidth = mapDimensions[1] * TILE_SIZE;
 		int trackPixelHeight = mapDimensions[0] * TILE_SIZE;
-		int hudBarTop = TRACK_TOP_OFFSET + trackPixelHeight;
+		int hudBarTop = TRACK_ORIGIN_Y + trackPixelHeight;
 
 		UiPainter.paintScreenBackdrop(graphics2D, getWidth(), getHeight());
-		UiPainter.paintRaceViewportFrame(graphics2D, 0, TRACK_TOP_OFFSET, trackPixelWidth, trackPixelHeight);
+		UiPainter.paintRaceViewportFrame(graphics2D, TRACK_ORIGIN_X, TRACK_ORIGIN_Y, trackPixelWidth, trackPixelHeight);
 
 		for (int column = 0; column < mapDimensions[1]; column++) {
 			for (int row = 0; row < mapDimensions[0]; row++) {
 				graphics2D.drawImage(
 						trackTiles[row][column],
-						column * TILE_SIZE,
-						TRACK_TOP_OFFSET + row * TILE_SIZE,
+						TRACK_ORIGIN_X + column * TILE_SIZE,
+						TRACK_ORIGIN_Y + row * TILE_SIZE,
 						null);
 			}
 		}
 
-		graphics2D.setColor(java.awt.Color.WHITE);
-		for (int slotIndex = 0; slotIndex < START_SLOT_COUNT; slotIndex++) {
-			float startX = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][slotIndex][0];
-			float startY = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][slotIndex][1];
-			graphics2D.drawLine(
-					(int) startX - START_MARKER_LEFT_OFFSET,
-					(int) startY - START_MARKER_LEFT_OFFSET,
-					(int) startX + START_MARKER_RIGHT_OFFSET,
-					(int) startY - START_MARKER_LEFT_OFFSET);
-		}
+		paintStartGrid(graphics2D);
 
 		UiPainter.paintHudStrip(graphics2D, 0, hudBarTop, getWidth(), HUD_BAR_HEIGHT);
 		graphics2D.dispose();
 		staticScene = scene;
 		return staticScene;
+	}
+
+	/**
+	 * Draws one grid marker per start slot: a line just ahead of the car's
+	 * nose (cars face up) with a short tick trailing down each side.
+	 */
+	private void paintStartGrid(Graphics2D graphics2D) {
+		graphics2D.setColor(java.awt.Color.WHITE);
+		for (int slotIndex = 0; slotIndex < START_SLOT_COUNT; slotIndex++) {
+			int centerX = TRACK_ORIGIN_X + Math.round(Circuit.startSlotCenterX(slotIndex));
+			int noseY = TRACK_ORIGIN_Y + Math.round(Circuit.startSlotCenterY(slotIndex))
+					- START_MARKER_NOSE_OFFSET;
+			int leftX = centerX - START_MARKER_HALF_WIDTH;
+			int rightX = centerX + START_MARKER_HALF_WIDTH;
+			graphics2D.fillRect(leftX, noseY, rightX - leftX, 2);
+			graphics2D.fillRect(leftX, noseY, 2, START_MARKER_TICK_LENGTH);
+			graphics2D.fillRect(rightX - 2, noseY, 2, START_MARKER_TICK_LENGTH);
+		}
 	}
 
 	private static boolean allFlagsSet(boolean[] flags) {

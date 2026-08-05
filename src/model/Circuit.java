@@ -21,9 +21,6 @@ public class Circuit extends Observable {
 
 	public static final int INNER_RADIUS = 26;
 	public static final int OUTER_RADIUS = 191;
-	private static final double FINISH_LINE_LEFT_OFFSET = -122;
-	private static final double FINISH_LINE_RIGHT_OFFSET = 43;
-	private static final double FINISH_LINE_Y_OFFSET = -50;
 	private static final double FINISH_LINE_RESET_DISTANCE = 3;
 	private static final double FINISH_LINE_CROSSING_DISTANCE = 3;
 	private static final double OFF_TRACK_SPEED_FACTOR = -0.2;
@@ -35,12 +32,46 @@ public class Circuit extends Observable {
 	private static final String LOG_FRAME_HEIGHT = ", height: ";
 	private static final String ERROR_LEFT_TRACK = "Car left the playable area.";
 
-	public static final float[][][] START_POSITIONS = {
-			{{127, 275}, {55, 325}, {127, 375}, {55, 425}},
-			{{127, 275}, {55, 325}, {127, 375}, {55, 425}},
-			{{127, 275}, {55, 325}, {127, 375}, {55, 425}},
-			{{127, 275}, {55, 325}, {127, 375}, {55, 425}}
-	};
+	/**
+	 * Start grid geometry, derived from the track layout instead of magic
+	 * offsets: every track starts on the vertical lane of the left column
+	 * (row 1), cars face up, and the finish line sits on the tile boundary
+	 * just above the grid.
+	 */
+	private static final double LANE_CENTER_PX = (INNER_RADIUS + OUTER_RADIUS) / 2.0;
+	private static final float START_SLOT_STAGGER_PX = 34f;
+	private static final float START_GRID_TOP_GAP_PX = 56f;
+	private static final float START_SLOT_SPACING_PX = 50f;
+	public static final int CAR_ANCHOR_HALF_WIDTH_PX = 19;
+	public static final int CAR_ANCHOR_HALF_HEIGHT_PX = 10;
+
+	/**
+	 * Sprite anchor (top-left) start position per track and slot, in pixels.
+	 */
+	public static final float[][][] START_POSITIONS = buildStartPositions();
+
+	private static float[][][] buildStartPositions() {
+		float[][][] positions = new float[TRACK_COUNT][START_SLOT_COUNT][2];
+		for (int trackIndex = 0; trackIndex < TRACK_COUNT; trackIndex++) {
+			for (int slotIndex = 0; slotIndex < START_SLOT_COUNT; slotIndex++) {
+				positions[trackIndex][slotIndex][0] =
+						startSlotCenterX(slotIndex) - CAR_ANCHOR_HALF_WIDTH_PX;
+				positions[trackIndex][slotIndex][1] =
+						startSlotCenterY(slotIndex) - CAR_ANCHOR_HALF_HEIGHT_PX;
+			}
+		}
+		return positions;
+	}
+
+	/** Pole position sits on the inside of the first corner (right of the lane center). */
+	public static float startSlotCenterX(int slotIndex) {
+		float stagger = slotIndex % 2 == 0 ? START_SLOT_STAGGER_PX : -START_SLOT_STAGGER_PX;
+		return (float) (LANE_CENTER_PX + stagger);
+	}
+
+	public static float startSlotCenterY(int slotIndex) {
+		return GameFrame.TILE_SIZE + START_GRID_TOP_GAP_PX + slotIndex * START_SLOT_SPACING_PX;
+	}
 
 	/**
 	 * Simulation runs every tick; observers are only notified (and the frame
@@ -70,14 +101,16 @@ public class Circuit extends Observable {
 		System.out.println(LOG_FRAME_WIDTH + frameDimensions[0] + LOG_FRAME_HEIGHT + frameDimensions[1]);
 	}
 
+	/**
+	 * The finish line spans the start lane exactly (inner to outer wall) on
+	 * the tile boundary just above the start grid.
+	 */
 	public void initializeFinishLine(int trackNumber) {
-		float startX = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][0][0];
-		float startY = Circuit.START_POSITIONS[trackNumber - ONE_BASED_INDEX_OFFSET][0][1];
 		finishLine = new Line2D.Float(
-				(float) (startX + FINISH_LINE_LEFT_OFFSET),
-				(float) (startY + FINISH_LINE_Y_OFFSET),
-				(float) (startX + FINISH_LINE_RIGHT_OFFSET),
-				(float) (startY + FINISH_LINE_Y_OFFSET));
+				INNER_RADIUS,
+				GameFrame.TILE_SIZE,
+				OUTER_RADIUS,
+				GameFrame.TILE_SIZE);
 	}
 
 	public int crossFinishLine(Car car) {
