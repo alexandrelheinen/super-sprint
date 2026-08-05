@@ -35,7 +35,7 @@ public final class ResourcePaths {
 	}
 
 	public static String carSpritePath(int modelIndex) {
-		String fileName = "voiture" + modelIndex + ".png";
+		String fileName = "car" + modelIndex + ".png";
 		Path prepared = PREPARED_SPRITE_DIR.resolve(fileName);
 		if (Files.exists(prepared)) {
 			return prepared.toString();

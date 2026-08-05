@@ -176,9 +176,9 @@ All user-visible strings were translated to English during the 2026 refactor; th
 
 Graphics are static PNG files under `src/sprites/`:
 
-- Car sprites: `voiture1.png` … `voiture4.png`
+- Car sprites: `car1.png` … `car4.png`
 - Track tiles: `track1.png` … `track7.png`
-- UI: `menu.png`, `icon.png`, mini-track previews, background texture
+- UI: `menu.png`, `icon.png`, `track_preview1.png` … `track_preview4.png`, background texture
 
 Tile size in pixels is `GameFrame.TILE_SIZE` (219 px).
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Downloads GTA 2 car artwork sprites, flips them horizontally (art faces left;
 # the game expects sprites facing right like the bundled car PNG files),
-# and writes PNGs to $BUILD_DIR/sprites/voitureN.png.
+# and writes PNGs to $BUILD_DIR/sprites/carN.png.
 set -u
 
 BUILD_DIR="${1:-build}"
@@ -33,11 +33,11 @@ prepare_sprite() {
 	local index="$1"
 	local url="$2"
 	local name="$3"
-	local output="${OUT_DIR}/voiture${index}.png"
-	local fallback="${FALLBACK_DIR}/voiture${index}.png"
+	local output="${OUT_DIR}/car${index}.png"
+	local fallback="${FALLBACK_DIR}/car${index}.png"
 	local temp_file
 
-	temp_file="$(mktemp "${TMPDIR:-/tmp}/voiture${index}.XXXXXX")"
+	temp_file="$(mktemp "${TMPDIR:-/tmp}/car${index}.XXXXXX")"
 
 	if [[ ! -f "${fallback}" ]]; then
 		echo "WARNING: Missing fallback sprite ${fallback}; cannot prepare car ${index} (${name})." >&2
@@ -49,7 +49,7 @@ prepare_sprite() {
 		&& command -v ffmpeg >/dev/null 2>&1 \
 		&& curl -fsSL "${url}" -o "${temp_file}" \
 		&& ffmpeg -y -loglevel error -i "${temp_file}" -vf hflip -update 1 -frames:v 1 "${output}"; then
-		echo "Prepared voiture${index}.png from ${name} artwork (horizontally flipped)."
+		echo "Prepared car${index}.png from ${name} artwork (horizontally flipped)."
 		rm -f "${temp_file}"
 		return 0
 	fi
