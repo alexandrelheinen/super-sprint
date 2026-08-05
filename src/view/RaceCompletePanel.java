@@ -2,9 +2,13 @@ package view;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -111,13 +115,16 @@ public class RaceCompletePanel extends BackgroundPanel {
 				placementRank != HallOfFame.NO_PLACEMENT ? GameTheme.ACCENT_YELLOW : GameTheme.TEXT_MUTED);
 		placementLabel.setHorizontalAlignment(JLabel.CENTER);
 		summary.add(placementLabel);
-		summaryCard.add(summary, BorderLayout.CENTER);
-		add(summaryCard, BorderLayout.CENTER);
+		summaryCard.add(summary, BorderLayout.NORTH);
 
-		JPanel south = new JPanel(new BorderLayout(0, SECTION_GAP));
-		south.setOpaque(false);
+		JPanel stack = new JPanel();
+		stack.setLayout(new BoxLayout(stack, BoxLayout.Y_AXIS));
+		stack.setOpaque(false);
+		pinHeightStretchWidth(summaryCard);
+		stack.add(summaryCard);
 
 		if (canSave) {
+			stack.add(Box.createVerticalStrut(SECTION_GAP));
 			GlassCard nameCard = new GlassCard(new BorderLayout(0, ROW_GAP), scaleContext, NAME_PROMPT);
 			nameField = new JTextField(DEFAULT_PLAYER);
 			nameField.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
@@ -125,19 +132,26 @@ public class RaceCompletePanel extends BackgroundPanel {
 			nameField.setBackground(GameTheme.PANEL_SURFACE);
 			nameField.setCaretColor(GameTheme.TEXT_PRIMARY);
 			nameField.setBorder(new EmptyBorder(10, 12, 10, 12));
-			nameCard.add(nameField, BorderLayout.CENTER);
-			south.add(nameCard, BorderLayout.CENTER);
+			nameCard.add(nameField, BorderLayout.NORTH);
+			pinHeightStretchWidth(nameCard);
+			stack.add(nameCard);
 		} else {
 			nameField = null;
 		}
+
+		// Keep the result stack under the title instead of stretching it through
+		// the fixed shell's empty vertical space.
+		JPanel body = new JPanel(new BorderLayout());
+		body.setOpaque(false);
+		body.add(stack, BorderLayout.NORTH);
+		add(body, BorderLayout.CENTER);
 
 		continueButton = new ArcadeButton(CONTINUE_LABEL);
 		continueButton.addActionListener(event -> onContinue());
 		JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
 		footer.setOpaque(false);
 		footer.add(continueButton);
-		south.add(footer, BorderLayout.SOUTH);
-		add(south, BorderLayout.SOUTH);
+		add(footer, BorderLayout.SOUTH);
 
 		applyScaledMetrics(scaleContext);
 	}
@@ -161,6 +175,13 @@ public class RaceCompletePanel extends BackgroundPanel {
 			return String.format(NEW_RECORD_FORMAT, displayRank, meanText);
 		}
 		return String.format(PLACEMENT_FORMAT, displayRank, meanText);
+	}
+
+	/** BoxLayout grows children up to their max size; lock height, free width. */
+	private static void pinHeightStretchWidth(JComponent component) {
+		component.setAlignmentX(Component.LEFT_ALIGNMENT);
+		Dimension preferred = component.getPreferredSize();
+		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, preferred.height));
 	}
 
 	private static JPanel buildInfoRow(Component owner, String label, String value) {
