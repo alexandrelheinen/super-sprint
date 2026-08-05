@@ -21,7 +21,6 @@ import model.Car;
 import model.Circuit;
 import model.GameCatalog;
 import model.ResourcePaths;
-import model.WorldUnits;
 import view.theme.GameTheme;
 import view.ui.UiPainter;
 
@@ -37,9 +36,6 @@ public class GameFrame extends JFrame implements Observer {
 	private static final int BUFFER_STRATEGY_BUFFERS = 2;
 	private static final int TRACK_TOP_OFFSET = 10;
 	private static final int HUD_BAR_HEIGHT = 64;
-	private static final int HUD_BADGE_WIDTH = 220;
-	private static final int HUD_BADGE_HEIGHT = 30;
-	private static final int HUD_BADGE_GAP = 10;
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
 	private static final int START_MARKER_LEFT_OFFSET = 20;
 	private static final int START_MARKER_RIGHT_OFFSET = 17;
@@ -152,26 +148,6 @@ public class GameFrame extends JFrame implements Observer {
 						rotation,
 						car.getX() - CAR_RENDER_OFFSET[0] / SPRITE_CENTER_DIVISOR,
 						car.getY() - CAR_RENDER_OFFSET[1] / SPRITE_CENTER_DIVISOR);
-				graphics2D.drawString(
-						car.getName(),
-						car.getX() - CAR_RENDER_OFFSET[0] / SPRITE_CENTER_DIVISOR,
-						car.getY() - CAR_RENDER_OFFSET[1] / SPRITE_CENTER_DIVISOR);
-				int hudBarTop = TRACK_TOP_OFFSET + mapDimensions[0] * TILE_SIZE;
-				String badgeText = GameCatalog.carModelName(carModels[car.getSpriteIndex()])
-						+ "  P"
-						+ car.getName()
-						+ "  L"
-						+ car.getLapCount()
-						+ "  "
-						+ WorldUnits.formatMetersPerSecond(Math.abs(car.getSpeed()));
-				UiPainter.paintHudBadge(
-						graphics2D,
-						HUD_LEFT_OFFSET + car.getSpriteIndex() * (HUD_BADGE_WIDTH + HUD_BADGE_GAP),
-						hudBarTop + 26,
-						HUD_BADGE_WIDTH,
-						HUD_BADGE_HEIGHT,
-						badgeText,
-						hudFont);
 				renderFlags[car.getSpriteIndex()] = true;
 			} finally {
 				if (graphics != null) {
