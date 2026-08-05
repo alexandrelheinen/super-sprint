@@ -5,7 +5,7 @@ This repository is a Java Swing game (**Super Sprint Supélec**). Before making 
 ## Required reading order
 
 1. **[CONTRIBUTING.md](CONTRIBUTING.md)** — code standards, MVC structure, Java conventions, git workflow.
-2. **[README.md](README.md)** — how to build and run the application.
+2. **[README.md](../README.md)** — how to build and run the application.
 3. **[REPORT.md](REPORT.md)** — architecture and design context (when present).
 
 ## Quick checklist for agents

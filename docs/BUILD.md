@@ -99,4 +99,4 @@ Older revisions used a hand-maintained `java-files.txt` source list and stored a
 | HeadlessException on CI | No display | Use `make smoke-test` (includes Xvfb) |
 | Deprecation warnings for Observer | Legacy observer pattern | Warnings are expected; see CONTRIBUTING.md |
 
-See also [README.md](README.md) for gameplay controls and [CONTRIBUTING.md](CONTRIBUTING.md) for coding standards.
+See also [README.md](../README.md) for gameplay controls and [CONTRIBUTING.md](CONTRIBUTING.md) for coding standards.
