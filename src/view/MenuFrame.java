@@ -1,6 +1,7 @@
 package view;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -21,6 +22,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SpringLayout;
+import javax.swing.WindowConstants;
 
 import controller.Game;
 import model.Car;
@@ -37,6 +39,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private final HallOfFame hallOfFame;
 
 	private final JPanel mainPanel;
+	private final JLabel menuImageLabel;
+	private final JPanel buttonPanel;
 	private final JButton[] mainButtons;
 
 	private final JPanel racePanel;
@@ -53,6 +57,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 	private final JButton startButton;
 	private final JButton backToMenuButton;
+	private final SpringLayout raceLayout;
 
 	private int selectedTrack = 1;
 	private final int[] selectedCarModels = new int[2];
@@ -66,10 +71,11 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		hallOfFame = new HallOfFame(hallFrame);
 
 		mainPanel = new JPanel();
+		menuImageLabel = new JLabel();
 		JPanel imagePanel = new JPanel();
-		imagePanel.add(new JLabel(new ImageIcon(ResourcePaths.bundledSprite("menu.png"))));
+		imagePanel.add(menuImageLabel);
 
-		JPanel buttonPanel = new JPanel(new GridLayout(2, 2));
+		buttonPanel = new JPanel(new GridLayout(2, 2, 12, 12));
 		mainButtons = new JButton[] {
 				new JButton("1 Player"),
 				new JButton("2 Players"),
@@ -81,6 +87,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 			mainButtons[index].addActionListener(this);
 			mainButtons[index].setMnemonic(index);
 		}
+		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.add(imagePanel);
 		mainPanel.add(buttonPanel);
 
@@ -108,8 +115,8 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 			carPanels[playerIndex].add(carMenus[playerIndex]);
 			carPanels[playerIndex].add(carIcons[playerIndex]);
 
-			JPanel statsPanel = new JPanel(new GridLayout(3, 2));
-			String[] statLabels = {"Acceleration  ", "Top Speed  ", "Handling  "};
+			JPanel statsPanel = new JPanel(new GridLayout(3, 2, 8, 8));
+			String[] statLabels = {"Acceleration", "Top Speed", "Handling"};
 			int[][] statLimits = {{100, 250}, {200, 400}, {30, 60}};
 			for (int statIndex = 0; statIndex < 3; statIndex++) {
 				statsPanel.add(new JLabel(statLabels[statIndex]));
@@ -117,7 +124,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 				carStatBars[playerIndex][statIndex].setMinimum(statLimits[statIndex][0]);
 				carStatBars[playerIndex][statIndex].setMaximum(statLimits[statIndex][1]);
 				carStatBars[playerIndex][statIndex].setStringPainted(true);
-				carStatBars[playerIndex][statIndex].setPreferredSize(new Dimension(10, 10));
 				statsPanel.add(carStatBars[playerIndex][statIndex]);
 			}
 			carPanels[playerIndex].add(statsPanel);
@@ -136,69 +142,123 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		trackPanel.add(new JLabel("Choose a track"));
 		trackPanel.add(trackMenu);
 		trackIcon = new JLabel();
-		trackPanel.add(new JLabel("     "));
 		trackPanel.add(trackIcon);
 		trackMenu.setSelectedIndex(0);
 
 		startButton = new JButton("Start Race");
 		startButton.setMnemonic(10);
 		startButton.addActionListener(this);
-		startButton.setPreferredSize(new Dimension(100, 60));
 
 		backToMenuButton = new JButton("Main Menu");
 		backToMenuButton.setMnemonic(11);
 		backToMenuButton.addActionListener(this);
-		backToMenuButton.setPreferredSize(new Dimension(120, 30));
 
 		racePanel.add(trackPanel);
 		racePanel.add(startButton);
 		racePanel.add(backToMenuButton);
 
-		SpringLayout layout = new SpringLayout();
-		Container contentPane = getContentPane();
-		racePanel.setLayout(layout);
-		layout.putConstraint(SpringLayout.WEST, carPanels[0], 10, SpringLayout.WEST, contentPane);
-		layout.putConstraint(SpringLayout.NORTH, carPanels[0], 10, SpringLayout.NORTH, contentPane);
-		layout.putConstraint(SpringLayout.WEST, carPanels[1], 0, SpringLayout.WEST, carPanels[0]);
-		layout.putConstraint(SpringLayout.NORTH, carPanels[1], 140, SpringLayout.NORTH, carPanels[0]);
-		layout.putConstraint(SpringLayout.WEST, trackPanel, 20, SpringLayout.EAST, carPanels[1]);
-		layout.putConstraint(SpringLayout.NORTH, trackPanel, 10, SpringLayout.NORTH, contentPane);
-		layout.putConstraint(SpringLayout.WEST, startButton, 262, SpringLayout.EAST, contentPane);
-		layout.putConstraint(SpringLayout.SOUTH, startButton, 90, SpringLayout.SOUTH, carPanels[0]);
-		layout.putConstraint(SpringLayout.WEST, backToMenuButton, 252, SpringLayout.EAST, contentPane);
-		layout.putConstraint(SpringLayout.SOUTH, backToMenuButton, 140, SpringLayout.SOUTH, carPanels[0]);
+		raceLayout = new SpringLayout();
+		racePanel.setLayout(raceLayout);
+		applyRaceLayoutConstraints();
 
-		add(racePanel);
+		setContentPane(mainPanel);
 		showMainMenu();
 		setIconImage(new ImageIcon(ResourcePaths.bundledSprite("icon.png")).getImage());
 		mainPanel.setBackground(Color.BLACK);
 		imagePanel.setBackground(Color.BLACK);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		UiScale.applyQuarterScreenSize(this);
+		applyScaledMetrics();
+		UiScale.enableDelayedResize(this, this::applyScaledMetrics);
 		setVisible(true);
-		setResizable(false);
 
 		carMenus[0].setSelectedIndex(0);
 		carMenus[1].setSelectedIndex(0);
 	}
 
+	private void applyRaceLayoutConstraints() {
+		Container contentPane = racePanel;
+		int padding = 16;
+		int rowGap = 140;
+		raceLayout.putConstraint(SpringLayout.WEST, carPanels[0], padding, SpringLayout.WEST, contentPane);
+		raceLayout.putConstraint(SpringLayout.NORTH, carPanels[0], padding, SpringLayout.NORTH, contentPane);
+		raceLayout.putConstraint(SpringLayout.WEST, carPanels[1], 0, SpringLayout.WEST, carPanels[0]);
+		raceLayout.putConstraint(SpringLayout.NORTH, carPanels[1], rowGap, SpringLayout.NORTH, carPanels[0]);
+		raceLayout.putConstraint(SpringLayout.WEST, trackPanel, padding, SpringLayout.EAST, carPanels[1]);
+		raceLayout.putConstraint(SpringLayout.NORTH, trackPanel, padding, SpringLayout.NORTH, contentPane);
+		raceLayout.putConstraint(SpringLayout.EAST, startButton, -padding, SpringLayout.EAST, contentPane);
+		raceLayout.putConstraint(SpringLayout.NORTH, startButton, padding, SpringLayout.NORTH, contentPane);
+		raceLayout.putConstraint(SpringLayout.EAST, backToMenuButton, -padding, SpringLayout.EAST, contentPane);
+		raceLayout.putConstraint(SpringLayout.NORTH, backToMenuButton, 12, SpringLayout.SOUTH, startButton);
+	}
+
+	private void applyScaledMetrics() {
+		UiScale.fitLabelIcon(menuImageLabel, this, ResourcePaths.bundledSprite("menu.png"), 640, 280);
+		for (JButton button : mainButtons) {
+			button.setFont(UiScale.scaledFont(this, button.getFont()));
+			button.setPreferredSize(new Dimension(UiScale.scale(this, 180), UiScale.scale(this, 48)));
+		}
+		for (int playerIndex = 0; playerIndex < 2; playerIndex++) {
+			scaleComponentTree(carPanels[playerIndex]);
+			if (carMenus[playerIndex].getSelectedIndex() >= 0) {
+				int modelIndex = carMenus[playerIndex].getSelectedIndex();
+				UiScale.fitLabelIcon(
+						carIcons[playerIndex],
+						this,
+						ResourcePaths.carSpritePath(modelIndex + 1),
+						80,
+						48);
+			}
+		}
+		scaleComponentTree(trackPanel);
+		if (trackMenu.getSelectedIndex() >= 0) {
+			int trackIndex = trackMenu.getSelectedIndex();
+			UiScale.fitLabelIcon(
+					trackIcon,
+					this,
+					ResourcePaths.bundledSprite("track_preview" + (trackIndex + 1) + ".png"),
+					120,
+					80);
+		}
+		startButton.setFont(UiScale.scaledFont(this, startButton.getFont()));
+		backToMenuButton.setFont(UiScale.scaledFont(this, backToMenuButton.getFont()));
+		startButton.setPreferredSize(new Dimension(UiScale.scale(this, 140), UiScale.scale(this, 52)));
+		backToMenuButton.setPreferredSize(new Dimension(UiScale.scale(this, 140), UiScale.scale(this, 40)));
+		revalidate();
+		repaint();
+	}
+
+	private void scaleComponentTree(Component component) {
+		component.setFont(UiScale.scaledFont(this, component.getFont()));
+		if (component instanceof Container container) {
+			for (Component child : container.getComponents()) {
+				scaleComponentTree(child);
+			}
+		}
+	}
+
 	private void showMainMenu() {
-		remove(racePanel);
-		add(mainPanel);
-		setSize(430, 380);
+		setContentPane(mainPanel);
+		UiScale.applyQuarterScreenSize(this);
+		applyScaledMetrics();
+		revalidate();
 		repaint();
 	}
 
 	private void showRaceMenu(int players) {
 		carMenus[1].setEnabled(players != 1);
 		humanPlayerCount = players;
-		remove(mainPanel);
-		add(racePanel);
-		setSize(420, 320);
+		setContentPane(racePanel);
+		UiScale.applyQuarterScreenSize(this);
+		applyScaledMetrics();
+		revalidate();
 		repaint();
 	}
 
 	public void showMenu() {
+		showMainMenu();
 		setVisible(true);
+		toFront();
 	}
 
 	@Override
@@ -216,7 +276,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 				break;
 			case 3:
 				JOptionPane.showMessageDialog(
-						null,
+						this,
 						"SUPER SPRINT SUPELEC\n"
 								+ "_______________________________________\n"
 								+ "GENERAL INFORMATION:\n\n"
@@ -231,7 +291,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 				break;
 			case 10:
 				setVisible(false);
-				showMainMenu();
 				int[] carModels = new int[4];
 				for (int playerIndex = 0; playerIndex < humanPlayerCount; playerIndex++) {
 					carModels[playerIndex] = selectedCarModels[playerIndex];
@@ -253,12 +312,20 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	@Override
 	@SuppressWarnings("rawtypes")
 	public void itemStateChanged(ItemEvent event) {
+		if (event.getStateChange() != ItemEvent.SELECTED) {
+			return;
+		}
 		JComboBox box = (JComboBox) event.getSource();
 		String name = box.getName();
 		if (name.contains("car")) {
 			int playerIndex = name.contains("1") ? 0 : 1;
 			int modelIndex = box.getSelectedIndex();
-			carIcons[playerIndex].setIcon(new ImageIcon(ResourcePaths.carSpritePath(modelIndex + 1)));
+			UiScale.fitLabelIcon(
+					carIcons[playerIndex],
+					this,
+					ResourcePaths.carSpritePath(modelIndex + 1),
+					80,
+					48);
 			int[] stats = Car.CAR_MODEL_STATS[modelIndex];
 			for (int statIndex = 0; statIndex < 3; statIndex++) {
 				carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
@@ -268,7 +335,12 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		} else {
 			int trackIndex = box.getSelectedIndex();
 			selectedTrack = trackIndex + 1;
-			trackIcon.setIcon(new ImageIcon(ResourcePaths.bundledSprite("track_preview" + (trackIndex + 1) + ".png")));
+			UiScale.fitLabelIcon(
+					trackIcon,
+					this,
+					ResourcePaths.bundledSprite("track_preview" + (trackIndex + 1) + ".png"),
+					120,
+					80);
 		}
 	}
 }

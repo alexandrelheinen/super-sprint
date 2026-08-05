@@ -23,11 +23,13 @@ public class HallOfFame extends Observable {
 
 	private final Result[][] results;
 	private final Path hallOfFameFile;
+	private final HallFrame hallFrame;
 	private int lastUpdatedTrackIndex;
 
 	public HallOfFame(HallFrame frame) throws FileNotFoundException {
 		results = new Result[Circuit.TRACK_COUNT][MAX_RESULTS];
 		hallOfFameFile = initializeUserHallOfFameFile();
+		hallFrame = frame;
 
 		try (InputStream fileStream = new FileInputStream(hallOfFameFile.toFile());
 				ObjectInputStream input = new ObjectInputStream(fileStream)) {
@@ -47,7 +49,6 @@ public class HallOfFame extends Observable {
 		lastUpdatedTrackIndex = 0;
 		setChanged();
 		notifyObservers();
-		frame.hideHall();
 	}
 
 	private Path initializeUserHallOfFameFile() throws FileNotFoundException {
@@ -135,5 +136,6 @@ public class HallOfFame extends Observable {
 		persistResults();
 		setChanged();
 		notifyObservers();
+		hallFrame.showHall();
 	}
 }
