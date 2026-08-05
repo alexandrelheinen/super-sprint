@@ -61,7 +61,7 @@ Steering input only affects heading when the car is moving. Releasing accelerate
 
 ### 2.3 Car models
 
-Nine liveries differ by three statistics (stored in `Car.CAR_MODEL_STATS`):
+Nine liveries differ by three statistics (loaded from `cars.properties` into `Car.CAR_MODEL_STATS`):
 
 | Model | Acceleration | Top speed | Handling |
 |-------|-------------|-----------|----------|

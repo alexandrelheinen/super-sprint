@@ -19,19 +19,9 @@ public class Car extends Observable {
 
 	/**
 	 * Car model stats in SI units: acceleration (m/s²), max speed (m/s), handling index.
-	 * Nine liveries from {@code cars.png}; values keep the previous four-model spread.
+	 * Loaded from {@code cars.properties}.
 	 */
-	public static final double[][] CAR_MODEL_STATS = {
-			{12.0, 28.0, 50},
-			{20.0, 32.0, 38},
-			{14.6, 37.4, 40},
-			{17.0, 25.0, 55},
-			{18.5, 34.0, 42},
-			{11.0, 26.0, 48},
-			{15.5, 30.0, 52},
-			{19.0, 36.0, 36},
-			{13.5, 29.0, 46}
-	};
+	public static final double[][] CAR_MODEL_STATS = GameConfig.CAR_MODEL_STATS;
 
 	/**
 	 * Trimmed car sprite size in pixels (width, height) per model index.

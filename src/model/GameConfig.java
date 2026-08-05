@@ -48,12 +48,25 @@ public final class GameConfig {
 	};
 	private static final int DEFAULT_SPRITE_WIDTH = 40;
 	private static final int DEFAULT_SPRITE_HEIGHT = 20;
+	/** Fallback stats: acceleration (m/s²), max speed (m/s), handling index. */
+	private static final double[][] DEFAULT_CAR_STATS = {
+			{16.5, 30.0, 44.0},
+			{21.0, 35.5, 34.0},
+			{14.0, 33.0, 46.0},
+			{18.0, 29.0, 40.0},
+			{19.5, 38.0, 32.0},
+			{10.0, 24.0, 50.0},
+			{15.0, 28.5, 56.0},
+			{20.0, 36.5, 36.0},
+			{13.5, 31.0, 52.0}
+	};
 
 	public static final String GAME_TITLE = ConfigLoader.getString(KEY_GAME_TITLE, DEFAULT_GAME_TITLE);
 	public static final String[] CAR_MODEL_NAMES = loadCarModelNames();
 	public static final int[] CAR_MODEL_NUMBERS = loadCarModelNumbers(CAR_MODEL_NAMES.length);
 	public static final Color[] CAR_MODEL_COLORS = loadCarModelColors(CAR_MODEL_NAMES.length);
 	public static final int[][] CAR_MODEL_SPRITE_DIMENSIONS = loadCarSpriteDimensions(CAR_MODEL_NAMES.length);
+	public static final double[][] CAR_MODEL_STATS = loadCarModelStats(CAR_MODEL_NAMES.length);
 	public static final String[] TRACK_NAMES = ConfigLoader.getCommaSeparated(KEY_TRACK_NAMES, DEFAULT_TRACK_NAMES);
 	public static final Terrain[] TRACK_TERRAINS = loadTrackTerrains();
 	public static final int[] LAP_COUNT_OPTIONS = ConfigLoader.getIntList(KEY_LAP_COUNT_OPTIONS, DEFAULT_LAP_COUNT_OPTIONS);
@@ -108,6 +121,19 @@ public final class GameConfig {
 			dimensions[index][1] = ConfigLoader.getInt("car." + index + ".height", DEFAULT_SPRITE_HEIGHT);
 		}
 		return dimensions;
+	}
+
+	private static double[][] loadCarModelStats(int count) {
+		double[][] stats = new double[count][3];
+		for (int index = 0; index < count; index++) {
+			double[] fallback = index < DEFAULT_CAR_STATS.length
+					? DEFAULT_CAR_STATS[index]
+					: new double[] {14.0, 30.0, 45.0};
+			stats[index][0] = ConfigLoader.getDouble("car." + index + ".acceleration", fallback[0]);
+			stats[index][1] = ConfigLoader.getDouble("car." + index + ".maxSpeed", fallback[1]);
+			stats[index][2] = ConfigLoader.getDouble("car." + index + ".handling", fallback[2]);
+		}
+		return stats;
 	}
 
 	private static Terrain[] loadTrackTerrains() {
