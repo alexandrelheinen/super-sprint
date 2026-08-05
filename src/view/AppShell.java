@@ -102,8 +102,8 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 	private static final String HERO_TITLE = ConfigLoader.getString("messages.menu.hero.title", "SUPER SPRINT");
 	private static final String HERO_BRAND = ConfigLoader.getString("messages.menu.hero.brand", "Supélec");
-	private static final String BUTTON_ONE_PLAYER = ConfigLoader.getString("messages.menu.button.one.player", "1 Player");
-	private static final String BUTTON_TWO_PLAYERS = ConfigLoader.getString("messages.menu.button.two.players", "2 Players");
+	private static final String BUTTON_ONE_PLAYER = ConfigLoader.getString("messages.menu.button.one.player", "Single Player");
+	private static final String BUTTON_TWO_PLAYERS = ConfigLoader.getString("messages.menu.button.two.players", "Multiplayer");
 	private static final String BUTTON_HALL_OF_FAME = ConfigLoader.getString("messages.menu.button.hall", "Hall of Fame");
 	private static final String BUTTON_HELP = ConfigLoader.getString("messages.menu.button.help", "Help");
 	private static final String RACE_SETUP_TITLE = ConfigLoader.getString("messages.menu.race.setup.title", "Race Setup");
