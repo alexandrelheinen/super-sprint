@@ -17,7 +17,7 @@ import view.ui.UiPainter;
 public class StatBar extends JComponent {
 
 	private static final long serialVersionUID = 1L;
-	private static final int BAR_HEIGHT = 18;
+	private static final int BAR_HEIGHT = 20;
 	private static final int CORNER_ARC = 10;
 
 	private final Component context;
@@ -54,7 +54,17 @@ public class StatBar extends JComponent {
 
 	@Override
 	public Dimension getPreferredSize() {
-		return new Dimension(super.getPreferredSize().width, UiScale.scale(context, BAR_HEIGHT + 18));
+		return new Dimension(Math.max(120, super.getPreferredSize().width), UiScale.scale(context, BAR_HEIGHT + 18));
+	}
+
+	@Override
+	public Dimension getMinimumSize() {
+		return getPreferredSize();
+	}
+
+	@Override
+	public Dimension getMaximumSize() {
+		return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
 	}
 
 	@Override

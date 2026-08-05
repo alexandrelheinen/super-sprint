@@ -34,7 +34,7 @@ public final class UiScale {
 	private static final int SCREEN_WIDTH_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_WIDTH_DIVISOR, 2);
 	private static final int SCREEN_HEIGHT_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_HEIGHT_DIVISOR, 2);
 	private static final int MINIMUM_SIZE_DIVISOR = 2;
-	private static final float MIN_FONT_SIZE = ConfigLoader.getFloat(KEY_MIN_FONT_SIZE, 11f);
+	private static final float MIN_FONT_SIZE = ConfigLoader.getFloat(KEY_MIN_FONT_SIZE, 14f);
 
 	private UiScale() {
 	}
@@ -97,6 +97,20 @@ public final class UiScale {
 		Dimension size = quarterScreenSize();
 		frame.setSize(size);
 		frame.setMinimumSize(new Dimension(size.width / MINIMUM_SIZE_DIVISOR, size.height / MINIMUM_SIZE_DIVISOR));
+		frame.setLocationRelativeTo(null);
+	}
+
+	/**
+	 * Slightly taller than {@link #quarterScreenSize()} so dense screens like
+	 * Race Setup can show their full content without clipping.
+	 */
+	public static void applyRaceSetupSize(JFrame frame) {
+		Dimension baseline = quarterScreenSize();
+		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+		int width = Math.max(baseline.width, (int) (screen.width * 0.55));
+		int height = Math.max(baseline.height, (int) (screen.height * 0.72));
+		frame.setSize(width, height);
+		frame.setMinimumSize(new Dimension(baseline.width / MINIMUM_SIZE_DIVISOR, baseline.height / MINIMUM_SIZE_DIVISOR));
 		frame.setLocationRelativeTo(null);
 	}
 
