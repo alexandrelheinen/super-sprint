@@ -19,7 +19,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
-import model.Circuit;
+import model.ConfigLoader;
 import model.GameCatalog;
 import model.HallOfFame;
 import model.Result;
@@ -31,15 +31,22 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String WINDOW_TITLE = "Hall Of Fame";
-	private static final String[] COLUMN_NAMES = {"Rank", "Name", "Time", "Date"};
-	private static final String HEADER_TITLE = "Hall of Fame";
-	private static final String HEADER_SUBTITLE = "Best lap times by track";
-	private static final String TRACK_LABEL = "Track";
-	private static final String LEADERBOARD_TITLE = "Leaderboard";
-	private static final String CLOSE_BUTTON_LABEL = "Close";
-	private static final String EMPTY_CELL = "-";
-	private static final String TIME_SUFFIX = " s";
+	private static final String WINDOW_TITLE = ConfigLoader.getString("messages.hall.window.title", "Hall Of Fame");
+	private static final String[] COLUMN_NAMES = {
+			ConfigLoader.getString("messages.hall.table.rank", "Rank"),
+			ConfigLoader.getString("messages.hall.table.name", "Name"),
+			ConfigLoader.getString("messages.hall.table.time", "Time"),
+			ConfigLoader.getString("messages.hall.table.date", "Date")
+	};
+	private static final String HEADER_TITLE = ConfigLoader.getString("messages.hall.header.title", "Hall of Fame");
+	private static final String HEADER_SUBTITLE = ConfigLoader.getString(
+			"messages.hall.header.subtitle",
+			"Best lap times by track");
+	private static final String TRACK_LABEL = ConfigLoader.getString("messages.hall.section.track", "Track");
+	private static final String LEADERBOARD_TITLE = ConfigLoader.getString("messages.hall.section.leaderboard", "Leaderboard");
+	private static final String CLOSE_BUTTON_LABEL = ConfigLoader.getString("messages.hall.button.close", "Close");
+	private static final String EMPTY_CELL = ConfigLoader.getString("messages.hall.empty.cell", "-");
+	private static final String TIME_SUFFIX = ConfigLoader.getString("messages.hall.time.suffix", " s");
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 
 	private static final int ROOT_LAYOUT_GAP = 16;

@@ -14,6 +14,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import model.ConfigLoader;
 import model.ResourcePaths;
 
 /**
@@ -22,14 +23,20 @@ import model.ResourcePaths;
  */
 public final class UiScale {
 
-	public static final int REFERENCE_WIDTH = 960;
-	public static final int REFERENCE_HEIGHT = 720;
+	private static final String KEY_REFERENCE_WIDTH = "ui.scale.reference.width";
+	private static final String KEY_REFERENCE_HEIGHT = "ui.scale.reference.height";
+	private static final String KEY_MIN_WINDOW_WIDTH = "ui.scale.min.window.width";
+	private static final String KEY_MIN_WINDOW_HEIGHT = "ui.scale.min.window.height";
+	private static final String KEY_MIN_FONT_SIZE = "ui.scale.min.font.size";
 
-	private static final int MIN_WINDOW_WIDTH = 640;
-	private static final int MIN_WINDOW_HEIGHT = 480;
+	public static final int REFERENCE_WIDTH = ConfigLoader.getInt(KEY_REFERENCE_WIDTH, 960);
+	public static final int REFERENCE_HEIGHT = ConfigLoader.getInt(KEY_REFERENCE_HEIGHT, 720);
+
+	private static final int MIN_WINDOW_WIDTH = ConfigLoader.getInt(KEY_MIN_WINDOW_WIDTH, 640);
+	private static final int MIN_WINDOW_HEIGHT = ConfigLoader.getInt(KEY_MIN_WINDOW_HEIGHT, 480);
 	private static final int SCREEN_SIZE_DIVISOR = 2;
 	private static final int MINIMUM_SIZE_DIVISOR = 2;
-	private static final float MIN_FONT_SIZE = 11f;
+	private static final float MIN_FONT_SIZE = ConfigLoader.getFloat(KEY_MIN_FONT_SIZE, 11f);
 
 	private UiScale() {
 	}
