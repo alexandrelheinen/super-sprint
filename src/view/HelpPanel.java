@@ -21,36 +21,48 @@ import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
 /**
- * Help screen content hosted inside {@link AppShell}. Controls and information
- * sit side by side so the fixed window can show both without clipping; each
- * column scrolls independently if needed.
+ * Help screen: player keyboards sit side by side above the information text.
  */
 public class HelpPanel extends BackgroundPanel {
 
 	private static final long serialVersionUID = 1L;
 
+	private static final String DEFAULT_INFO_BODY =
+			"Super Sprint Supélec is a top-down arcade racer on modular tracks.\n\n"
+					+ "Race setup\n"
+					+ "• Choose Single Player or Multiplayer from the main menu.\n"
+					+ "• Pick a car model, track, and lap count before starting.\n"
+					+ "• Empty grid slots are filled by AI opponents.\n\n"
+					+ "On the track\n"
+					+ "• Stay on the asphalt — leaving the lane cuts your speed.\n"
+					+ "• Cross the yellow finish line in the racing direction to count laps.\n"
+					+ "• Cars can bump each other; contact mixes speed and heading briefly.\n\n"
+					+ "Winning & Hall of Fame\n"
+					+ "• First to complete the chosen lap count wins.\n"
+					+ "• Human winners who place can save a name to the Hall of Fame.\n"
+					+ "• Rankings use mean lap time (total time ÷ laps), so different race lengths stay comparable.\n\n"
+					+ "Project\n"
+					+ "Software Project 2014/2015 — Sequence 6 (Supélec). Maintained with English UI and a single-window shell.";
+
 	private static final String TITLE = ConfigLoader.getString("messages.help.dialog.title", "Help");
 	private static final String CONTROLS_TITLE = ConfigLoader.getString("messages.help.controls.title", "Controls");
 	private static final String PLAYER_ONE = ConfigLoader.getString("messages.help.player.one", "Player 1");
 	private static final String PLAYER_TWO = ConfigLoader.getString("messages.help.player.two", "Player 2");
-	private static final String INFO_TITLE = ConfigLoader.getString("messages.help.info.title", "Information");
-	private static final String INFO_BODY = ConfigLoader.getMessage(
-			"messages.help.info.body",
-			"Software Project 2014/2015 — Sequence 6\nVersion 14.01.14\n\nConfigure laps in Race Setup before launching the grid.\nFinish first to enter the Hall of Fame, ranked by mean time per lap.");
+	private static final String INFO_TITLE = ConfigLoader.getString("messages.help.info.title", "How to play");
+	private static final String INFO_BODY = ConfigLoader.getMessage("messages.help.info.body", DEFAULT_INFO_BODY);
 	private static final String CLOSE = ConfigLoader.getString("messages.help.button.close", "Back to Menu");
 
-	private static final int PANEL_INSET = 22;
-	private static final int SECTION_GAP = 16;
-	private static final int PLAYER_LABEL_GAP = 8;
+	private static final int PANEL_INSET = 18;
+	private static final int SECTION_GAP = 12;
+	private static final int PLAYER_LABEL_GAP = 6;
 	private static final int BUTTON_WIDTH = 200;
 	private static final int BUTTON_HEIGHT = 54;
 	private static final int SCROLL_UNIT = 16;
-	private static final int HELP_KEY_SIZE = 46;
-	private static final int SCROLL_BOTTOM_PAD = 20;
+	private static final int HELP_KEY_SIZE = 36;
 
 	private final ArcadeButton closeButton;
 	private final JTextArea infoArea;
-	private final JPanel keyboardColumn;
+	private final JPanel keyboardRow;
 
 	public HelpPanel(Component scaleContext, Runnable onClose) {
 		super(BackgroundPanel.Style.SCREEN);
@@ -59,20 +71,16 @@ public class HelpPanel extends BackgroundPanel {
 
 		add(ThemedPanel.createHeader(TITLE, null, scaleContext), BorderLayout.NORTH);
 
-		JPanel columns = new JPanel(new GridLayout(1, 2, SECTION_GAP, 0));
-		columns.setOpaque(false);
+		JPanel body = new JPanel(new BorderLayout(0, SECTION_GAP));
+		body.setOpaque(false);
 
 		GlassCard controlsCard = new GlassCard(new BorderLayout(), scaleContext, CONTROLS_TITLE);
 		controlsCard.setOpaque(false);
-		keyboardColumn = new JPanel(new GridLayout(2, 1, 0, SECTION_GAP));
-		keyboardColumn.setOpaque(false);
+		keyboardRow = new JPanel(new GridLayout(1, 2, SECTION_GAP, 0));
+		keyboardRow.setOpaque(false);
 		rebuildKeyboards(scaleContext);
-		JPanel keyboardHolder = new JPanel(new BorderLayout());
-		keyboardHolder.setOpaque(false);
-		keyboardHolder.add(keyboardColumn, BorderLayout.NORTH);
-		keyboardHolder.add(Box.createVerticalStrut(SCROLL_BOTTOM_PAD), BorderLayout.SOUTH);
-		controlsCard.add(wrapScroll(keyboardHolder), BorderLayout.CENTER);
-		columns.add(controlsCard);
+		controlsCard.add(keyboardRow, BorderLayout.CENTER);
+		body.add(controlsCard, BorderLayout.NORTH);
 
 		GlassCard infoCard = new GlassCard(new BorderLayout(), scaleContext, INFO_TITLE);
 		infoCard.setOpaque(false);
@@ -82,15 +90,14 @@ public class HelpPanel extends BackgroundPanel {
 		infoArea.setFocusable(false);
 		infoArea.setLineWrap(true);
 		infoArea.setWrapStyleWord(true);
-		// Explicit rows keep preferred height tall enough for descenders.
-		infoArea.setRows(INFO_BODY.split("\n", -1).length + 2);
+		infoArea.setRows(Math.min(16, INFO_BODY.split("\n", -1).length + 2));
 		infoArea.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
 		infoArea.setForeground(GameTheme.TEXT_PRIMARY);
-		infoArea.setBorder(new EmptyBorder(8, 8, 16, 8));
+		infoArea.setBorder(new EmptyBorder(8, 10, 14, 10));
 		infoCard.add(wrapScroll(infoArea), BorderLayout.CENTER);
-		columns.add(infoCard);
+		body.add(infoCard, BorderLayout.CENTER);
 
-		add(columns, BorderLayout.CENTER);
+		add(body, BorderLayout.CENTER);
 
 		closeButton = new ArcadeButton(CLOSE, false);
 		closeButton.addActionListener(event -> onClose.run());
@@ -109,10 +116,10 @@ public class HelpPanel extends BackgroundPanel {
 	}
 
 	private void rebuildKeyboards(Component scaleContext) {
-		keyboardColumn.removeAll();
-		keyboardColumn.add(buildPlayerPanel(scaleContext, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
-		keyboardColumn.add(buildPlayerPanel(scaleContext, PLAYER_TWO, KeyboardPanel.Layout.WASD));
-		keyboardColumn.revalidate();
+		keyboardRow.removeAll();
+		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_ONE, KeyboardPanel.Layout.ARROWS));
+		keyboardRow.add(buildPlayerPanel(scaleContext, PLAYER_TWO, KeyboardPanel.Layout.WASD));
+		keyboardRow.revalidate();
 	}
 
 	private static JScrollPane wrapScroll(Component view) {
@@ -135,9 +142,9 @@ public class HelpPanel extends BackgroundPanel {
 		panel.add(label, BorderLayout.NORTH);
 		JPanel keyboardHolder = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
 		keyboardHolder.setOpaque(false);
-		KeyboardPanel keyboard = new KeyboardPanel(owner, layout, HELP_KEY_SIZE);
-		keyboardHolder.add(keyboard);
+		keyboardHolder.add(new KeyboardPanel(owner, layout, HELP_KEY_SIZE));
 		panel.add(keyboardHolder, BorderLayout.CENTER);
+		panel.add(Box.createVerticalStrut(4), BorderLayout.SOUTH);
 		return panel;
 	}
 }
