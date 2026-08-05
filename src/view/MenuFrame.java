@@ -94,7 +94,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String BUTTON_ONE_PLAYER = ConfigLoader.getString("messages.menu.button.one.player", "1 Player");
 	private static final String BUTTON_TWO_PLAYERS = ConfigLoader.getString("messages.menu.button.two.players", "2 Players");
 	private static final String BUTTON_HALL_OF_FAME = ConfigLoader.getString("messages.menu.button.hall", "Hall of Fame");
-	private static final String BUTTON_HELP = ConfigLoader.getString("messages.menu.button.help", "Help & Info");
+	private static final String BUTTON_HELP = ConfigLoader.getString("messages.menu.button.help", "Help");
 	private static final String RACE_SETUP_TITLE = ConfigLoader.getString("messages.menu.race.setup.title", "Race Setup");
 	private static final String PLAYER_SECTION_PREFIX = ConfigLoader.getString("messages.menu.section.player.prefix", "Player ");
 	private static final String TRACK_SECTION_TITLE = ConfigLoader.getString("messages.menu.section.track", "Track");
@@ -114,8 +114,6 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private static final String[] STAT_VALUE_SUFFIXES = {" m/s²", " m/s", ""};
 
 	private static final String SPRITE_ICON = "icon.png";
-	private static final String TRACK_PREVIEW_PREFIX = "track_preview";
-	private static final String TRACK_PREVIEW_SUFFIX = ".png";
 
 	private final HallFrame hallFrame;
 	private final HallOfFame hallOfFame;
@@ -459,12 +457,10 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 	private void updateTrackPreview(int trackIndex) {
 		selectedTrack = trackIndex + ONE_BASED_INDEX_OFFSET;
-		UiScale.fitLabelIcon(
-				trackIcon,
-				this,
-				ResourcePaths.bundledSprite(TRACK_PREVIEW_PREFIX + (trackIndex + ONE_BASED_INDEX_OFFSET) + TRACK_PREVIEW_SUFFIX),
-				TRACK_PREVIEW_WIDTH,
-				TRACK_PREVIEW_HEIGHT);
+		trackIcon.setIcon(new ImageIcon(TrackPreviewRenderer.render(
+				Game.TRACK_MAPS[trackIndex],
+				UiScale.scale(this, TRACK_PREVIEW_WIDTH),
+				UiScale.scale(this, SETUP_PREVIEW_HEIGHT))));
 	}
 
 	@Override
