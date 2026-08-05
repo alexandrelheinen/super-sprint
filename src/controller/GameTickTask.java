@@ -6,6 +6,10 @@ import model.Circuit;
 
 public class GameTickTask extends TimerTask {
 
+	private static final String LOG_RACE_STARTED = "Race started with ";
+	private static final String LOG_CARS_SUFFIX = " cars.";
+	private static final String LOG_SEPARATOR = " ------------- ";
+
 	private final Controller[] controllers;
 	private final Circuit circuit;
 	private final Game game;
@@ -14,8 +18,8 @@ public class GameTickTask extends TimerTask {
 		this.controllers = controllers;
 		this.circuit = circuit;
 		this.game = game;
-		System.out.println("Race started with " + controllers.length + " cars.");
-		System.out.println(" ------------- ");
+		System.out.println(LOG_RACE_STARTED + controllers.length + LOG_CARS_SUFFIX);
+		System.out.println(LOG_SEPARATOR);
 	}
 
 	@Override

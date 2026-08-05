@@ -22,7 +22,7 @@ $(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(BUNDLED_CAR_SPRITES)
 
 prepare-sprites: $(BUILD_DIR)/sprites/.sprites-stamp
 
-$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(BUILD_DIR)/sprites/.sprites-stamp
+$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) src/data/game.properties $(BUILD_DIR)/sprites/.sprites-stamp
 	@mkdir -p $(BUILD_DIR)
 	@find src -name '*.java' > $(BUILD_DIR)/sources.txt
 	javac -d $(BUILD_DIR) -sourcepath src @$(BUILD_DIR)/sources.txt

@@ -17,10 +17,18 @@ public final class GameTheme {
 	public static final Color TEXT_MUTED = new Color(170, 180, 196);
 	public static final Color BORDER_SOFT = new Color(54, 68, 92);
 
-	public static final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 28);
-	public static final Font FONT_SUBTITLE = new Font("Segoe UI", Font.BOLD, 16);
-	public static final Font FONT_BODY = new Font("Segoe UI", Font.PLAIN, 14);
-	public static final Font FONT_BUTTON = new Font("Segoe UI", Font.BOLD, 15);
+	private static final String FONT_FAMILY = "Segoe UI";
+	private static final int FONT_SIZE_TITLE = 28;
+	private static final int FONT_SIZE_SUBTITLE = 16;
+	private static final int FONT_SIZE_BODY = 14;
+	private static final int FONT_SIZE_BUTTON = 15;
+	private static final int FONT_SIZE_HUD = 20;
+
+	public static final Font FONT_TITLE = new Font(FONT_FAMILY, Font.BOLD, FONT_SIZE_TITLE);
+	public static final Font FONT_SUBTITLE = new Font(FONT_FAMILY, Font.BOLD, FONT_SIZE_SUBTITLE);
+	public static final Font FONT_BODY = new Font(FONT_FAMILY, Font.PLAIN, FONT_SIZE_BODY);
+	public static final Font FONT_BUTTON = new Font(FONT_FAMILY, Font.BOLD, FONT_SIZE_BUTTON);
+	public static final Font FONT_HUD = new Font(FONT_FAMILY, Font.BOLD, FONT_SIZE_HUD);
 
 	private GameTheme() {
 	}

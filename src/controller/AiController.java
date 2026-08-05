@@ -8,6 +8,15 @@ import view.GameFrame;
 
 public class AiController extends Controller {
 
+	private static final double AI_PROPORTIONAL_GAIN_FACTOR = 0.0007;
+	private static final double AI_DERIVATIVE_GAIN_FACTOR = -30.0;
+	private static final double AI_MAX_TURN_RATE_FACTOR = 0.002;
+	private static final double AI_INITIAL_GRID_ROW_OFFSET = 1;
+	private static final double ANGLE_HALF_TURN = Math.PI / 2;
+	private static final double ANGLE_FULL_TURN = Math.PI;
+	private static final double ANGLE_ZERO = 0;
+	private static final double ANGLE_TWO_PI = 2 * Math.PI;
+
 	private final Circuit circuit;
 	private int[] previousGridCell;
 	private int[] currentGridCell;
@@ -19,28 +28,28 @@ public class AiController extends Controller {
 		this.circuit = circuit;
 		currentGridCell = circuit.getGridCoordinates(car);
 		previousGridCell = currentGridCell.clone();
-		previousGridCell[0] += 1;
-		targetHeading = 0;
+		previousGridCell[0] += AI_INITIAL_GRID_ROW_OFFSET;
+		targetHeading = ANGLE_ZERO;
 		previousHeadingError = 0;
 	}
 
 	private double normalizeAngle(double angle) {
 		while (angle <= -Math.PI) {
-			angle += 2 * Math.PI;
+			angle += ANGLE_TWO_PI;
 		}
 		while (angle > Math.PI) {
-			angle -= 2 * Math.PI;
+			angle -= ANGLE_TWO_PI;
 		}
 		return angle;
 	}
 
 	private void applyControlOutput() {
-		double proportionalGain = 0.0007 * car.getStat(2);
-		double derivativeGain = -30.0 / car.getStat(2);
+		double proportionalGain = AI_PROPORTIONAL_GAIN_FACTOR * car.getStat(Car.STAT_HANDLING_INDEX);
+		double derivativeGain = AI_DERIVATIVE_GAIN_FACTOR / car.getStat(Car.STAT_HANDLING_INDEX);
 		double currentHeading = car.getAngle();
 		double headingError = normalizeAngle(targetHeading - currentHeading);
 		double controlOutput = proportionalGain * headingError + derivativeGain * (headingError - previousHeadingError);
-		double maxTurnRate = 0.002 * car.getStat(2);
+		double maxTurnRate = AI_MAX_TURN_RATE_FACTOR * car.getStat(Car.STAT_HANDLING_INDEX);
 		if (controlOutput > maxTurnRate) {
 			controlOutput = maxTurnRate;
 		}
@@ -62,51 +71,51 @@ public class AiController extends Controller {
 			previousGridCell = currentGridCell.clone();
 			currentGridCell = gridCell;
 		}
-		targetHeading = 0;
+		targetHeading = ANGLE_ZERO;
 		switch (circuit.getTileType(car)) {
-			case 1:
+			case Circuit.TILE_STRAIGHT_HORIZONTAL:
 				if (previousGridCell[0] == currentGridCell[0] + 1) {
-					targetHeading = -Math.PI / 2;
+					targetHeading = -ANGLE_HALF_TURN;
 				} else if (previousGridCell[0] == currentGridCell[0] - 1) {
-					targetHeading = Math.PI / 2;
+					targetHeading = ANGLE_HALF_TURN;
 				}
 				break;
-			case 2:
+			case Circuit.TILE_STRAIGHT_VERTICAL:
 				if (previousGridCell[1] == currentGridCell[1] - 1) {
-					targetHeading = 0;
+					targetHeading = ANGLE_ZERO;
 				} else if (previousGridCell[1] == currentGridCell[1] + 1) {
-					targetHeading = Math.PI;
+					targetHeading = ANGLE_FULL_TURN;
 				}
 				break;
-			case 3:
+			case Circuit.TILE_CORNER_BOTTOM_RIGHT:
 				if (previousGridCell[1] == currentGridCell[1] - 1) {
-					targetHeading = Math.PI / 2;
+					targetHeading = ANGLE_HALF_TURN;
 				} else if (previousGridCell[0] == currentGridCell[0] + 1) {
-					targetHeading = Math.PI;
+					targetHeading = ANGLE_FULL_TURN;
 				}
 				break;
-			case 4:
+			case Circuit.TILE_CORNER_TOP_RIGHT:
 				if (previousGridCell[0] == currentGridCell[0] + 1) {
-					targetHeading = 0;
+					targetHeading = ANGLE_ZERO;
 				} else if (previousGridCell[1] == currentGridCell[1] + 1) {
-					targetHeading = Math.PI / 2;
+					targetHeading = ANGLE_HALF_TURN;
 				}
 				break;
-			case 5:
+			case Circuit.TILE_CORNER_TOP_LEFT:
 				if (previousGridCell[0] == currentGridCell[0] - 1) {
-					targetHeading = 0;
+					targetHeading = ANGLE_ZERO;
 				} else if (previousGridCell[1] == currentGridCell[1] + 1) {
-					targetHeading = -Math.PI / 2 + 2 * Math.PI;
+					targetHeading = -ANGLE_HALF_TURN + ANGLE_TWO_PI;
 				}
 				break;
-			case 6:
+			case Circuit.TILE_CORNER_BOTTOM_LEFT:
 				if (previousGridCell[0] == currentGridCell[0] - 1) {
-					targetHeading = Math.PI;
+					targetHeading = ANGLE_FULL_TURN;
 				} else if (previousGridCell[1] == currentGridCell[1] - 1) {
-					targetHeading = -Math.PI / 2;
+					targetHeading = -ANGLE_HALF_TURN;
 				}
 				break;
-			case 7:
+			case Circuit.TILE_OPEN:
 			default:
 				break;
 		}
