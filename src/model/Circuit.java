@@ -139,6 +139,18 @@ public class Circuit extends Observable {
 	}
 
 	/**
+	 * Advances the render cadence without charging race time — used during the
+	 * pre-race countdown while the track is already on screen.
+	 *
+	 * @return {@code true} when this visual tick should repaint
+	 */
+	public boolean shouldRenderAfterVisualTick() {
+		tickCount++;
+		renderTick = tickCount % RENDER_TICK_DIVISOR == 0;
+		return renderTick;
+	}
+
+	/**
 	 * @return whether observers should repaint on the current tick
 	 */
 	public boolean isRenderTick() {
