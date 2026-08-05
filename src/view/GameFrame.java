@@ -19,7 +19,6 @@ import javax.swing.JFrame;
 
 import model.Car;
 import model.Circuit;
-import model.GameCatalog;
 import model.ResourcePaths;
 import view.theme.GameTheme;
 import view.ui.UiPainter;
@@ -33,7 +32,7 @@ public class GameFrame extends JFrame implements Observer {
 	private static final int BUFFER_STRATEGY_BUFFERS = 2;
 	/** Breathing room between the track walls and the window border. */
 	private static final int TRACK_MARGIN = 28;
-	private static final int HUD_BAR_HEIGHT = 64;
+	private static final int HUD_BAR_HEIGHT = 80;
 	private static final int START_SLOT_COUNT = Circuit.START_SLOT_COUNT;
 	// Cars face up on the grid, so their on-screen width is the sprite height
 	// and their nose sits half a sprite width above the slot center.
@@ -41,7 +40,7 @@ public class GameFrame extends JFrame implements Observer {
 	private static final int START_MARKER_NOSE_OFFSET = Circuit.CAR_ANCHOR_HALF_WIDTH_PX + 6;
 	private static final int START_MARKER_TICK_LENGTH = 8;
 	private static final int HUD_SIDE_PADDING = 24;
-	private static final int HUD_LAP_CHIP_GAP = 26;
+	private static final int HUD_LAP_CHIP_GAP = 18;
 	private static final int SPRITE_CENTER_DIVISOR = 2;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 	private static final int MS_PER_SECOND = 1000;
@@ -58,13 +57,12 @@ public class GameFrame extends JFrame implements Observer {
 	private static final String SPRITE_TRACK_PREFIX = "track";
 	private static final String SPRITE_TRACK_SUFFIX = ".png";
 	private static final String HUD_RACE_TIME_PREFIX = "TIME ";
-	private static final String HUD_TIME_SUFFIX = " s";
-	private static final String HUD_TRACK_SEPARATOR = "  •  ";
+	private static final String HUD_TIME_SUFFIX = "s";
 	private static final String HUD_LAP_SEPARATOR = "/";
 	private static final String HUD_HUMAN_PLAYER_PREFIX = "P";
-	private static final String HUD_AI_PLAYER_LABEL = "CPU";
+	private static final String HUD_AI_PLAYER_PREFIX = "C";
 	private static final String HUD_AI_PLAYER_NAME = "C";
-	private static final String HUD_LAP_LABEL = " LAP ";
+	private static final String HUD_SLOT_SEPARATOR = " ";
 	private static final String LOG_SPRITE_LOADED = "Sprite #";
 	private static final String LOG_SPRITE_LOADED_SUFFIX = " loaded";
 	private static final String LOG_SPRITE_SEPARATOR = " **************** \n";
@@ -293,9 +291,7 @@ public class GameFrame extends JFrame implements Observer {
 		graphics2D.setColor(GameTheme.TEXT_PRIMARY);
 		String timerText = HUD_RACE_TIME_PREFIX
 				+ ((int) circuit.getRaceTimeMs() / MS_PER_SECOND)
-				+ HUD_TIME_SUFFIX
-				+ HUD_TRACK_SEPARATOR
-				+ GameCatalog.trackName(trackNumber);
+				+ HUD_TIME_SUFFIX;
 		graphics2D.drawString(timerText, trackOriginX(), baseline);
 
 		Car[] cars = hudCars;
@@ -305,13 +301,14 @@ public class GameFrame extends JFrame implements Observer {
 		String[] lapTexts = new String[cars.length];
 		int chipsWidth = 0;
 		for (int index = 0; index < cars.length; index++) {
-			lapTexts[index] = lapCounterText(cars[index]);
+			lapTexts[index] = lapCounterText(cars[index], index);
 			chipsWidth += metrics.stringWidth(lapTexts[index]);
 			if (index > 0) {
 				chipsWidth += HUD_LAP_CHIP_GAP;
 			}
 		}
-		int chipX = getWidth() - getInsets().right - HUD_SIDE_PADDING - chipsWidth;
+		int rightEdge = getWidth() - getInsets().right - HUD_SIDE_PADDING;
+		int chipX = Math.max(trackOriginX() + metrics.stringWidth(timerText) + HUD_LAP_CHIP_GAP, rightEdge - chipsWidth);
 		for (int index = 0; index < cars.length; index++) {
 			graphics2D.setColor(CAR_MODEL_HUD_COLORS[
 					(cars[index].getModelIndex() - ONE_BASED_INDEX_OFFSET) % CAR_MODEL_HUD_COLORS.length]);
@@ -320,12 +317,12 @@ public class GameFrame extends JFrame implements Observer {
 		}
 	}
 
-	private String lapCounterText(Car car) {
+	private String lapCounterText(Car car, int slotIndex) {
 		String label = HUD_AI_PLAYER_NAME.equals(car.getName())
-				? HUD_AI_PLAYER_LABEL
+				? HUD_AI_PLAYER_PREFIX + (slotIndex + ONE_BASED_INDEX_OFFSET)
 				: HUD_HUMAN_PLAYER_PREFIX + car.getName();
-		int currentLap = Math.min(Math.max(car.getLapCount(), 1), totalLaps);
-		return label + HUD_LAP_LABEL + currentLap + HUD_LAP_SEPARATOR + totalLaps;
+		int currentLap = Math.min(Math.max(car.getLapCount(), 1), Math.max(totalLaps, 1));
+		return label + HUD_SLOT_SEPARATOR + currentLap + HUD_LAP_SEPARATOR + totalLaps;
 	}
 
 	private static boolean allFlagsSet(boolean[] flags) {
