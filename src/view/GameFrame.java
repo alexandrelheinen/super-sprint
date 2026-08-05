@@ -120,6 +120,13 @@ public class GameFrame extends Canvas implements Observer {
 		return new Dimension(preferredRaceSize);
 	}
 
+	/** Pixel size of a race viewport for a track with the given tile grid. */
+	public static Dimension contentSizeFor(int rows, int columns) {
+		return new Dimension(
+				2 * TRACK_MARGIN + columns * TILE_SIZE,
+				2 * TRACK_MARGIN + rows * TILE_SIZE + HUD_BAR_HEIGHT);
+	}
+
 	/**
 	 * Creates the buffer strategy once this canvas is displayable inside the shell.
 	 */

@@ -248,9 +248,21 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		setContentPane(cardRoot);
 		setIconImage(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		showMainMenu();
-		UiScale.enableDelayedResize(this, this::applyScaledMetrics);
+		setResizable(false);
 		setVisible(true);
+		UiScale.lockFixedShellSize(this, largestRaceContentSize());
+		showMainMenu();
+		applyScaledMetrics();
+	}
+
+	private static Dimension largestRaceContentSize() {
+		int maxRows = 0;
+		int maxColumns = 0;
+		for (int[][] map : Game.TRACK_MAPS) {
+			maxRows = Math.max(maxRows, map.length);
+			maxColumns = Math.max(maxColumns, map[0].length);
+		}
+		return GameFrame.contentSizeFor(maxRows, maxColumns);
 	}
 
 	private void initializeRaceSetupDefaults() {
@@ -468,7 +480,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	public void showMainMenu() {
 		setTitle(WINDOW_TITLE);
 		showCard(CARD_MAIN);
-		UiScale.applyQuarterScreenSize(this);
 		applyScaledMetrics();
 		toFront();
 	}
@@ -484,7 +495,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		humanPlayerCount = players;
 		setTitle(WINDOW_TITLE + " — " + RACE_SETUP_TITLE);
 		showCard(CARD_SETUP);
-		UiScale.applyRaceSetupSize(this);
 		applyScaledMetrics();
 		refreshRaceSetupPreviews();
 		SwingUtilities.invokeLater(this::refreshRaceSetupPreviews);
@@ -494,7 +504,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.hall.header.title", "Hall of Fame"));
 		hallPanel.refreshOnShow();
 		showCard(CARD_HALL);
-		UiScale.applyRaceSetupSize(this);
 		applyScaledMetrics();
 		toFront();
 	}
@@ -502,13 +511,12 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	public void showHelp() {
 		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.help.dialog.title", "Help"));
 		showCard(CARD_HELP);
-		UiScale.applyRaceSetupSize(this);
 		applyScaledMetrics();
 	}
 
 	/**
-	 * Installs the race canvas as the sole content of this window and sizes the
-	 * frame to the track.
+	 * Installs the race canvas as the sole content of this window without
+	 * changing the fixed shell size.
 	 */
 	public void showRace(GameFrame raceView, String raceTitle) {
 		clearRaceView();
@@ -520,13 +528,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		raceHost.setBackground(GameTheme.BACKGROUND_DARK);
 		raceHost.add(raceView, BorderLayout.CENTER);
 		setContentPane(raceHost);
-		Dimension raceSize = raceView.getPreferredRaceSize();
-		Insets insets = getInsets();
-		setSize(
-				raceSize.width + insets.left + insets.right,
-				raceSize.height + insets.top + insets.bottom);
-		setMinimumSize(new Dimension(raceSize.width / 2, raceSize.height / 2));
-		setLocationRelativeTo(null);
 		revalidate();
 		repaint();
 		raceView.realizeBufferStrategy();
@@ -560,7 +561,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		cardRoot.add(panel, CARD_RACE_COMPLETE);
 		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.race.complete.title", "Race Complete"));
 		showCard(CARD_RACE_COMPLETE);
-		UiScale.applyQuarterScreenSize(this);
 		panel.applyScaledMetrics(this);
 		applyScaledMetrics();
 	}
