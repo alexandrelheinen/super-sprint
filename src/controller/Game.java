@@ -5,6 +5,7 @@ import java.util.Timer;
 import javax.swing.SwingUtilities;
 
 import model.Circuit;
+import model.GameCatalog;
 import model.HallOfFame;
 import view.GameFrame;
 import view.MenuFrame;
@@ -47,7 +48,11 @@ public class Game {
 		this.menuFrame = menuFrame;
 		this.humanPlayerCount = humanPlayers;
 
-		gameFrame = new GameFrame("Super Sprint Supelec", carModels, trackMap, trackNumber);
+		gameFrame = new GameFrame(
+				"Super Sprint Supelec — " + GameCatalog.trackName(trackNumber),
+				carModels,
+				trackMap,
+				trackNumber);
 		controllers = new Controller[carModels.length];
 		circuit = new Circuit(gameFrame, trackMap);
 		circuit.initializeFinishLine(trackNumber);

@@ -21,6 +21,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
 import model.Circuit;
+import model.GameCatalog;
 import model.HallOfFame;
 import model.Result;
 import view.components.ArcadeButton;
@@ -59,10 +60,7 @@ public class HallFrame extends JFrame implements Observer, ActionListener, ItemL
 		selectorPanel.setOpaque(false);
 		selectorPanel.add(ThemedPanel.createLabel("Track", this), BorderLayout.WEST);
 
-		String[] trackOptions = new String[Circuit.TRACK_COUNT];
-		for (int trackIndex = 0; trackIndex < Circuit.TRACK_COUNT; trackIndex++) {
-			trackOptions[trackIndex] = "Track " + (trackIndex + 1);
-		}
+		String[] trackOptions = GameCatalog.trackOptions();
 		trackMenu = new JComboBox(trackOptions);
 		trackMenu.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		trackMenu.addItemListener(this);

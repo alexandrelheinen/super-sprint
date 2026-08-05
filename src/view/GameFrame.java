@@ -4,12 +4,14 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -19,10 +21,7 @@ import javax.swing.JFrame;
 
 import model.Car;
 import model.Circuit;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-
+import model.GameCatalog;
 import model.ResourcePaths;
 
 public class GameFrame extends JFrame implements Observer {
@@ -37,6 +36,7 @@ public class GameFrame extends JFrame implements Observer {
 	private final int[][] trackMap;
 	private final boolean[] renderFlags;
 	private final int trackNumber;
+	private final int[] carModels;
 	private final int[] mapDimensions;
 	private final Color hudColor;
 	private final Font hudFont;
@@ -46,6 +46,7 @@ public class GameFrame extends JFrame implements Observer {
 		super(title);
 		this.trackMap = trackMap;
 		this.trackNumber = trackNumber;
+		this.carModels = carModels.clone();
 		mapDimensions = new int[] {trackMap.length, trackMap[0].length};
 
 		renderFlags = new boolean[carModels.length + 1];
@@ -125,7 +126,8 @@ public class GameFrame extends JFrame implements Observer {
 				graphics2D.setFont(hudFont);
 				graphics2D.setColor(hudColor);
 				graphics2D.drawString(
-						"[P" + car.getName() + ": " + car.getLapCount() + "]",
+						GameCatalog.carModelName(carModels[car.getSpriteIndex()]) + " [P"
+								+ car.getName() + ": " + car.getLapCount() + "]",
 						2 * TILE_SIZE + 100 * car.getSpriteIndex(),
 						mapDimensions[0] * TILE_SIZE + 50);
 				renderFlags[car.getSpriteIndex()] = true;
@@ -163,7 +165,8 @@ public class GameFrame extends JFrame implements Observer {
 				graphics2D.setFont(new Font("Segoe UI", Font.BOLD, 20));
 				graphics2D.setColor(hudColor);
 				graphics2D.drawString(
-						"Race Time: " + ((int) circuit.getRaceTimeMs() / 1000) + " s",
+						"Race Time: " + ((int) circuit.getRaceTimeMs() / 1000) + " s  |  "
+								+ GameCatalog.trackName(trackNumber),
 						20,
 						mapDimensions[0] * TILE_SIZE + 50);
 				renderFlags[renderFlags.length - 1] = true;

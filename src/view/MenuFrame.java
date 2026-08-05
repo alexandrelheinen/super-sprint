@@ -25,6 +25,7 @@ import javax.swing.border.EmptyBorder;
 import controller.Game;
 import model.Car;
 import model.Circuit;
+import model.GameCatalog;
 import model.HallOfFame;
 import model.ResourcePaths;
 import view.components.ArcadeButton;
@@ -120,10 +121,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 			carPanels[playerIndex].setLayout(new BoxLayout(carPanels[playerIndex], BoxLayout.Y_AXIS));
 			carPanels[playerIndex].setBorder(ThemedPanel.sectionBorder("Player " + (playerIndex + 1), this));
 
-			String[] carOptions = new String[Car.CAR_MODEL_COUNT];
-			for (int modelIndex = 0; modelIndex < Car.CAR_MODEL_COUNT; modelIndex++) {
-				carOptions[modelIndex] = "Model " + (modelIndex + 1);
-			}
+			String[] carOptions = GameCatalog.carModelOptions();
 			carMenus[playerIndex] = new JComboBox(carOptions);
 			carMenus[playerIndex].addItemListener(this);
 			carMenus[playerIndex].setName("car" + (playerIndex + 1));
@@ -155,10 +153,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		trackPanel = new ThemedPanel();
 		trackPanel.setLayout(new BoxLayout(trackPanel, BoxLayout.Y_AXIS));
 		trackPanel.setBorder(ThemedPanel.sectionBorder("Track", this));
-		String[] trackOptions = new String[Circuit.TRACK_COUNT];
-		for (int trackIndex = 0; trackIndex < Circuit.TRACK_COUNT; trackIndex++) {
-			trackOptions[trackIndex] = "Track " + (trackIndex + 1);
-		}
+		String[] trackOptions = GameCatalog.trackOptions();
 		trackMenu = new JComboBox(trackOptions);
 		trackMenu.addItemListener(this);
 		trackMenu.setName("track");
