@@ -5,7 +5,6 @@ import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -192,24 +191,6 @@ public final class RaceSceneryPainter {
 			double y = originY + cell[0] * tileSize + tileSize * (0.25 + random.nextDouble() * 0.5);
 			paintFloraSprite(graphics, sprites[variant], x, y, size, random);
 		}
-	}
-
-	/** Axis-aligned asphalt footprint from the tile map (non-{@link Circuit#TILE_OPEN}). */
-	public static Area asphaltFootprint(int[][] trackMap, int tileSize, int originX, int originY) {
-		Area area = new Area();
-		for (int row = 0; row < trackMap.length; row++) {
-			for (int column = 0; column < trackMap[row].length; column++) {
-				if (trackMap[row][column] == Circuit.TILE_OPEN) {
-					continue;
-				}
-				area.add(new Area(new Rectangle2D.Double(
-						originX + column * tileSize,
-						originY + row * tileSize,
-						tileSize,
-						tileSize)));
-			}
-		}
-		return area;
 	}
 
 	public static int seedFor(int[][] trackMap) {

@@ -24,7 +24,7 @@ The project aimed to:
 1. Deliver a **functional game** with menus, race setup, real-time rendering, and scoring.
 2. Apply **object-oriented design** with clear separation of concerns.
 3. Implement **non-trivial behaviour**: car physics, track boundary detection, AI opponents, and serialized persistence.
-4. Produce **supporting artefacts**: UML class diagram, user documentation, and a written report (original French PDF).
+4. Produce **supporting artefacts**: user documentation and a written report (original French PDF).
 
 ### 1.3 Scope and limitations
 
@@ -92,8 +92,6 @@ The codebase follows **Model–View–Controller**:
 | **View** | Single-window Swing UI | `AppShell`, `GameFrame`, screen panels |
 | **Controller** | Loop, input, AI | `Game`, `Controller`, `HumanController`, `AiController`, `GameTickTask`, `Main` |
 
-The UML class diagram is maintained in `diagram/classes.ucls` (ObjectAid) with PNG export `diagram/classes.png`.
-
 ### 3.2 Observer pattern
 
 `Car` and `Circuit` extend `java.util.Observable` and notify `GameFrame` when state changes. `HallOfFame` notifies `HallPanel` when rankings change. This was a standard Swing-era pattern taught in the course; it is deprecated in modern Java but preserved for historical fidelity until a listener-based refactor is undertaken.
@@ -129,21 +127,21 @@ Collisions (`collideWith`) use axis-aligned rectangles rotated per car, then adj
 
 `enforceTrackBoundaries` maps the car to grid coordinates and checks whether the pixel position lies inside the valid corridor for that tile type:
 
-- **Types 1–2:** straight segments with inner/outer radius bounds.
-- **Types 3–6:** quarter-circle corners around tile corners.
-- **Type 7:** open tile (no extra constraint).
+- **Types 0–1:** straight segments with inner/outer radius bounds.
+- **Types 2–5:** quarter-circle corners around tile corners.
+- **Type 6:** open tile (no asphalt constraint).
 
 Leaving the corridor reverses part of the speed and nudges the car back toward the tile centre.
 
 ### 4.3 AI controller (`AiController`)
 
-AI opponents always accelerate and steer using a **PD (proportional–derivative) controller** on heading error:
+AI opponents follow a geometric **reference path** (`TrackGeometry` / `ReferencePath`) with a **PD path-following controller** (`PdPathFollowController`) on a Dubins vehicle model:
 
-- The **reference heading** depends on the current tile type and the previous grid cell (inferring driving direction through corners).
-- Gains scale with the car’s handling statistic.
-- Output is saturated to limit turn rate.
+- Cross-track and heading errors produce steering commands.
+- Speed commands ramp toward a cruise speed with curvature feedforward on arcs.
+- The resulting pose is applied back to the game `Car` each tick.
 
-This approach was chosen as a lightweight alternative to full path planning, sufficient for arcade opponents on fixed tracks.
+This keeps arcade AI opponents on the racing line without full planning.
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
@@ -241,7 +239,6 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 2. Course materials: Supélec *Projet Logiciel*, Sequence 6, 2014/2015.
 3. Inspiration: *Super Sprint* (arcade, 1985).
 4. Repository documentation: [README.md](../README.md), [BUILD.md](BUILD.md), [CONTRIBUTING.md](CONTRIBUTING.md).
-5. UML diagram: [diagram/classes.ucls](diagram/classes.ucls), [diagram/classes.png](diagram/classes.png).
 
 ---
 
@@ -253,15 +250,19 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 | `Game` | controller | Race session orchestration |
 | `Controller` | controller | Abstract player/AI binding to `Car` |
 | `HumanController` | controller | Keyboard input |
-| `AiController` | controller | PD steering AI |
+| `AiController` | controller | Path-following AI |
+| `PdPathFollowController` | controller | PD tracking on a reference path |
+| `TrackingLoop` | controller | Dubins vehicle + PD step |
 | `GameTickTask` | controller | Timer tick callback |
 | `Car` | model | Physics and rendering notifications |
 | `Circuit` | model | Track grid, boundaries, timing |
-| `HallOfFame` | model | Leaderboard persistence |
-| `Result` | model | Serializable score entry |
+| `TrackGeometry` / `ReferencePath` | model | Centerline samples for AI / previews |
+| `Terrain` / `GameCatalog` | model | Catalog names, terrains, lap options |
+| `HallOfFame` / `Result` | model | Leaderboard persistence |
 | `AppShell` | view | Single application window |
 | `GameFrame` | view | Race canvas rendering |
-| `HallPanel` | view | Leaderboard UI |
+| `HallPanel` / `HelpPanel` / `RaceCompletePanel` | view | In-window screens |
+| `RaceSceneryPainter` | view | Terrain ground fill + flora sprites |
 
 ## Appendix B — Glossary (French → English)
 

@@ -1,9 +1,7 @@
 package view.components;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
-import java.awt.Font;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -65,9 +63,5 @@ public class ThemedPanel extends JPanel {
 			header.add(subtitleLabel, BorderLayout.SOUTH);
 		}
 		return header;
-	}
-
-	public void styleSurface(Color background) {
-		setBackground(background);
 	}
 }

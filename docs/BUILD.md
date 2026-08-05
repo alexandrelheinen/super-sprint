@@ -85,17 +85,13 @@ On first launch, the game copies `src/data/hall_of_fame.dat` to:
 
 Subsequent runs read and write leaderboard data from that user file only.
 
-## Legacy compilation note
-
-Older revisions used a hand-maintained `java-files.txt` source list and stored assets under `images/` at the repository root. That layout has been replaced by `src/sprites/`, `src/data/`, and automatic source discovery via the Makefile.
-
 ## Troubleshooting
 
 | Problem | Likely cause | Fix |
 |---------|--------------|-----|
 | `Could not find or load main class controller.Main` | Not compiled or wrong directory | Run `make compile` from repo root |
 | Missing sprites / file not found | Wrong working directory | Always run from repository root |
-| Car sprite download failed | Network blocked or missing ffmpeg | Warnings appear during `make compile`; bundled `src/sprites/car*.png` are copied to `build/sprites/` |
+| Car sprite download failed | Network blocked or missing ffmpeg | Warnings appear during `make compile`; bundled `src/sprites/car_XX.png` are copied to `build/sprites/` |
 | HeadlessException on CI | No display | Use `make smoke-test` (includes Xvfb) |
 | Deprecation warnings for Observer | Legacy observer pattern | Warnings are expected; see CONTRIBUTING.md |
 

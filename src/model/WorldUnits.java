@@ -22,20 +22,4 @@ public final class WorldUnits {
 	public static int mToPxRounded(double meters) {
 		return (int) Math.round(mToPx(meters));
 	}
-
-	public static float mToPxFloat(double meters) {
-		return (float) mToPx(meters);
-	}
-
-	public static String formatMetersPerSecond(double speedMs) {
-		return String.format("%.1f m/s", speedMs);
-	}
-
-	public static String formatMetersPerSecondSquared(double accelerationMs2) {
-		return String.format("%.1f m/s²", accelerationMs2);
-	}
-
-	public static String formatHandling(double handling) {
-		return String.format("%.0f", handling);
-	}
 }

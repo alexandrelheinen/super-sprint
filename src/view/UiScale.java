@@ -11,7 +11,6 @@ import java.io.IOException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 import model.ConfigLoader;
 import model.ResourcePaths;
@@ -103,10 +102,6 @@ public final class UiScale {
 				content.height + insets.top + insets.bottom);
 	}
 
-	public static Dimension lockedContentSize() {
-		return lockedContentSize != null ? new Dimension(lockedContentSize) : quarterScreenSize();
-	}
-
 	public static float scaleFactor(Component component) {
 		Dimension baseline = quarterScreenSize();
 		Dimension size = lockedContentSize != null
@@ -152,9 +147,5 @@ public final class UiScale {
 		int scaledHeight = scale(component, height);
 		Image image = icon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
 		return new ImageIcon(image);
-	}
-
-	public static void fitLabelIcon(JLabel label, Component context, String spritePath, int width, int height) {
-		label.setIcon(scaledIcon(context, spritePath, width, height));
 	}
 }

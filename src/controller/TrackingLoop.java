@@ -20,10 +20,6 @@ public class TrackingLoop {
 		return vehicle;
 	}
 
-	public PdPathFollowController getController() {
-		return controller;
-	}
-
 	/**
 	 * Integrate one tracking step on the reference path.
 	 */
