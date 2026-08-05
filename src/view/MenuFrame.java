@@ -34,7 +34,6 @@ import view.components.StatBar;
 import view.components.StyledComboBox;
 import view.components.ThemedPanel;
 import view.dialogs.HelpDialog;
-import view.theme.GameTheme;
 import view.ui.BackgroundPanel;
 
 public class MenuFrame extends JFrame implements ActionListener, ItemListener {
