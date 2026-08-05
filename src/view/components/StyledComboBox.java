@@ -13,7 +13,7 @@ public final class StyledComboBox {
 
 	private static final int COMBO_HEIGHT = 36;
 	/** Fallback width hint when callers do not supply a prototype. */
-	private static final String DEFAULT_PROTOTYPE = "A-Type";
+	private static final String DEFAULT_PROTOTYPE = "Purple Retro Grand Prix";
 
 	private StyledComboBox() {
 	}

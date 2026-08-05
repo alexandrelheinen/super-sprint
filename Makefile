@@ -6,7 +6,7 @@ SMOKE_TIMEOUT_SEC := 5
 SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
 KENNEY_SCRIPT := scripts/prepare-kenney-sprites.sh
 TRACK_PREVIEW_SCRIPT := scripts/generate-track-previews.sh
-BUNDLED_CAR_SPRITES := src/sprites/car_00.png src/sprites/car_01.png src/sprites/car_02.png src/sprites/car_03.png
+CAR_SHEET := src/sprites/cars.png
 KENNEY_ZIP := third_party/kenney-top-down-tanks-redux/kenney_topdownTanksRedux.zip
 KENNEY_LICENSE := third_party/kenney-top-down-tanks-redux/License.txt
 CONFIG_FILES := $(wildcard src/data/config/*.properties)
@@ -27,7 +27,7 @@ help:
 	@echo "  make clean       Remove build artifacts"
 	@echo "  make help        Show this message"
 
-$(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(BUNDLED_CAR_SPRITES)
+$(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(CAR_SHEET)
 	@bash $(SPRITE_SCRIPT) $(BUILD_DIR)
 
 prepare-sprites: $(BUILD_DIR)/sprites/.sprites-stamp

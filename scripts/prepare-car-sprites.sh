@@ -1,118 +1,235 @@
 #!/usr/bin/env bash
-# Downloads GTA 2 car artwork sprites, flips them horizontally (art faces left;
-# the game expects sprites facing right like the bundled car PNG files),
-# keys out the top-left background pixel, crops transparent borders, and writes
-# RGBA PNGs to $BUILD_DIR/sprites/car_XX.png (zero-based, two-digit index).
-set -u
+# Slices src/sprites/cars.png (3x3 grid) into car_00.png … car_08.png,
+# replaces the cyan background with transparency, trims empty margins,
+# rotates each sprite to face right (game convention), scales to race size,
+# and writes mean-color metadata to cars.properties.
+set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 OUT_DIR="${BUILD_DIR}/sprites"
-FALLBACK_DIR="src/sprites"
-TARGET_WIDTH="${CAR_SPRITE_WIDTH:-40}"
-CHROMA_TOLERANCE="${CAR_CHROMA_TOLERANCE:-36}"
+CONFIG_OUT_DIR="${BUILD_DIR}/config"
+BUNDLED_SPRITE_DIR="src/sprites"
+BUNDLED_CONFIG_DIR="src/data/config"
+SOURCE_SHEET="${BUNDLED_SPRITE_DIR}/cars.png"
+GRID_SIZE=3
+CAR_COUNT=$((GRID_SIZE * GRID_SIZE))
+# Long axis in pixels after rotate-to-face-right (matches previous ~40px cars).
+TARGET_LENGTH="${CAR_SPRITE_LENGTH:-40}"
+CHROMA_TOLERANCE="${CAR_CHROMA_TOLERANCE:-40}"
 
-mkdir -p "${OUT_DIR}"
+mkdir -p "${OUT_DIR}" "${CONFIG_OUT_DIR}" "${BUNDLED_SPRITE_DIR}" "${BUNDLED_CONFIG_DIR}"
 
-if ! command -v curl >/dev/null 2>&1; then
-	echo "WARNING: curl is not available; using bundled car sprites." >&2
-fi
-
-if ! command -v ffmpeg >/dev/null 2>&1; then
-	echo "WARNING: ffmpeg is not available; using bundled car sprites." >&2
+if [[ ! -f "${SOURCE_SHEET}" ]]; then
+	echo "ERROR: Missing sprite sheet ${SOURCE_SHEET}" >&2
+	exit 1
 fi
 
 if ! python3 -c "from PIL import Image" >/dev/null 2>&1; then
-	echo "WARNING: Python Pillow is not available; sprites will not be trimmed." >&2
+	echo "ERROR: Python Pillow is required to prepare car sprites from ${SOURCE_SHEET}." >&2
+	echo "Install with: pip3 install Pillow   or   sudo apt-get install python3-pil" >&2
+	exit 1
 fi
 
-# Source artwork (French GTA Wiki — Artworks de GTA 2):
-# 0 A-Type, 1 B-Type, 2 Z-Type, 3 T-Rex
-URLS=(
-	"https://static.wikia.nocookie.net/gta/images/7/75/A-TypeRL.jpg/revision/latest/scale-to-width-down/${TARGET_WIDTH}?cb=20090709121326&path-prefix=fr"
-	"https://static.wikia.nocookie.net/gta/images/b/b7/B-TypeRL.jpg/revision/latest/scale-to-width-down/${TARGET_WIDTH}?cb=20090709121500&path-prefix=fr"
-	"https://static.wikia.nocookie.net/gta/images/a/af/Z-TypeRL.jpg/revision/latest/scale-to-width-down/${TARGET_WIDTH}?cb=20090725135634&path-prefix=fr"
-	"https://static.wikia.nocookie.net/gta/images/1/14/T-RexRL.jpg/revision/latest/scale-to-width-down/${TARGET_WIDTH}?cb=20090725135132&path-prefix=fr"
-)
-NAMES=("A-Type" "B-Type" "Z-Type" "T-Rex")
+python3 - "${SOURCE_SHEET}" "${OUT_DIR}" "${CONFIG_OUT_DIR}" "${BUNDLED_SPRITE_DIR}" "${BUNDLED_CONFIG_DIR}" \
+	"${CAR_COUNT}" "${GRID_SIZE}" "${TARGET_LENGTH}" "${CHROMA_TOLERANCE}" <<'PY'
+from __future__ import annotations
 
-sprite_file_name() {
-	local index="$1"
-	printf 'car_%02d.png' "${index}"
-}
-
-chroma_filter() {
-	local tolerance="$1"
-	cat <<EOF
-format=rgba,hflip,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte(abs(r(X,Y)-r(0,0))+abs(g(X,Y)-g(0,0))+abs(b(X,Y)-b(0,0)),${tolerance}),0,255)'
-EOF
-}
-
-trim_transparent_png() {
-	local input="$1"
-	local output="$2"
-	python3 - "${input}" "${output}" <<'PY'
-from PIL import Image
 import sys
+from pathlib import Path
 
-source_path, output_path = sys.argv[1:3]
-image = Image.open(source_path).convert("RGBA")
-bbox = image.getbbox()
-if bbox is not None:
-	image = image.crop(bbox)
-image.save(output_path)
+from PIL import Image
+
+source_sheet = Path(sys.argv[1])
+out_dir = Path(sys.argv[2])
+config_out_dir = Path(sys.argv[3])
+bundled_sprite_dir = Path(sys.argv[4])
+bundled_config_dir = Path(sys.argv[5])
+car_count = int(sys.argv[6])
+grid_size = int(sys.argv[7])
+target_length = int(sys.argv[8])
+chroma_tolerance = int(sys.argv[9])
+
+# Index order is row-major (left-to-right, top-to-bottom).
+CAR_META = [
+	(12, "Vintage Yellow Hot Rod"),
+	(8, "Classic Green Formula"),
+	(21, "Blue GT Coupe"),
+	(45, "Red Flame Muscle"),
+	(77, "Silver Open-Wheel Racer"),
+	(56, "Brown Vintage Wagon"),
+	(3, "Orange Classic Roadster"),
+	(9, "Purple Retro Grand Prix"),
+	(6, "Teal Vintage Sports"),
+]
+
+
+def iter_pixels(image: Image.Image):
+	if hasattr(image, "get_flattened_data"):
+		return image.get_flattened_data()
+	return image.getdata()
+
+
+def channel_distance(pixel, key):
+	return abs(pixel[0] - key[0]) + abs(pixel[1] - key[1]) + abs(pixel[2] - key[2])
+
+
+def dominant_background(image: Image.Image) -> tuple[int, int, int]:
+	"""Pick the most common opaque RGB near the sheet corners (cyan key)."""
+	width, height = image.size
+	margin = max(8, min(width, height) // 32)
+	regions = [
+		(0, 0, margin, margin),
+		(width - margin, 0, width, margin),
+		(0, height - margin, margin, height),
+		(width - margin, height - margin, width, height),
+	]
+	counts: dict[tuple[int, int, int], int] = {}
+	for left, top, right, bottom in regions:
+		region = image.crop((left, top, right, bottom))
+		for pixel in iter_pixels(region):
+			rgb = pixel[:3]
+			counts[rgb] = counts.get(rgb, 0) + 1
+	if not counts:
+		return image.getpixel((0, 0))[:3]
+	return max(counts.items(), key=lambda item: item[1])[0]
+
+
+def key_out_cyan(cell: Image.Image, key: tuple[int, int, int], tolerance: int) -> Image.Image:
+	rgba = cell.convert("RGBA")
+	keyed = []
+	for red, green, blue, _alpha in iter_pixels(rgba):
+		if channel_distance((red, green, blue), key) <= tolerance:
+			keyed.append((0, 0, 0, 0))
+		else:
+			keyed.append((red, green, blue, 255))
+	out = Image.new("RGBA", rgba.size)
+	out.putdata(keyed)
+	return out
+
+
+def trim_transparent(image: Image.Image) -> Image.Image:
+	bbox = image.getbbox()
+	if bbox is None:
+		return image
+	return image.crop(bbox)
+
+
+def mean_opaque_color(image: Image.Image) -> tuple[int, int, int]:
+	total_r = total_g = total_b = count = 0
+	for red, green, blue, alpha in iter_pixels(image):
+		if alpha == 0:
+			continue
+		total_r += red
+		total_g += green
+		total_b += blue
+		count += 1
+	if count == 0:
+		return (128, 128, 128)
+	return (total_r // count, total_g // count, total_b // count)
+
+
+def scale_to_length(image: Image.Image, length: int) -> Image.Image:
+	width, height = image.size
+	if width <= 0 or height <= 0:
+		return image
+	# After rotate-to-face-right, width is the car length.
+	scale = length / float(width)
+	new_size = (
+		max(1, int(round(width * scale))),
+		max(1, int(round(height * scale))),
+	)
+	return image.resize(new_size, Image.Resampling.LANCZOS)
+
+
+def cleanup_fringe(image: Image.Image, key: tuple[int, int, int], tolerance: int) -> Image.Image:
+	"""Drop rescale fringe: near-transparent or reintroduced cyan key pixels."""
+	cleaned = []
+	for red, green, blue, alpha in iter_pixels(image):
+		if alpha < 16 or channel_distance((red, green, blue), key) <= tolerance:
+			cleaned.append((0, 0, 0, 0))
+		else:
+			cleaned.append((red, green, blue, 255))
+	out = Image.new("RGBA", image.size)
+	out.putdata(cleaned)
+	return out
+
+
+def cell_bounds(sheet_size: int, index: int) -> tuple[int, int]:
+	start = (index * sheet_size) // grid_size
+	end = ((index + 1) * sheet_size) // grid_size
+	return start, end
+
+
+sheet = Image.open(source_sheet).convert("RGBA")
+sheet_w, sheet_h = sheet.size
+key = dominant_background(sheet)
+print(f"Using cyan key color RGB{key} with tolerance {chroma_tolerance}")
+
+config_lines = [
+	"# Generated by scripts/prepare-car-sprites.sh from src/sprites/cars.png",
+	"# Do not edit by hand — re-run the sprite preparation step instead.",
+	"# Fields: index, number (racing #), name, mean opaque RGB color, sprite size.",
+	"",
+]
+names = []
+
+for index in range(car_count):
+	row, col = divmod(index, grid_size)
+	x0, x1 = cell_bounds(sheet_w, col)
+	y0, y1 = cell_bounds(sheet_h, row)
+	cell = sheet.crop((x0, y0, x1, y1))
+	keyed = key_out_cyan(cell, key, chroma_tolerance)
+	trimmed = trim_transparent(keyed)
+	if trimmed.getbbox() is None:
+		raise SystemExit(f"Car cell {index} is empty after chroma key / trim")
+
+	# Sheet cars face up; the game expects angle 0 = facing right.
+	facing_right = trimmed.rotate(-90, expand=True, resample=Image.Resampling.BICUBIC)
+	facing_right = trim_transparent(facing_right)
+	mean_color = mean_opaque_color(facing_right)
+	scaled = scale_to_length(facing_right, target_length)
+	scaled = cleanup_fringe(scaled, key, chroma_tolerance)
+	scaled = trim_transparent(scaled)
+
+	file_name = f"car_{index:02d}.png"
+	build_path = out_dir / file_name
+	bundled_path = bundled_sprite_dir / file_name
+	scaled.save(build_path, format="PNG")
+	scaled.save(bundled_path, format="PNG")
+
+	number, name = CAR_META[index]
+	names.append(name)
+	width, height = scaled.size
+	config_lines.extend(
+		[
+			f"car.{index}.index={index}",
+			f"car.{index}.number={number}",
+			f"car.{index}.name={name}",
+			f"car.{index}.color={mean_color[0]},{mean_color[1]},{mean_color[2]}",
+			f"car.{index}.width={width}",
+			f"car.{index}.height={height}",
+			"",
+		]
+	)
+	print(
+		f"Prepared {file_name}: #{number} {name} "
+		f"mean=RGB{mean_color} size={width}x{height}"
+	)
+
+config_lines.append("catalog.car.names=" + ",".join(names))
+config_lines.append("")
+config_text = "\n".join(config_lines)
+for config_dir in (config_out_dir, bundled_config_dir):
+	config_path = config_dir / "cars.properties"
+	config_path.write_text(config_text, encoding="utf-8")
+	print(f"Wrote {config_path}")
 PY
-}
 
-finalize_sprite() {
-	local source="$1"
-	local output="$2"
-	if python3 -c "from PIL import Image" >/dev/null 2>&1; then
-		trim_transparent_png "${source}" "${output}"
-	else
-		cp "${source}" "${output}"
-	fi
-}
-
-prepare_sprite() {
-	local index="$1"
-	local url="$2"
-	local name="$3"
-	local file_name
-	file_name="$(sprite_file_name "${index}")"
-	local output="${OUT_DIR}/${file_name}"
-	local fallback="${FALLBACK_DIR}/${file_name}"
-	local temp_file
-	local processed_file
-
-	temp_file="$(mktemp "${TMPDIR:-/tmp}/car_${index}.XXXXXX")"
-	processed_file="$(mktemp "${TMPDIR:-/tmp}/car_${index}.proc.XXXXXX.png")"
-
-	if [[ ! -f "${fallback}" ]]; then
-		echo "WARNING: Missing fallback sprite ${fallback}; cannot prepare car ${index} (${name})." >&2
-		rm -f "${temp_file}" "${processed_file}"
-		return 1
-	fi
-
-	if command -v curl >/dev/null 2>&1 \
-		&& command -v ffmpeg >/dev/null 2>&1 \
-		&& curl -fsSL "${url}" -o "${temp_file}" \
-		&& ffmpeg -y -loglevel error -i "${temp_file}" \
-			-vf "$(chroma_filter "${CHROMA_TOLERANCE}")" \
-			-update 1 -frames:v 1 "${processed_file}" \
-		&& finalize_sprite "${processed_file}" "${output}"; then
-		echo "Prepared ${file_name} from ${name} artwork (flipped, chroma keyed, trimmed)."
-		rm -f "${temp_file}" "${processed_file}"
-		return 0
-	fi
-
-	echo "WARNING: Failed to download or process ${name} sprite; using trimmed bundled ${fallback}." >&2
-	finalize_sprite "${fallback}" "${output}"
-	rm -f "${temp_file}" "${processed_file}"
-	return 0
-}
-
-for index in 0 1 2 3; do
-	prepare_sprite "${index}" "${URLS[$index]}" "${NAMES[$index]}"
-done
+# Keep the source sheet; only individual sprites are derived outputs.
+if [[ ! -f "${SOURCE_SHEET}" ]]; then
+	echo "ERROR: Source sheet disappeared: ${SOURCE_SHEET}" >&2
+	exit 1
+fi
 
 touch "${OUT_DIR}/.sprites-stamp"
+echo "Car sprites ready in ${OUT_DIR} (source sheet ${SOURCE_SHEET} preserved)."

@@ -63,14 +63,6 @@ public class GameFrame extends Canvas implements Observer {
 	private static final int SPRITE_CENTER_DIVISOR = 2;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
 	private static final int MS_PER_SECOND = 1000;
-	/** HUD text colors matching the car sprite liveries (models 1-4). */
-	private static final java.awt.Color[] CAR_MODEL_HUD_COLORS = {
-			new java.awt.Color(110, 170, 255),
-			new java.awt.Color(225, 205, 100),
-			new java.awt.Color(130, 205, 130),
-			new java.awt.Color(240, 110, 110)
-	};
-
 	private static final String HUD_RACE_TIME_PREFIX = "TIME ";
 	private static final String HUD_TIME_SUFFIX = "s";
 	private static final String HUD_LAP_SEPARATOR = "/";
@@ -612,8 +604,7 @@ public class GameFrame extends Canvas implements Observer {
 		int rightEdge = getWidth() - HUD_SIDE_PADDING;
 		int chipX = Math.max(HUD_SIDE_PADDING + metrics.stringWidth(timerText) + HUD_LAP_CHIP_GAP, rightEdge - chipsWidth);
 		for (int index = 0; index < cars.length; index++) {
-			graphics2D.setColor(CAR_MODEL_HUD_COLORS[
-					cars[index].getModelIndex() % CAR_MODEL_HUD_COLORS.length]);
+			graphics2D.setColor(GameCatalog.carModelColor(cars[index].getModelIndex()));
 			graphics2D.drawString(lapTexts[index], chipX, baseline);
 			chipX += metrics.stringWidth(lapTexts[index]) + HUD_LAP_CHIP_GAP;
 		}

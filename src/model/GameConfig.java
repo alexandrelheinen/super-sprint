@@ -1,5 +1,7 @@
 package model;
 
+import java.awt.Color;
+
 /**
  * Typed accessors for game and catalog settings loaded from {@code src/data/config/}.
  */
@@ -18,7 +20,10 @@ public final class GameConfig {
 	private static final String KEY_METERS_PER_TILE = "world.metersPerTile";
 
 	private static final String DEFAULT_GAME_TITLE = "Super Sprint Supelec";
-	private static final String DEFAULT_CAR_MODEL_NAMES = "A-Type,B-Type,Z-Type,T-Rex";
+	private static final String DEFAULT_CAR_MODEL_NAMES =
+			"Vintage Yellow Hot Rod,Classic Green Formula,Blue GT Coupe,Red Flame Muscle,"
+					+ "Silver Open-Wheel Racer,Brown Vintage Wagon,Orange Classic Roadster,"
+					+ "Purple Retro Grand Prix,Teal Vintage Sports";
 	private static final String DEFAULT_TRACK_NAMES = "Campus Loop,Foundry Eight,Serpent Pass,Metro Chicane";
 	private static final String DEFAULT_TRACK_TERRAINS = "grass,sand,grass,sand";
 	private static final String DEFAULT_LAP_COUNT_OPTIONS = "1,2,3,5,7,10";
@@ -29,9 +34,26 @@ public final class GameConfig {
 	private static final double DEFAULT_METERS_PER_TILE = 21.9;
 	private static final String DEFAULT_HALL_NAMES =
 			"Paul,Alexandre,Chloe,Nathan,Raphael,Louise,Arthur,Emma,Jules,Amelie";
+	private static final int[] DEFAULT_CAR_NUMBERS = {12, 8, 21, 45, 77, 56, 3, 9, 6};
+	private static final String[] DEFAULT_CAR_COLORS = {
+			"200,160,40",
+			"40,140,60",
+			"40,90,180",
+			"200,50,50",
+			"160,160,165",
+			"120,80,50",
+			"210,110,40",
+			"120,60,160",
+			"40,140,140"
+	};
+	private static final int DEFAULT_SPRITE_WIDTH = 40;
+	private static final int DEFAULT_SPRITE_HEIGHT = 20;
 
 	public static final String GAME_TITLE = ConfigLoader.getString(KEY_GAME_TITLE, DEFAULT_GAME_TITLE);
-	public static final String[] CAR_MODEL_NAMES = ConfigLoader.getCommaSeparated(KEY_CAR_MODEL_NAMES, DEFAULT_CAR_MODEL_NAMES);
+	public static final String[] CAR_MODEL_NAMES = loadCarModelNames();
+	public static final int[] CAR_MODEL_NUMBERS = loadCarModelNumbers(CAR_MODEL_NAMES.length);
+	public static final Color[] CAR_MODEL_COLORS = loadCarModelColors(CAR_MODEL_NAMES.length);
+	public static final int[][] CAR_MODEL_SPRITE_DIMENSIONS = loadCarSpriteDimensions(CAR_MODEL_NAMES.length);
 	public static final String[] TRACK_NAMES = ConfigLoader.getCommaSeparated(KEY_TRACK_NAMES, DEFAULT_TRACK_NAMES);
 	public static final Terrain[] TRACK_TERRAINS = loadTrackTerrains();
 	public static final int[] LAP_COUNT_OPTIONS = ConfigLoader.getIntList(KEY_LAP_COUNT_OPTIONS, DEFAULT_LAP_COUNT_OPTIONS);
@@ -46,6 +68,46 @@ public final class GameConfig {
 			ConfigLoader.getDouble(KEY_METERS_PER_TILE, DEFAULT_METERS_PER_TILE);
 
 	private GameConfig() {
+	}
+
+	private static String[] loadCarModelNames() {
+		String[] fromCatalog = ConfigLoader.getCommaSeparated(KEY_CAR_MODEL_NAMES, "");
+		if (fromCatalog.length > 0) {
+			return fromCatalog;
+		}
+		String[] defaults = DEFAULT_CAR_MODEL_NAMES.split(",");
+		String[] names = new String[defaults.length];
+		for (int index = 0; index < defaults.length; index++) {
+			names[index] = ConfigLoader.getString("car." + index + ".name", defaults[index].trim());
+		}
+		return names;
+	}
+
+	private static int[] loadCarModelNumbers(int count) {
+		int[] numbers = new int[count];
+		for (int index = 0; index < count; index++) {
+			int fallback = index < DEFAULT_CAR_NUMBERS.length ? DEFAULT_CAR_NUMBERS[index] : index + 1;
+			numbers[index] = ConfigLoader.getInt("car." + index + ".number", fallback);
+		}
+		return numbers;
+	}
+
+	private static Color[] loadCarModelColors(int count) {
+		Color[] colors = new Color[count];
+		for (int index = 0; index < count; index++) {
+			String fallback = index < DEFAULT_CAR_COLORS.length ? DEFAULT_CAR_COLORS[index] : "180,180,180";
+			colors[index] = ConfigLoader.getColor("car." + index + ".color", fallback);
+		}
+		return colors;
+	}
+
+	private static int[][] loadCarSpriteDimensions(int count) {
+		int[][] dimensions = new int[count][2];
+		for (int index = 0; index < count; index++) {
+			dimensions[index][0] = ConfigLoader.getInt("car." + index + ".width", DEFAULT_SPRITE_WIDTH);
+			dimensions[index][1] = ConfigLoader.getInt("car." + index + ".height", DEFAULT_SPRITE_HEIGHT);
+		}
+		return dimensions;
 	}
 
 	private static Terrain[] loadTrackTerrains() {

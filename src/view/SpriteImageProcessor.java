@@ -20,20 +20,16 @@ public final class SpriteImageProcessor {
 			return null;
 		}
 
-		int keyRed;
-		int keyGreen;
-		int keyBlue;
-		if (source.getColorModel().hasAlpha()) {
-			int keyRgb = source.getRGB(0, 0);
-			keyRed = (keyRgb >> RED_CHANNEL_SHIFT) & CHANNEL_MASK;
-			keyGreen = (keyRgb >> GREEN_CHANNEL_SHIFT) & CHANNEL_MASK;
-			keyBlue = keyRgb & CHANNEL_MASK;
-		} else {
-			int keyRgb = source.getRGB(0, 0);
-			keyRed = (keyRgb >> RED_CHANNEL_SHIFT) & CHANNEL_MASK;
-			keyGreen = (keyRgb >> GREEN_CHANNEL_SHIFT) & CHANNEL_MASK;
-			keyBlue = keyRgb & CHANNEL_MASK;
+		// Sprites prepared from cars.png are already chroma-keyed. Re-keying from
+		// a transparent top-left pixel would treat black outlines as the key color.
+		if (hasTransparentPixel(source)) {
+			return trimTransparentBorder(copyArgb(source));
 		}
+
+		int keyRgb = source.getRGB(0, 0);
+		int keyRed = (keyRgb >> RED_CHANNEL_SHIFT) & CHANNEL_MASK;
+		int keyGreen = (keyRgb >> GREEN_CHANNEL_SHIFT) & CHANNEL_MASK;
+		int keyBlue = keyRgb & CHANNEL_MASK;
 
 		BufferedImage processed = new BufferedImage(
 				source.getWidth(),
@@ -62,6 +58,34 @@ public final class SpriteImageProcessor {
 			}
 		}
 		return trimTransparentBorder(processed);
+	}
+
+	private static boolean hasTransparentPixel(BufferedImage source) {
+		if (!source.getColorModel().hasAlpha()) {
+			return false;
+		}
+		for (int y = 0; y < source.getHeight(); y++) {
+			for (int x = 0; x < source.getWidth(); x++) {
+				int alpha = (source.getRGB(x, y) >> ALPHA_OPAQUE_SHIFT) & CHANNEL_MASK;
+				if (alpha == TRANSPARENT_ALPHA) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static BufferedImage copyArgb(BufferedImage source) {
+		BufferedImage copy = new BufferedImage(
+				source.getWidth(),
+				source.getHeight(),
+				BufferedImage.TYPE_INT_ARGB);
+		for (int y = 0; y < source.getHeight(); y++) {
+			for (int x = 0; x < source.getWidth(); x++) {
+				copy.setRGB(x, y, source.getRGB(x, y));
+			}
+		}
+		return copy;
 	}
 
 	/**

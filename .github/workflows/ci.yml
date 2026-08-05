@@ -21,7 +21,7 @@ jobs:
           java-version: '17'
 
       - name: Install headless display dependencies
-        run: sudo apt-get update && sudo apt-get install -y xvfb ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y xvfb python3-pil
 
       - name: Compile
         run: make compile
