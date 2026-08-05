@@ -102,4 +102,4 @@ GitHub Actions (`.github/workflows/ci.yml`) compiles the project and runs a head
 
 ## License
 
-This repository contains a student academic project. No explicit license file is provided.
+This project is released under the [MIT License](../LICENSE).
