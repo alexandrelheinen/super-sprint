@@ -28,13 +28,14 @@ public final class UiScale {
 	private static final String KEY_MIN_WINDOW_WIDTH = "ui.scale.min.window.width";
 	private static final String KEY_MIN_WINDOW_HEIGHT = "ui.scale.min.window.height";
 	private static final String KEY_MIN_FONT_SIZE = "ui.scale.min.font.size";
+	private static final String KEY_SCREEN_SIZE_DIVISOR = "ui.scale.screen.divisor";
 
 	public static final int REFERENCE_WIDTH = ConfigLoader.getInt(KEY_REFERENCE_WIDTH, 960);
 	public static final int REFERENCE_HEIGHT = ConfigLoader.getInt(KEY_REFERENCE_HEIGHT, 720);
 
 	private static final int MIN_WINDOW_WIDTH = ConfigLoader.getInt(KEY_MIN_WINDOW_WIDTH, 640);
 	private static final int MIN_WINDOW_HEIGHT = ConfigLoader.getInt(KEY_MIN_WINDOW_HEIGHT, 480);
-	private static final int SCREEN_SIZE_DIVISOR = 2;
+	private static final int SCREEN_SIZE_DIVISOR = ConfigLoader.getInt(KEY_SCREEN_SIZE_DIVISOR, 4);
 	private static final int MINIMUM_SIZE_DIVISOR = 2;
 	private static final float MIN_FONT_SIZE = ConfigLoader.getFloat(KEY_MIN_FONT_SIZE, 11f);
 
