@@ -1,9 +1,7 @@
 package view;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,23 +10,26 @@ import java.awt.event.ItemListener;
 import java.io.FileNotFoundException;
 import java.util.Random;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.SpringLayout;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
 
 import controller.Game;
 import model.Car;
 import model.Circuit;
 import model.HallOfFame;
 import model.ResourcePaths;
+import view.components.ArcadeButton;
+import view.components.ThemedPanel;
+import view.theme.GameTheme;
 
 public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
@@ -41,23 +42,22 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 	private final JPanel mainPanel;
 	private final JLabel menuImageLabel;
 	private final JPanel buttonPanel;
-	private final JButton[] mainButtons;
+	private final ArcadeButton[] mainButtons;
 
 	private final JPanel racePanel;
-	private final JPanel[] carPanels;
+	private final ThemedPanel[] carPanels;
 	@SuppressWarnings("rawtypes")
 	private final JComboBox[] carMenus;
 	private final JLabel[] carIcons;
 	private final JProgressBar[][] carStatBars;
 
-	private final JPanel trackPanel;
+	private final ThemedPanel trackPanel;
 	@SuppressWarnings("rawtypes")
 	private final JComboBox trackMenu;
 	private final JLabel trackIcon;
 
-	private final JButton startButton;
-	private final JButton backToMenuButton;
-	private final SpringLayout raceLayout;
+	private final ArcadeButton startButton;
+	private final ArcadeButton backToMenuButton;
 
 	private int selectedTrack = 1;
 	private final int[] selectedCarModels = new int[2];
@@ -70,102 +70,121 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		hallFrame = new HallFrame(this);
 		hallOfFame = new HallOfFame(hallFrame);
 
-		mainPanel = new JPanel();
-		menuImageLabel = new JLabel();
-		JPanel imagePanel = new JPanel();
-		imagePanel.add(menuImageLabel);
+		mainPanel = new ThemedPanel();
+		mainPanel.setLayout(new BorderLayout(0, 18));
+		mainPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
+		((ThemedPanel) mainPanel).styleSurface(GameTheme.BACKGROUND_DARK);
 
-		buttonPanel = new JPanel(new GridLayout(2, 2, 12, 12));
-		mainButtons = new JButton[] {
-				new JButton("1 Player"),
-				new JButton("2 Players"),
-				new JButton("Hall of Fame"),
-				new JButton("Help & Info")
+		menuImageLabel = new JLabel("", JLabel.CENTER);
+		JPanel heroPanel = new ThemedPanel();
+		heroPanel.setLayout(new BorderLayout());
+		heroPanel.setOpaque(false);
+		heroPanel.add(ThemedPanel.createHeader("SUPER SPRINT SUPELEC", "Arcade top-down racing", this), BorderLayout.NORTH);
+		heroPanel.add(menuImageLabel, BorderLayout.CENTER);
+
+		buttonPanel = new JPanel(new GridLayout(2, 2, 14, 14));
+		buttonPanel.setOpaque(false);
+		mainButtons = new ArcadeButton[] {
+				new ArcadeButton("1 Player"),
+				new ArcadeButton("2 Players"),
+				new ArcadeButton("Hall of Fame", false),
+				new ArcadeButton("Help & Info", false)
 		};
 		for (int index = 0; index < mainButtons.length; index++) {
 			buttonPanel.add(mainButtons[index]);
 			mainButtons[index].addActionListener(this);
 			mainButtons[index].setMnemonic(index);
 		}
-		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-		mainPanel.add(imagePanel);
-		mainPanel.add(buttonPanel);
 
-		racePanel = new JPanel();
-		carPanels = new JPanel[2];
+		mainPanel.add(heroPanel, BorderLayout.CENTER);
+		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+		racePanel = new ThemedPanel();
+		racePanel.setLayout(new BorderLayout(16, 16));
+		racePanel.setBorder(new EmptyBorder(18, 18, 18, 18));
+		((ThemedPanel) racePanel).styleSurface(GameTheme.BACKGROUND_LIGHT);
+
+		JPanel raceHeader = ThemedPanel.createHeader("Race Setup", "Choose cars, track, and launch the grid", this);
+		racePanel.add(raceHeader, BorderLayout.NORTH);
+
+		JPanel setupBody = new JPanel(new GridLayout(1, 3, 18, 0));
+		setupBody.setOpaque(false);
+
+		carPanels = new ThemedPanel[2];
 		carMenus = new JComboBox[2];
 		carStatBars = new JProgressBar[2][3];
 		carIcons = new JLabel[2];
-		trackPanel = new JPanel();
 
 		for (int playerIndex = 0; playerIndex < 2; playerIndex++) {
+			carPanels[playerIndex] = new ThemedPanel();
+			carPanels[playerIndex].setLayout(new BoxLayout(carPanels[playerIndex], BoxLayout.Y_AXIS));
+			carPanels[playerIndex].setBorder(ThemedPanel.sectionBorder("Player " + (playerIndex + 1), this));
+
 			String[] carOptions = new String[Car.CAR_MODEL_COUNT];
 			for (int modelIndex = 0; modelIndex < Car.CAR_MODEL_COUNT; modelIndex++) {
 				carOptions[modelIndex] = "Model " + (modelIndex + 1);
 			}
 			carMenus[playerIndex] = new JComboBox(carOptions);
-			carMenus[playerIndex].setBackground(Color.WHITE);
 			carMenus[playerIndex].addItemListener(this);
 			carMenus[playerIndex].setName("car" + (playerIndex + 1));
-			carIcons[playerIndex] = new JLabel();
+			carIcons[playerIndex] = new JLabel("", JLabel.CENTER);
 
-			carPanels[playerIndex] = new JPanel();
-			carPanels[playerIndex].setLayout(new BoxLayout(carPanels[playerIndex], BoxLayout.Y_AXIS));
-			carPanels[playerIndex].add(new JLabel("Player " + (playerIndex + 1)));
+			carPanels[playerIndex].add(Box.createVerticalStrut(8));
 			carPanels[playerIndex].add(carMenus[playerIndex]);
+			carPanels[playerIndex].add(Box.createVerticalStrut(12));
 			carPanels[playerIndex].add(carIcons[playerIndex]);
+			carPanels[playerIndex].add(Box.createVerticalStrut(12));
 
 			JPanel statsPanel = new JPanel(new GridLayout(3, 2, 8, 8));
+			statsPanel.setOpaque(false);
 			String[] statLabels = {"Acceleration", "Top Speed", "Handling"};
 			int[][] statLimits = {{100, 250}, {200, 400}, {30, 60}};
 			for (int statIndex = 0; statIndex < 3; statIndex++) {
-				statsPanel.add(new JLabel(statLabels[statIndex]));
+				statsPanel.add(ThemedPanel.createLabel(statLabels[statIndex], this));
 				carStatBars[playerIndex][statIndex] = new JProgressBar();
 				carStatBars[playerIndex][statIndex].setMinimum(statLimits[statIndex][0]);
 				carStatBars[playerIndex][statIndex].setMaximum(statLimits[statIndex][1]);
 				carStatBars[playerIndex][statIndex].setStringPainted(true);
+				carStatBars[playerIndex][statIndex].setForeground(GameTheme.ACCENT_BLUE);
 				statsPanel.add(carStatBars[playerIndex][statIndex]);
 			}
 			carPanels[playerIndex].add(statsPanel);
-			racePanel.add(carPanels[playerIndex]);
+			setupBody.add(carPanels[playerIndex]);
 		}
 
+		trackPanel = new ThemedPanel();
+		trackPanel.setLayout(new BoxLayout(trackPanel, BoxLayout.Y_AXIS));
+		trackPanel.setBorder(ThemedPanel.sectionBorder("Track", this));
 		String[] trackOptions = new String[Circuit.TRACK_COUNT];
 		for (int trackIndex = 0; trackIndex < Circuit.TRACK_COUNT; trackIndex++) {
 			trackOptions[trackIndex] = "Track " + (trackIndex + 1);
 		}
 		trackMenu = new JComboBox(trackOptions);
-		trackMenu.setBackground(Color.WHITE);
 		trackMenu.addItemListener(this);
 		trackMenu.setName("track");
-		trackPanel.setLayout(new BoxLayout(trackPanel, BoxLayout.Y_AXIS));
-		trackPanel.add(new JLabel("Choose a track"));
+		trackIcon = new JLabel("", JLabel.CENTER);
+		trackPanel.add(Box.createVerticalStrut(8));
 		trackPanel.add(trackMenu);
-		trackIcon = new JLabel();
+		trackPanel.add(Box.createVerticalStrut(12));
 		trackPanel.add(trackIcon);
-		trackMenu.setSelectedIndex(0);
+		setupBody.add(trackPanel);
+		racePanel.add(setupBody, BorderLayout.CENTER);
 
-		startButton = new JButton("Start Race");
+		JPanel actionPanel = new JPanel(new GridLayout(1, 2, 14, 0));
+		actionPanel.setOpaque(false);
+		startButton = new ArcadeButton("Start Race");
 		startButton.setMnemonic(10);
 		startButton.addActionListener(this);
-
-		backToMenuButton = new JButton("Main Menu");
+		backToMenuButton = new ArcadeButton("Main Menu", false);
 		backToMenuButton.setMnemonic(11);
 		backToMenuButton.addActionListener(this);
-
-		racePanel.add(trackPanel);
-		racePanel.add(startButton);
-		racePanel.add(backToMenuButton);
-
-		raceLayout = new SpringLayout();
-		racePanel.setLayout(raceLayout);
-		applyRaceLayoutConstraints();
+		actionPanel.add(backToMenuButton);
+		actionPanel.add(startButton);
+		racePanel.add(actionPanel, BorderLayout.SOUTH);
 
 		setContentPane(mainPanel);
 		showMainMenu();
 		setIconImage(new ImageIcon(ResourcePaths.bundledSprite("icon.png")).getImage());
-		mainPanel.setBackground(Color.BLACK);
-		imagePanel.setBackground(Color.BLACK);
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		UiScale.applyQuarterScreenSize(this);
 		applyScaledMetrics();
@@ -174,66 +193,39 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 		carMenus[0].setSelectedIndex(0);
 		carMenus[1].setSelectedIndex(0);
-	}
-
-	private void applyRaceLayoutConstraints() {
-		Container contentPane = racePanel;
-		int padding = 16;
-		int rowGap = 140;
-		raceLayout.putConstraint(SpringLayout.WEST, carPanels[0], padding, SpringLayout.WEST, contentPane);
-		raceLayout.putConstraint(SpringLayout.NORTH, carPanels[0], padding, SpringLayout.NORTH, contentPane);
-		raceLayout.putConstraint(SpringLayout.WEST, carPanels[1], 0, SpringLayout.WEST, carPanels[0]);
-		raceLayout.putConstraint(SpringLayout.NORTH, carPanels[1], rowGap, SpringLayout.NORTH, carPanels[0]);
-		raceLayout.putConstraint(SpringLayout.WEST, trackPanel, padding, SpringLayout.EAST, carPanels[1]);
-		raceLayout.putConstraint(SpringLayout.NORTH, trackPanel, padding, SpringLayout.NORTH, contentPane);
-		raceLayout.putConstraint(SpringLayout.EAST, startButton, -padding, SpringLayout.EAST, contentPane);
-		raceLayout.putConstraint(SpringLayout.NORTH, startButton, padding, SpringLayout.NORTH, contentPane);
-		raceLayout.putConstraint(SpringLayout.EAST, backToMenuButton, -padding, SpringLayout.EAST, contentPane);
-		raceLayout.putConstraint(SpringLayout.NORTH, backToMenuButton, 12, SpringLayout.SOUTH, startButton);
+		trackMenu.setSelectedIndex(0);
 	}
 
 	private void applyScaledMetrics() {
-		UiScale.fitLabelIcon(menuImageLabel, this, ResourcePaths.bundledSprite("menu.png"), 640, 280);
-		for (JButton button : mainButtons) {
-			button.setFont(UiScale.scaledFont(this, button.getFont()));
-			button.setPreferredSize(new Dimension(UiScale.scale(this, 180), UiScale.scale(this, 48)));
+		UiScale.fitLabelIcon(menuImageLabel, this, ResourcePaths.bundledSprite("menu.png"), 700, 300);
+		for (ArcadeButton button : mainButtons) {
+			button.applyScaledSize(this, 190, 52);
 		}
 		for (int playerIndex = 0; playerIndex < 2; playerIndex++) {
-			scaleComponentTree(carPanels[playerIndex]);
+			styleComboBox(carMenus[playerIndex]);
+			styleProgressBars(playerIndex);
 			if (carMenus[playerIndex].getSelectedIndex() >= 0) {
-				int modelIndex = carMenus[playerIndex].getSelectedIndex();
-				UiScale.fitLabelIcon(
-						carIcons[playerIndex],
-						this,
-						ResourcePaths.carSpritePath(modelIndex + 1),
-						80,
-						48);
+				updateCarPreview(playerIndex, carMenus[playerIndex].getSelectedIndex());
 			}
 		}
-		scaleComponentTree(trackPanel);
+		styleComboBox(trackMenu);
 		if (trackMenu.getSelectedIndex() >= 0) {
-			int trackIndex = trackMenu.getSelectedIndex();
-			UiScale.fitLabelIcon(
-					trackIcon,
-					this,
-					ResourcePaths.bundledSprite("track_preview" + (trackIndex + 1) + ".png"),
-					120,
-					80);
+			updateTrackPreview(trackMenu.getSelectedIndex());
 		}
-		startButton.setFont(UiScale.scaledFont(this, startButton.getFont()));
-		backToMenuButton.setFont(UiScale.scaledFont(this, backToMenuButton.getFont()));
-		startButton.setPreferredSize(new Dimension(UiScale.scale(this, 140), UiScale.scale(this, 52)));
-		backToMenuButton.setPreferredSize(new Dimension(UiScale.scale(this, 140), UiScale.scale(this, 40)));
+		startButton.applyScaledSize(this, 180, 52);
+		backToMenuButton.applyScaledSize(this, 180, 52);
 		revalidate();
 		repaint();
 	}
 
-	private void scaleComponentTree(Component component) {
-		component.setFont(UiScale.scaledFont(this, component.getFont()));
-		if (component instanceof Container container) {
-			for (Component child : container.getComponents()) {
-				scaleComponentTree(child);
-			}
+	private void styleComboBox(JComboBox<?> comboBox) {
+		comboBox.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
+		comboBox.setBackground(Color.WHITE);
+	}
+
+	private void styleProgressBars(int playerIndex) {
+		for (JProgressBar bar : carStatBars[playerIndex]) {
+			bar.setFont(GameTheme.scaled(GameTheme.FONT_BODY, this));
 		}
 	}
 
@@ -247,6 +239,7 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 	private void showRaceMenu(int players) {
 		carMenus[1].setEnabled(players != 1);
+		carPanels[1].setVisible(players != 1);
 		humanPlayerCount = players;
 		setContentPane(racePanel);
 		UiScale.applyQuarterScreenSize(this);
@@ -263,7 +256,9 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 
 	@Override
 	public void actionPerformed(ActionEvent event) {
-		JButton button = (JButton) event.getSource();
+		if (!(event.getSource() instanceof ArcadeButton button)) {
+			return;
+		}
 		switch (button.getMnemonic()) {
 			case 0:
 				showRaceMenu(1);
@@ -309,6 +304,31 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		}
 	}
 
+	private void updateCarPreview(int playerIndex, int modelIndex) {
+		UiScale.fitLabelIcon(
+				carIcons[playerIndex],
+				this,
+				ResourcePaths.carSpritePath(modelIndex + 1),
+				96,
+				56);
+		int[] stats = Car.CAR_MODEL_STATS[modelIndex];
+		for (int statIndex = 0; statIndex < 3; statIndex++) {
+			carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
+			carStatBars[playerIndex][statIndex].setString(Integer.toString(stats[statIndex]));
+		}
+		selectedCarModels[playerIndex] = modelIndex + 1;
+	}
+
+	private void updateTrackPreview(int trackIndex) {
+		selectedTrack = trackIndex + 1;
+		UiScale.fitLabelIcon(
+				trackIcon,
+				this,
+				ResourcePaths.bundledSprite("track_preview" + (trackIndex + 1) + ".png"),
+				140,
+				96);
+	}
+
 	@Override
 	@SuppressWarnings("rawtypes")
 	public void itemStateChanged(ItemEvent event) {
@@ -319,28 +339,9 @@ public class MenuFrame extends JFrame implements ActionListener, ItemListener {
 		String name = box.getName();
 		if (name.contains("car")) {
 			int playerIndex = name.contains("1") ? 0 : 1;
-			int modelIndex = box.getSelectedIndex();
-			UiScale.fitLabelIcon(
-					carIcons[playerIndex],
-					this,
-					ResourcePaths.carSpritePath(modelIndex + 1),
-					80,
-					48);
-			int[] stats = Car.CAR_MODEL_STATS[modelIndex];
-			for (int statIndex = 0; statIndex < 3; statIndex++) {
-				carStatBars[playerIndex][statIndex].setValue(stats[statIndex]);
-				carStatBars[playerIndex][statIndex].setString(Integer.toString(stats[statIndex]));
-			}
-			selectedCarModels[playerIndex] = modelIndex + 1;
+			updateCarPreview(playerIndex, box.getSelectedIndex());
 		} else {
-			int trackIndex = box.getSelectedIndex();
-			selectedTrack = trackIndex + 1;
-			UiScale.fitLabelIcon(
-					trackIcon,
-					this,
-					ResourcePaths.bundledSprite("track_preview" + (trackIndex + 1) + ".png"),
-					120,
-					80);
+			updateTrackPreview(box.getSelectedIndex());
 		}
 	}
 }
