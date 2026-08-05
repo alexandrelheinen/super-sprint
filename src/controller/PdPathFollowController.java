@@ -6,12 +6,16 @@ import model.ReferencePath;
 /**
  * PD path-following controller for a Dubins unicycle.
  *
- * <p>Heading tracking uses proportional–derivative action on heading error (plus
- * optional cross-track correction). Speed tracking ramps toward a curvature-modulated
- * cruise reference using a second PD loop. Commands are saturated by
- * {@link DubinsVehicle#step(double, double, double)}.
+ * <p>The turn-rate command combines a curvature feedforward term
+ * ({@code speed * referenceCurvature}) with proportional–derivative action on
+ * heading error and a proportional cross-track correction that steers back
+ * towards the reference line. Speed tracking ramps toward a
+ * curvature-modulated cruise reference using a second PD loop. Commands are
+ * saturated by {@link DubinsVehicle#step(double, double, double)}.
  */
 public class PdPathFollowController {
+
+	private static final double MIN_CROSS_TRACK_SPEED = 1.0;
 
 	private final double kpHeading;
 	private final double kdHeading;
@@ -56,7 +60,7 @@ public class PdPathFollowController {
 	private double crossTrackError;
 	private double headingError;
 	private double curvature;
-	private int lastProjectionIndex;
+	private int lastProjectionIndex = ReferencePath.NO_HINT;
 
 	/**
 	 * @return {@code [speedCommand, turnRateCommand]}
@@ -80,9 +84,15 @@ public class PdPathFollowController {
 
 		double headingErrorDerivative = (headingError - previousHeadingError) / deltaSeconds;
 		previousHeadingError = headingError;
-		double turnRateCommand = kpHeading * headingError
-				+ kdHeading * headingErrorDerivative
-				+ kpCrossTrack * crossTrackError;
+		// Positive cross-track error means the vehicle is right of the path
+		// (screen coordinates, y down), so steer left: subtract the term.
+		// The correction angle shrinks with speed to avoid oscillation.
+		double crossTrackAngle = Math.atan2(
+				kpCrossTrack * crossTrackError,
+				Math.max(Math.abs(speed), MIN_CROSS_TRACK_SPEED));
+		double turnRateCommand = speed * curvature
+				+ kpHeading * (headingError - crossTrackAngle)
+				+ kdHeading * headingErrorDerivative;
 
 		double speedReference = cruiseSpeed / (1.0 + curvatureGain * Math.abs(curvature));
 		double speedError = speedReference - speed;

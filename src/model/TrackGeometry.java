@@ -205,7 +205,32 @@ public final class TrackGeometry {
 		if (trackMap[row][column] == Circuit.TILE_OPEN) {
 			return null;
 		}
+		// Grid adjacency is not enough: both tiles must open onto the shared edge,
+		// otherwise chicane layouts produce paths that cut across unconnected tiles.
+		int oppositeDirection = (direction + 2) % NEIGHBOR_OFFSETS.length;
+		if (!tileOpensTowards(trackMap[current[0]][current[1]], direction)
+				|| !tileOpensTowards(trackMap[row][column], oppositeDirection)) {
+			return null;
+		}
 		return new int[] {row, column};
+	}
+
+	/**
+	 * @param direction index into {@link #NEIGHBOR_OFFSETS}: 0 = east, 1 = south,
+	 *        2 = west, 3 = north (screen coordinates, y down)
+	 * @return whether the tile artwork has a lane opening on that side
+	 */
+	private static boolean tileOpensTowards(int tileType, int direction) {
+		return switch (tileType) {
+			// Legacy tile constants are swapped relative to on-screen orientation.
+			case Circuit.TILE_STRAIGHT_HORIZONTAL -> direction == 1 || direction == 3;
+			case Circuit.TILE_STRAIGHT_VERTICAL -> direction == 0 || direction == 2;
+			case Circuit.TILE_CORNER_BOTTOM_RIGHT -> direction == 1 || direction == 2;
+			case Circuit.TILE_CORNER_TOP_RIGHT -> direction == 0 || direction == 1;
+			case Circuit.TILE_CORNER_TOP_LEFT -> direction == 0 || direction == 3;
+			case Circuit.TILE_CORNER_BOTTOM_LEFT -> direction == 2 || direction == 3;
+			default -> false;
+		};
 	}
 
 	private static int[] chooseNextTile(

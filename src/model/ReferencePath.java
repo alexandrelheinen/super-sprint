@@ -29,6 +29,18 @@ public final class ReferencePath {
 		return samples;
 	}
 
+	public int sampleCount() {
+		return samples.length;
+	}
+
+	public double headingAt(int index) {
+		return headings[index];
+	}
+
+	public double curvatureAt(int index) {
+		return curvatures[index];
+	}
+
 	static ReferencePath fromSamples(List<SampleBuilder> builders) {
 		if (builders.isEmpty()) {
 			return empty();
@@ -46,28 +58,46 @@ public final class ReferencePath {
 		return new ReferencePath(points, headings, curvatures);
 	}
 
+	/** Hint value requesting a full-path projection search. */
+	public static final int NO_HINT = -1;
+
+	private static final int FORWARD_SEARCH_WINDOW = 180;
+	private static final int BACKWARD_SEARCH_WINDOW = 40;
+
 	/**
 	 * Projects a world position onto the closest path sample and returns tracking errors.
 	 */
 	public Projection project(double x, double y) {
-		return project(x, y, 0);
+		return project(x, y, NO_HINT);
 	}
 
 	/**
-	 * Projects onto the path, searching forward from {@code hintIndex} to avoid
-	 * backwards matches on closed loops.
+	 * Projects onto the path. With {@link #NO_HINT} the whole path is searched;
+	 * otherwise the search is limited to a window around {@code hintIndex} so
+	 * closed loops keep matching forward progress instead of jumping backwards.
 	 */
 	public Projection project(double x, double y, int hintIndex) {
 		if (samples.length == 0) {
 			return new Projection(0, 0.0, 0.0, 0.0, 0.0);
 		}
 
-		int normalizedHint = Math.floorMod(hintIndex, samples.length);
+		int firstOffset;
+		int lastOffset;
+		int normalizedHint;
+		if (hintIndex < 0) {
+			normalizedHint = 0;
+			firstOffset = 0;
+			lastOffset = samples.length - 1;
+		} else {
+			normalizedHint = Math.floorMod(hintIndex, samples.length);
+			firstOffset = -Math.min(samples.length - 1, BACKWARD_SEARCH_WINDOW);
+			lastOffset = Math.min(samples.length - 1, FORWARD_SEARCH_WINDOW);
+		}
+
 		int closestIndex = normalizedHint;
 		double minDistance = Double.POSITIVE_INFINITY;
-		int searchWindow = Math.min(samples.length, 180);
-		for (int offset = 0; offset < searchWindow; offset++) {
-			int index = (normalizedHint + offset) % samples.length;
+		for (int offset = firstOffset; offset <= lastOffset; offset++) {
+			int index = Math.floorMod(normalizedHint + offset, samples.length);
 			double distance = Math.hypot(samples[index][0] - x, samples[index][1] - y);
 			if (distance < minDistance) {
 				minDistance = distance;
