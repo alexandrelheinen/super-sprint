@@ -60,8 +60,8 @@ public class GameFrame extends Canvas implements Observer {
 	private static final int START_MARKER_TICK_LENGTH = 10;
 	private static final int START_MARKER_STROKE = 2;
 	/** Soft painted look: asphalt shadow under translucent chalk-white. */
-	private static final Color START_MARKER_SHADOW = new Color(36, 48, 52, 70);
-	private static final Color START_MARKER_PAINT = new Color(198, 210, 214, 120);
+	private static final Color START_MARKER_SHADOW = new Color(36, 48, 52, 95);
+	private static final Color START_MARKER_PAINT = new Color(206, 216, 220, 165);
 	private static final int FINISH_CHECKER_ROWS = 2;
 	private static final int FINISH_CHECKER_COLS = 14;
 	private static final int FINISH_BAND_HEIGHT = 12;
