@@ -29,6 +29,11 @@ public class GameTickTask extends TimerTask {
 			return;
 		}
 
+		if (game.isFinishing()) {
+			game.tickFinishSequence();
+			return;
+		}
+
 		if (!game.isRacing()) {
 			tickCountdown();
 			return;
