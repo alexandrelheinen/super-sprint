@@ -153,12 +153,8 @@ public class AiController extends Controller {
 				continue;
 			}
 			Car opponent = other.getCar();
-			// Prefer half-width over the bounding-circle radius so MPCC can plan
-			// side-by-side passes; length is covered by the safety margin.
-			// Pose uses the same sprite-anchor convention as the ego planner state.
-			double halfWidthMeters = WorldUnits.pxToM(0.5 * opponent.getSpriteHeight());
-			double halfLengthMeters = WorldUnits.pxToM(0.5 * opponent.getSpriteWidth());
-			double radiusMeters = Math.max(halfWidthMeters, 0.55 * halfLengthMeters);
+			double radiusMeters = WorldUnits.pxToM(
+					0.5 * Math.hypot(opponent.getSpriteWidth(), opponent.getSpriteHeight()));
 			obstacles.add(new DynamicObstacle(
 					opponent.getPositionXMeters(),
 					opponent.getPositionYMeters(),

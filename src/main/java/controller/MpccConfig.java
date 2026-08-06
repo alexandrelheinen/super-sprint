@@ -22,36 +22,33 @@ public final class MpccConfig {
 			(Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS) / 2.0);
 
 	/**
-	 * Middle ground between the short stable planner and the aggressive v2.4/v2.5
-	 * traffic retune: ~1.0 s look-ahead, earlier engagement than the original
-	 * 12-step horizon, but softer opponent weights / fewer refine passes so AI
-	 * steering does not chatter under load. Ego radius stays slightly under the
-	 * bounding circle so in-lane passes remain feasible. Walls remain strictly
-	 * heavier than soft opponent proximity.
+	 * Stable short-horizon defaults (pre traffic-avoidance retune). Cars remain a
+	 * soft, saturating preference so progress can still force overlaps; only the
+	 * obstacle weight is nudged lightly above the historical 3.5 baseline.
 	 */
 	public static final MpccConfig DEFAULT = new MpccConfig(
-			16,
+			12,
 			0.06,
-			44,
-			0.6,
+			48,
+			0.7,
 			0.8,
-			2.7,
-			10.0,
-			2.5,
-			2.7,
+			3.0,
+			12.0,
+			2.8,
+			3.0,
 			14.0,
 			14.0,
 			12.0,
-			8.0,
-			1.5,
-			1.7,
-			6.0,
+			5.0,
+			1.2,
+			2.0,
+			4.5,
 			900.0,
 			DEFAULT_LANE_HALF_WIDTH_METERS,
 			2.4,
 			2.2,
-			2.7,
-			1.25,
+			2.5,
+			1.2,
 			2);
 
 	private final int horizonStepCount;

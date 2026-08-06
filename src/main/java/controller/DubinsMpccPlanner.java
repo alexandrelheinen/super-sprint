@@ -54,23 +54,17 @@ public final class DubinsMpccPlanner {
 		double[] candidateSpeeds = bestSpeeds.clone();
 		double[] candidateTurns = bestTurns.clone();
 
-		// Pass-oriented seeds: commit early to a lateral offset, then settle.
-		// Turn biases are fractions of the car's max turn rate so MPCC adapts
-		// when arcade TURN_RATE_PER_HANDLING is retuned.
-		double maxTurnRate = vehicle.getMaxTurnRate();
+		// Pass-oriented seeds: keep speed high and commit to a lateral offset,
+		// then settle. Milder than bang-bang so closed-loop does not chatter.
 		double[][] passProfiles = {
 				{0.00, 0.00},
-				{0.04, -0.55},
-				{0.04, 0.55},
-				{0.08, -0.80},
-				{0.08, 0.80},
-				{0.10, -1.00},
-				{0.10, 1.00},
-				{0.02, -0.35},
-				{0.02, 0.35},
-				{-0.10, 0.00},
-				{-0.18, -0.50},
-				{-0.18, 0.50}
+				{0.06, -0.45},
+				{0.06, 0.45},
+				{0.10, -0.70},
+				{0.10, 0.70},
+				{0.04, -0.30},
+				{0.04, 0.30},
+				{-0.04, 0.00}
 		};
 		for (double[] profile : passProfiles) {
 			applyPassProfile(
@@ -79,9 +73,9 @@ public final class DubinsMpccPlanner {
 					candidateSpeeds,
 					candidateTurns,
 					profile[0],
-					profile[1] * maxTurnRate,
+					profile[1],
 					vehicle.getMaxSpeed(),
-					maxTurnRate);
+					vehicle.getMaxTurnRate());
 			refine(vehicle, path, obstacles, candidateSpeeds, candidateTurns);
 			smoothCommands(candidateSpeeds, candidateTurns);
 			double cost = evaluate(vehicle, path, obstacles, candidateSpeeds, candidateTurns);
@@ -411,9 +405,8 @@ public final class DubinsMpccPlanner {
 	}
 
 	/**
-	 * Soft preference against other cars — avoid when a cheap lateral pass
-	 * exists. Mild proximity saturates; actual overlaps add a non-saturating
-	 * quadratic so ploughing through traffic is never the cheapest plan.
+	 * Mild, saturating preference against other cars — avoid if cheap, never a
+	 * hard barrier so progress / speed can still force a bypass.
 	 */
 	private double obstacleCost(
 			double x,
@@ -432,13 +425,6 @@ public final class DubinsMpccPlanner {
 			double violation = config.getObstacleSafeMarginMeters() - clearance;
 			if (violation > 0.0) {
 				total += config.getWeightObstacle() * saturatingViolation(violation);
-			}
-			// Predicted hull overlap: non-saturating so ploughing through traffic
-			// cannot be masked by progress / speed rewards over the horizon.
-			if (clearance < 0.0) {
-				double overlap = -clearance;
-				total += config.getWeightObstacle()
-						* (20.0 * overlap * overlap + 12.0 * overlap * overlap * overlap);
 			}
 		}
 		return total;
