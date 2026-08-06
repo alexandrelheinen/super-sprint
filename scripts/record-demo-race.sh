@@ -65,31 +65,58 @@ echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=$
 java -cp "${JAR_FILE}" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
 GAME_PID=$!
 
-# Wait until a Super Sprint window is mapped with a real non-zero size.
-# Finding the window too early yields WIDTH=0 HEIGHT=0 on Xvfb/CI.
+# Wait until a Super Sprint window owned by this Java process is mapped with a
+# real non-zero size. Prefer --pid so a leftover title match from a previous
+# demo in the same Xvfb session cannot steal the grab. Finding the window too
+# early yields WIDTH=0 HEIGHT=0 on Xvfb/CI.
 WINDOW_ID=""
 WIDTH=0
 HEIGHT=0
 X=0
 Y=0
-for _ in $(seq 1 150); do
+for _ in $(seq 1 250); do
+	if ! kill -0 "${GAME_PID}" 2>/dev/null; then
+		echo "Demo race process exited before a recordable window appeared" >&2
+		wait "${GAME_PID}" || true
+		exit 1
+	fi
+	candidates="$(xdotool search --pid "${GAME_PID}" --class 'sun-awt-X11' 2>/dev/null || true)"
+	if [[ -z "${candidates}" ]]; then
+		candidates="$(xdotool search --pid "${GAME_PID}" --name 'Super Sprint' 2>/dev/null || true)"
+	fi
+	if [[ -z "${candidates}" ]]; then
+		candidates="$(xdotool search --name 'Super Sprint' 2>/dev/null || true)"
+	fi
 	while read -r candidate; do
 		[[ -z "${candidate}" ]] && continue
+		WIDTH=0
+		HEIGHT=0
+		X=0
+		Y=0
 		eval "$(xdotool getwindowgeometry --shell "${candidate}" 2>/dev/null || true)"
 		if (( WIDTH >= 2 && HEIGHT >= 2 )); then
 			WINDOW_ID="${candidate}"
 			break 2
 		fi
-	done < <(xdotool search --name 'Super Sprint' 2>/dev/null || true)
+	done <<< "${candidates}"
 	sleep 0.2
 done
 if [[ -z "${WINDOW_ID}" ]]; then
 	echo "Could not find a mapped Super Sprint window with non-zero size" >&2
+	echo "xdotool search --name:" >&2
+	xdotool search --name 'Super Sprint' 2>&1 || true
+	echo "xdotool search --pid ${GAME_PID}:" >&2
+	xdotool search --pid "${GAME_PID}" 2>&1 || true
 	exit 1
 fi
 
+xdotool windowmap "${WINDOW_ID}" >/dev/null 2>&1 || true
 xdotool windowactivate --sync "${WINDOW_ID}" >/dev/null 2>&1 || true
 sleep 0.4
+WIDTH=0
+HEIGHT=0
+X=0
+Y=0
 eval "$(xdotool getwindowgeometry --shell "${WINDOW_ID}")"
 
 # Keep even dimensions for yuv420p
