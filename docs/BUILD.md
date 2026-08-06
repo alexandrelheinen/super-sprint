@@ -1,4 +1,4 @@
-# Super Sprint Supélec — build instructions
+# Super Sprint Supélec - build instructions
 
 This project is a plain Java application (no Maven/Gradle). All build and run commands execute from the **repository root** so relative paths to `src/sprites/` and `src/data/` resolve correctly.
 

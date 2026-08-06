@@ -29,7 +29,7 @@ public class HeroBanner extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	private static final int MIN_HEIGHT = 260;
-	/** Main menu hero title — larger than the global theme title size. */
+	/** Main menu hero title - larger than the global theme title size. */
 	private static final int TITLE_FONT_SIZE = 58;
 	/** Brand line under the title (e.g. Supélec). */
 	private static final int BRAND_FONT_SIZE = 32;

@@ -282,7 +282,7 @@ public class GameFrame extends Canvas implements Observer {
 	}
 
 	/**
-	 * Contain-scale the asphalt ribbon into the canvas above the HUD — uses the
+	 * Contain-scale the asphalt ribbon into the canvas above the HUD - uses the
 	 * smaller of width and height fit ratios so the whole track stays visible.
 	 */
 	private float viewScale() {

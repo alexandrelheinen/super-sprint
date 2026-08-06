@@ -36,7 +36,7 @@ public class RaceCompletePanel extends BackgroundPanel {
 	private static final String MEAN_LABEL = ConfigLoader.getString("messages.race.complete.mean", "Mean lap time");
 	private static final String NEW_RECORD_FORMAT = ConfigLoader.getString(
 			"messages.race.complete.new.record",
-			"New record — Leaderboard #%d: %s s/lap");
+			"New record - Leaderboard #%d: %s s/lap");
 	private static final String PLACEMENT_FORMAT = ConfigLoader.getString(
 			"messages.race.complete.placement",
 			"Leaderboard #%d: %s s/lap");

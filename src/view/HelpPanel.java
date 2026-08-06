@@ -153,7 +153,7 @@ public class HelpPanel extends BackgroundPanel {
 						"messages.help.info.driving.title",
 						"On the track",
 						"messages.help.info.driving.body",
-						"Stay on the asphalt — leaving the lane cuts speed. Cross the yellow finish line to count a lap.")
+						"Stay on the asphalt - leaving the lane cuts speed. Cross the yellow finish line to count a lap.")
 				+ "\n\n"
 				+ section(
 						"messages.help.info.collisions.title",
@@ -169,7 +169,7 @@ public class HelpPanel extends BackgroundPanel {
 				+ "\n\n"
 				+ ConfigLoader.getString(
 						"messages.help.info.project",
-						"Software Project 2014/2015 — Sequence 6 (Supélec). English UI in a single-window shell.");
+						"Software Project 2014/2015 - Sequence 6 (Supélec). English UI in a single-window shell.");
 	}
 
 	private static String section(String titleKey, String titleFallback, String bodyKey, String bodyFallback) {

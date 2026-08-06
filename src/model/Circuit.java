@@ -139,7 +139,7 @@ public class Circuit extends Observable {
 	}
 
 	/**
-	 * Advances the render cadence without charging race time — used during the
+	 * Advances the render cadence without charging race time - used during the
 	 * pre-race countdown while the track is already on screen.
 	 *
 	 * @return {@code true} when this visual tick should repaint

@@ -474,7 +474,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 			if (!card.isVisible()) {
 				continue;
 			}
-			// Equalize height only — locking min width to the natural preferred
+			// Equalize height only - locking min width to the natural preferred
 			// width overflowed the fixed shell when three columns were visible.
 			card.setPreferredSize(new Dimension(card.getPreferredSize().width, maxHeight));
 			card.setMinimumSize(new Dimension(0, maxHeight));
@@ -629,7 +629,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	/**
 	 * BoxLayout only grows children up to their maximum size; unset maxima fall
 	 * back to preferred size and leave combo/stat rows narrow and clipped.
-	 * Height stays unbounded here — preview slots use {@link #lockPreviewSlot}.
+	 * Height stays unbounded here - preview slots use {@link #lockPreviewSlot}.
 	 */
 	private static void stretchHorizontally(javax.swing.JComponent component) {
 		component.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -663,17 +663,17 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		playerTwoConstraints.weightx = singlePlayer ? 0.0 : 1.0;
 		layout.setConstraints(carPanels[1], playerTwoConstraints);
 		humanPlayerCount = players;
-		setTitle(WINDOW_TITLE + " — " + RACE_SETUP_TITLE);
+		setTitle(WINDOW_TITLE);
 		showCard(CARD_SETUP);
 		applyScaledMetrics();
 		refreshRaceSetupPreviews();
-		// Column width is only final after the first layout pass — rebuild the
+		// Column width is only final after the first layout pass - rebuild the
 		// track preview at 66% of that width once the card has a real size.
 		SwingUtilities.invokeLater(this::refreshTrackPreviewLayout);
 	}
 
 	public void showHallOfFame() {
-		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.hall.header.title", "Hall of Fame"));
+		setTitle(WINDOW_TITLE);
 		hallPanel.refreshOnShow();
 		showCard(CARD_HALL);
 		applyScaledMetrics();
@@ -681,7 +681,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	}
 
 	public void showHelp() {
-		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.help.dialog.title", "Help"));
+		setTitle(WINDOW_TITLE);
 		showCard(CARD_HELP);
 		applyScaledMetrics();
 	}
@@ -690,11 +690,11 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	 * Installs the race canvas as the sole content of this window without
 	 * changing the fixed shell size.
 	 */
-	public void showRace(GameFrame raceView, String raceTitle) {
+	public void showRace(GameFrame raceView) {
 		clearRaceView();
 		activeRaceView = raceView;
 		activeCard = null;
-		setTitle(raceTitle);
+		setTitle(WINDOW_TITLE);
 		JPanel raceHost = new JPanel(new BorderLayout());
 		raceHost.setOpaque(true);
 		raceHost.setBackground(GameTheme.BACKGROUND_DARK);
@@ -731,7 +731,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 			}
 		}
 		cardRoot.add(panel, CARD_RACE_COMPLETE);
-		setTitle(WINDOW_TITLE + " — " + ConfigLoader.getString("messages.race.complete.title", "Race Complete"));
+		setTitle(WINDOW_TITLE);
 		showCard(CARD_RACE_COMPLETE);
 		panel.applyScaledMetrics(this);
 		applyScaledMetrics();

@@ -133,7 +133,7 @@ public final class UiScale {
 	/**
 	 * Fits {@code source} inside {@code width}×{@code height} while preserving
 	 * aspect ratio, centered on a transparent canvas. Never stretches the sprite
-	 * to fill — menu preview slots stay a fixed size regardless of car shape.
+	 * to fill - menu preview slots stay a fixed size regardless of car shape.
 	 */
 	private static BufferedImage scaleImage(BufferedImage source, int width, int height) {
 		BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);

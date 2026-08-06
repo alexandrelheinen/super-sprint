@@ -1,12 +1,12 @@
 # Instructions for AI coding agents
 
-This repository is a Java Swing game (**Super Sprint Supélec**). Before making any code change, read and follow **[CONTRIBUTING.md](CONTRIBUTING.md)** — it is the single source of truth for naming, package layout, formatting, and review expectations.
+This repository is a Java Swing game (**Super Sprint Supélec**). Before making any code change, read and follow **[CONTRIBUTING.md](CONTRIBUTING.md)** - it is the single source of truth for naming, package layout, formatting, and review expectations.
 
 ## Required reading order
 
-1. **[CONTRIBUTING.md](CONTRIBUTING.md)** — code standards, MVC structure, Java conventions, git workflow.
-2. **[README.md](../README.md)** — how to build and run the application.
-3. **[REPORT.md](REPORT.md)** — architecture and design context (when present).
+1. **[CONTRIBUTING.md](CONTRIBUTING.md)** - code standards, MVC structure, Java conventions, git workflow.
+2. **[README.md](../README.md)** - how to build and run the application.
+3. **[REPORT.md](REPORT.md)** - architecture and design context (when present).
 
 ## Quick checklist for agents
 

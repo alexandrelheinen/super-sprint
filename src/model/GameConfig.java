@@ -220,7 +220,7 @@ public final class GameConfig {
 							"Invalid tile id for " + key + " at column " + col + ": " + tokens[col],
 							exception);
 				}
-				// Tile ids 0–6 match Circuit / track_XX.png (avoid referencing Circuit here).
+				// Tile ids 0-6 match Circuit / track_XX.png (avoid referencing Circuit here).
 				if (row[col] < 0 || row[col] > 6) {
 					throw new IllegalStateException(
 							"Tile id out of range for " + key + " at column " + col + ": " + row[col]);

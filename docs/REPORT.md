@@ -1,4 +1,4 @@
-# Super Sprint Supélec — Project Report (English)
+# Super Sprint Supélec - Project Report (English)
 
 > **About this document**
 >
@@ -44,11 +44,11 @@ These constraints kept the project achievable within the academic schedule while
 
 ### 2.1 User workflow
 
-1. **Main menu** — choose single-player, two-player, Hall of Fame, or help.
-2. **Race setup** — select car model(s), track, then start the race.
-3. **Race** — real-time top-down view, lap counter, elapsed time, collisions.
-4. **End of race** — show a race completion window with the winner, total time, and mean-lap leaderboard placement; human winners who place can enter a name.
-5. **Hall of Fame** — view top ten mean lap times per track (name, duration, laps, mean, date).
+1. **Main menu** - choose single-player, two-player, Hall of Fame, or help.
+2. **Race setup** - select car model(s), track, then start the race.
+3. **Race** - real-time top-down view, lap counter, elapsed time, collisions.
+4. **End of race** - show a race completion window with the winner, total time, and mean-lap leaderboard placement; human winners who place can enter a name.
+5. **Hall of Fame** - view top ten mean lap times per track (name, duration, laps, mean, date).
 
 ### 2.2 Controls
 
@@ -74,7 +74,7 @@ Higher handling increases turn rate; top speed is enforced each physics step.
 
 ### 2.4 Tracks
 
-Each track is a grid of **tile types** (values 0–6) mapped to PNG assets under `src/sprites/` (`track_XX.png`). Types represent straights, corners, and open cells. Layouts, names, and terrains are defined per track in `src/data/config/tracks.properties` and loaded into `GameConfig.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
+Each track is a grid of **tile types** (values 0-6) mapped to PNG assets under `src/sprites/` (`track_XX.png`). Types represent straights, corners, and open cells. Layouts, names, and terrains are defined per track in `src/data/config/tracks.properties` and loaded into `GameConfig.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
 
 The finish line is a geometric segment near the first grid slot; crossing direction determines valid lap increments.
 
@@ -84,7 +84,7 @@ The finish line is a geometric segment near the first grid slot; crossing direct
 
 ### 3.1 MVC organization
 
-The codebase follows **Model–View–Controller**:
+The codebase follows **Model-View-Controller**:
 
 | Layer | Responsibility | Main classes |
 |-------|----------------|--------------|
@@ -127,8 +127,8 @@ Collisions (`collideWith`) use axis-aligned rectangles rotated per car, then adj
 
 `enforceTrackBoundaries` maps the car to grid coordinates and checks whether the pixel position lies inside the valid corridor for that tile type:
 
-- **Types 0–1:** straight segments with inner/outer radius bounds.
-- **Types 2–5:** quarter-circle corners around tile corners.
+- **Types 0-1:** straight segments with inner/outer radius bounds.
+- **Types 2-5:** quarter-circle corners around tile corners.
 - **Type 6:** open tile (no asphalt constraint).
 
 Leaving the corridor reverses part of the speed and nudges the car back toward the tile centre.
@@ -145,15 +145,15 @@ This keeps arcade AI opponents on the racing line without full planning.
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
-Each track keeps ten best results ranked by **mean lap time** (total duration ÷ lap count), so races with different lap counts stay comparable. `Result` stores player name, total duration in milliseconds, lap count, and timestamp. On Linux, data is serialized to `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from `src/data/hall_of_fame.dat` on first run. On first run failure (or corrupt / incompatible file — `Result` `serialVersionUID` is `2`), default placeholder entries are created.
+Each track keeps ten best results ranked by **mean lap time** (total duration ÷ lap count), so races with different lap counts stay comparable. `Result` stores player name, total duration in milliseconds, lap count, and timestamp. On Linux, data is serialized to `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from `src/data/hall_of_fame.dat` on first run. On first run failure (or corrupt / incompatible file - `Result` `serialVersionUID` is `2`), default placeholder entries are created.
 
 When a race ends, `Game` asks `AppShell` to show the race-complete screen. Human winners who place may save via `HallOfFame.addResult`; computer wins are shown but never written to the board.
 
 ### 4.5 View layer
 
-- **`AppShell`** — the sole application window; navigates between main menu, race setup, Hall of Fame, help, race complete, and race.
-- **`GameFrame`** — race canvas with buffer-strategy rendering of track tiles, cars, and HUD.
-- **`HallPanel` / `HelpPanel` / `RaceCompletePanel`** — in-window screens swapped by `AppShell`.
+- **`AppShell`** - the sole application window; navigates between main menu, race setup, Hall of Fame, help, race complete, and race.
+- **`GameFrame`** - race canvas with buffer-strategy rendering of track tiles, cars, and HUD.
+- **`HallPanel` / `HelpPanel` / `RaceCompletePanel`** - in-window screens swapped by `AppShell`.
 
 All user-visible strings were translated to English during the 2026 refactor; the original UI was French.
 
@@ -201,8 +201,8 @@ Validation was primarily **manual**: play-through on each track, two-player inpu
 
 The CI pipeline verifies:
 
-1. **Compilation** — all sources under `src/` compile without errors.
-2. **Launch smoke test** — the JVM starts, Swing initializes under a virtual framebuffer, and the process remains alive for several seconds without crashing.
+1. **Compilation** - all sources under `src/` compile without errors.
+2. **Launch smoke test** - the JVM starts, Swing initializes under a virtual framebuffer, and the process remains alive for several seconds without crashing.
 
 Contributors should run `make compile` and `make smoke-test` before opening pull requests (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
@@ -235,14 +235,14 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 
 ## 9. References
 
-1. Original French PDF project report (2015 evaluation submission — not stored in this repository).
+1. Original French PDF project report (2015 evaluation submission - not stored in this repository).
 2. Course materials: Supélec *Projet Logiciel*, Sequence 6, 2014/2015.
 3. Inspiration: *Super Sprint* (arcade, 1985).
 4. Repository documentation: [README.md](../README.md), [BUILD.md](BUILD.md), [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## Appendix A — Class inventory (current packages)
+## Appendix A - Class inventory (current packages)
 
 | Class | Package | Role |
 |-------|---------|------|
@@ -264,7 +264,7 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 | `HallPanel` / `HelpPanel` / `RaceCompletePanel` | view | In-window screens |
 | `RaceSceneryPainter` | view | Terrain ground fill + flora sprites |
 
-## Appendix B — Glossary (French → English)
+## Appendix B - Glossary (French → English)
 
 Terms used in the original codebase and report:
 
