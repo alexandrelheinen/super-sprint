@@ -10,6 +10,7 @@ import model.WorldUnits;
  * <ol>
  *   <li>Stay on asphalt (walls are near no-go)</li>
  *   <li>Keep speed / make progress (overtakes are encouraged)</li>
+ *   <li>Respect car actuator limits as soft saturating costs (speed, accel, turn)</li>
  *   <li>Prefer not to hit cars (soft, saturating — never a hard barrier)</li>
  *   <li>Stay near the racing line (weak; free band allows passing offsets)</li>
  * </ol>
@@ -30,6 +31,9 @@ public final class MpccConfig {
 			12.0,
 			2.8,
 			3.0,
+			14.0,
+			14.0,
+			12.0,
 			3.5,
 			1.2,
 			2.0,
@@ -51,6 +55,9 @@ public final class MpccConfig {
 	private final double weightProgress;
 	private final double weightControl;
 	private final double weightSpeed;
+	private final double weightSpeedLimit;
+	private final double weightTurnLimit;
+	private final double weightAcceleration;
 	private final double weightObstacle;
 	private final double obstacleSafeMarginMeters;
 	private final double egoRadiusMeters;
@@ -73,6 +80,9 @@ public final class MpccConfig {
 			double weightProgress,
 			double weightControl,
 			double weightSpeed,
+			double weightSpeedLimit,
+			double weightTurnLimit,
+			double weightAcceleration,
 			double weightObstacle,
 			double obstacleSafeMarginMeters,
 			double egoRadiusMeters,
@@ -97,6 +107,9 @@ public final class MpccConfig {
 		this.weightProgress = weightProgress;
 		this.weightControl = weightControl;
 		this.weightSpeed = weightSpeed;
+		this.weightSpeedLimit = weightSpeedLimit;
+		this.weightTurnLimit = weightTurnLimit;
+		this.weightAcceleration = weightAcceleration;
 		this.weightObstacle = weightObstacle;
 		this.obstacleSafeMarginMeters = obstacleSafeMarginMeters;
 		this.egoRadiusMeters = egoRadiusMeters;
@@ -144,6 +157,18 @@ public final class MpccConfig {
 
 	public double getWeightSpeed() {
 		return weightSpeed;
+	}
+
+	public double getWeightSpeedLimit() {
+		return weightSpeedLimit;
+	}
+
+	public double getWeightTurnLimit() {
+		return weightTurnLimit;
+	}
+
+	public double getWeightAcceleration() {
+		return weightAcceleration;
 	}
 
 	public double getWeightObstacle() {

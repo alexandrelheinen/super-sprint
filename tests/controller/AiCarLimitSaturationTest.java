@@ -114,4 +114,68 @@ public class AiCarLimitSaturationTest {
 		assertEquals(maxSpeed, vehicle.getSpeed(), EPSILON);
 		assertEquals(vehicle.getMaxTurnRate(), Math.abs(vehicle.getTurnRate()), EPSILON);
 	}
+
+	@Test
+	public void mpccTreatsActuatorSaturationsAsSoftConstraints() {
+		double maxSpeed = 30.0;
+		double maxAcceleration = 16.0;
+		double maxTurnRate = 8.0;
+		TrackingLoop loop = AiController.createHybridTrackingLoop(
+				maxSpeed,
+				maxAcceleration,
+				maxTurnRate / 0.2,
+				0.0,
+				0.0,
+				0.0);
+		HybridMpccPathFollowController hybrid =
+				(HybridMpccPathFollowController) loop.getController();
+		DubinsMpccPlanner planner = hybrid.getPlanner();
+		DubinsVehicle vehicle = loop.getVehicle();
+		vehicle.syncPose(5.0, 0.0, 0.0, 16.0);
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		int horizon = MpccConfig.DEFAULT.getHorizonStepCount();
+
+		double[] feasibleSpeeds = new double[horizon];
+		double[] feasibleTurns = new double[horizon];
+		double speed = 16.0;
+		for (int index = 0; index < horizon; index++) {
+			speed = Math.min(maxSpeed, speed + maxAcceleration * MpccConfig.DEFAULT.getDtSeconds());
+			feasibleSpeeds[index] = speed;
+			feasibleTurns[index] = 0.0;
+		}
+		double feasibleCost = planner.evaluate(
+				vehicle,
+				path,
+				java.util.List.of(),
+				feasibleSpeeds,
+				feasibleTurns);
+
+		double[] overspeed = feasibleSpeeds.clone();
+		for (int index = 0; index < horizon; index++) {
+			overspeed[index] = maxSpeed * 2.0;
+		}
+		assertTrue(
+				planner.evaluate(vehicle, path, java.util.List.of(), overspeed, feasibleTurns)
+						> feasibleCost + 0.5,
+				"Exceeding maxSpeed must raise the soft actuator cost");
+
+		double[] overturn = feasibleTurns.clone();
+		for (int index = 0; index < horizon; index++) {
+			overturn[index] = maxTurnRate * 2.0;
+		}
+		assertTrue(
+				planner.evaluate(vehicle, path, java.util.List.of(), feasibleSpeeds, overturn)
+						> feasibleCost + 0.5,
+				"Exceeding maxTurnRate must raise the soft actuator cost");
+
+		double[] overAccel = new double[horizon];
+		for (int index = 0; index < horizon; index++) {
+			overAccel[index] = 16.0 + (index + 1) * maxAcceleration * 4.0
+					* MpccConfig.DEFAULT.getDtSeconds();
+		}
+		assertTrue(
+				planner.evaluate(vehicle, path, java.util.List.of(), overAccel, feasibleTurns)
+						> feasibleCost + 0.5,
+				"Exceeding maxAcceleration must raise the soft actuator cost");
+	}
 }
