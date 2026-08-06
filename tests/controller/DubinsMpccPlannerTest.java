@@ -20,7 +20,7 @@ public class DubinsMpccPlannerTest {
 		DubinsVehicle vehicle = vehicleAt(0.0, 0.0, 0.0, 12.0);
 		DubinsMpccPlanner planner = planner(25.0);
 		DubinsMpccPlanner.Plan plan = planner.plan(vehicle, ReferencePath.empty(), List.of());
-		assertEquals(10, plan.commands().length);
+		assertEquals(MpccConfig.DEFAULT.getHorizonStepCount(), plan.commands().length);
 		assertEquals(12.0, plan.commands()[0].speedCommand(), 1e-9);
 		assertEquals(0.0, plan.commands()[0].turnRateCommand(), 1e-9);
 	}
@@ -37,7 +37,7 @@ public class DubinsMpccPlannerTest {
 		double blockedCost = planner.evaluate(vehicle, path, List.of(blocker), speeds, turns);
 		double clearCost = planner.evaluate(vehicle, path, List.of(), speeds, turns);
 		assertTrue(
-				blockedCost > clearCost + 1.0,
+				blockedCost > clearCost + 0.05,
 				"Expected obstacle soft constraint to increase cost: blocked="
 						+ blockedCost + " clear=" + clearCost);
 	}
@@ -200,6 +200,27 @@ public class DubinsMpccPlannerTest {
 				passCost < stopCost,
 				"Risk-tolerant progress should beat full-stop avoidance: pass="
 						+ passCost + " stop=" + stopCost);
+	}
+
+	@Test
+	public void bypassPrefersLateralOffsetOverSittingBehindTraffic() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 18.0);
+		DubinsMpccPlanner planner = planner(25.0);
+		DynamicObstacle blocker = new DynamicObstacle(11.0, 0.0, 0.0, 8.0, 1.6);
+		int horizon = planner.getConfig().getHorizonStepCount();
+
+		double[] followSpeeds = fill(horizon, 8.0);
+		double[] followTurns = fill(horizon, 0.0);
+		double[] passSpeeds = fill(horizon, 20.0);
+		double[] passTurns = fill(horizon, -0.55);
+
+		double followCost = planner.evaluate(vehicle, path, List.of(blocker), followSpeeds, followTurns);
+		double passCost = planner.evaluate(vehicle, path, List.of(blocker), passSpeeds, passTurns);
+		assertTrue(
+				passCost < followCost,
+				"High-speed lateral pass should beat drafting behind traffic: pass="
+						+ passCost + " follow=" + followCost);
 	}
 
 	private static DubinsMpccPlanner planner(double cruiseSpeed) {

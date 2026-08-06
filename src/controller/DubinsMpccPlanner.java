@@ -8,14 +8,10 @@ import model.ReferencePath;
 /**
  * Short-horizon Model Predictive Contouring Control on a Dubins unicycle.
  *
- * <p>Formulates a single-shooting NLP over speed and turn-rate commands,
- * warm-started from a PD path follower and refined with coordinate descent.
- * Costs penalize contouring (cross-track) error, lag behind a virtual path
- * progress variable, control roughness, soft track-wall violations, and a mild
- * preference against predicted opponents. Wall / lane-boundary costs dominate
- * so avoidance does not drive cars off the asphalt. Opponent proximity is
- * avoid-if-possible, not a hard no-go — progress rewards still encourage risky
- * overtakes when a bypass is available.
+ * <p>Single-shooting NLP over speed and turn-rate commands, warm-started from
+ * PD and refined with smooth pass seeds + light coordinate descent. Walls are
+ * near no-go; progress and speed are strongly rewarded so traffic is bypassed
+ * rather than waited out; racing-line contouring is weak inside a free band.
  */
 public final class DubinsMpccPlanner {
 
@@ -48,24 +44,36 @@ public final class DubinsMpccPlanner {
 		double[] bestSpeeds = new double[horizon];
 		double[] bestTurns = new double[horizon];
 		seedFromPd(vehicle, path, bestSpeeds, bestTurns);
+		smoothCommands(bestSpeeds, bestTurns);
 		double bestCost = evaluate(vehicle, path, obstacles, bestSpeeds, bestTurns);
 
 		double[] candidateSpeeds = bestSpeeds.clone();
 		double[] candidateTurns = bestTurns.clone();
-		double[][] biasProfiles = {
-				{0.0, 0.0},
-				{0.0, -0.55},
-				{0.0, 0.55},
-				{-0.22, 0.0},
-				{-0.18, -0.70},
-				{-0.18, 0.70},
-				{0.08, -0.35},
-				{0.08, 0.35}
+
+		// Pass-oriented seeds: keep speed high and commit to a lateral offset,
+		// then settle. Milder than bang-bang so closed-loop does not chatter.
+		double[][] passProfiles = {
+				{0.00, 0.00},
+				{0.06, -0.45},
+				{0.06, 0.45},
+				{0.10, -0.70},
+				{0.10, 0.70},
+				{0.04, -0.30},
+				{0.04, 0.30},
+				{-0.04, 0.00}
 		};
-		for (double[] bias : biasProfiles) {
-			applySpeedBias(bestSpeeds, candidateSpeeds, bias[0], vehicle.getMaxSpeed());
-			applyTurnBias(bestTurns, candidateTurns, bias[1], vehicle.getMaxTurnRate());
+		for (double[] profile : passProfiles) {
+			applyPassProfile(
+					bestSpeeds,
+					bestTurns,
+					candidateSpeeds,
+					candidateTurns,
+					profile[0],
+					profile[1],
+					vehicle.getMaxSpeed(),
+					vehicle.getMaxTurnRate());
 			refine(vehicle, path, obstacles, candidateSpeeds, candidateTurns);
+			smoothCommands(candidateSpeeds, candidateTurns);
 			double cost = evaluate(vehicle, path, obstacles, candidateSpeeds, candidateTurns);
 			if (cost < bestCost) {
 				bestCost = cost;
@@ -114,14 +122,65 @@ public final class DubinsMpccPlanner {
 				warmStartController.getCurvatureGain());
 	}
 
+	/**
+	 * Speed boost plus a two-phase lateral pass (offset then settle).
+	 */
+	private static void applyPassProfile(
+			double[] sourceSpeeds,
+			double[] sourceTurns,
+			double[] destinationSpeeds,
+			double[] destinationTurns,
+			double relativeSpeedBias,
+			double peakTurnBias,
+			double maxSpeed,
+			double maxTurnRate) {
+		int horizon = sourceSpeeds.length;
+		int turnPhase = Math.max(2, (horizon * 5) / 8);
+		for (int index = 0; index < horizon; index++) {
+			destinationSpeeds[index] = clamp(
+					sourceSpeeds[index] * (1.0 + relativeSpeedBias),
+					0.0,
+					maxSpeed);
+			double turnBias;
+			if (Math.abs(peakTurnBias) < 1e-9) {
+				turnBias = 0.0;
+			} else if (index < turnPhase) {
+				turnBias = peakTurnBias;
+			} else {
+				// Counter-steer settle so the plan does not keep spinning.
+				turnBias = -0.35 * peakTurnBias;
+			}
+			destinationTurns[index] = clamp(
+					sourceTurns[index] + turnBias,
+					-maxTurnRate,
+					maxTurnRate);
+		}
+	}
+
+	/** Light temporal smoothing to cut high-frequency command chatter. */
+	private static void smoothCommands(double[] speeds, double[] turns) {
+		if (speeds.length < 3) {
+			return;
+		}
+		double[] smoothSpeeds = speeds.clone();
+		double[] smoothTurns = turns.clone();
+		for (int index = 1; index < speeds.length - 1; index++) {
+			smoothSpeeds[index] = 0.25 * speeds[index - 1] + 0.5 * speeds[index] + 0.25 * speeds[index + 1];
+			smoothTurns[index] = 0.25 * turns[index - 1] + 0.5 * turns[index] + 0.25 * turns[index + 1];
+		}
+		System.arraycopy(smoothSpeeds, 0, speeds, 0, speeds.length);
+		System.arraycopy(smoothTurns, 0, turns, 0, turns.length);
+	}
+
 	private void refine(
 			DubinsVehicle vehicle,
 			ReferencePath path,
 			List<DynamicObstacle> obstacles,
 			double[] speeds,
 			double[] turns) {
-		double speedStep = config.getRefineStepScale() * Math.max(1.0, vehicle.getMaxAcceleration() * config.getDtSeconds());
-		double turnStep = config.getRefineStepScale() * Math.max(0.2, vehicle.getMaxTurnRate() * 0.25);
+		double speedStep = config.getRefineStepScale()
+				* Math.max(1.0, vehicle.getMaxAcceleration() * config.getDtSeconds());
+		double turnStep = config.getRefineStepScale() * Math.max(0.15, vehicle.getMaxTurnRate() * 0.18);
 		double bestCost = evaluate(vehicle, path, obstacles, speeds, turns);
 
 		for (int pass = 0; pass < config.getRefinePassCount(); pass++) {
@@ -241,22 +300,27 @@ public final class DubinsMpccPlanner {
 			virtualProgress += (cruise / Math.max(sampleSpacing, 1e-3)) * dt;
 
 			double contour = projection.crossTrackError();
+			double contourExcess = Math.max(
+					0.0,
+					Math.abs(contour) - config.getContourDeadzoneMeters());
 			double headingError = DubinsVehicle.wrapAngle(
 					projection.referenceHeading() - rollout.getHeading());
 			double lagSamples = virtualProgress - projection.closestIndex();
 			lagSamples = wrapSampleDelta(lagSamples, path.sampleCount());
 			double lagMeters = lagSamples * sampleSpacing;
-			// Progress is measured from the start of the horizon so early
-			// dithering around the same sample is not rewarded.
 			int forwardSamples = forwardSampleDelta(
 					startProjection.closestIndex(),
 					projection.closestIndex(),
 					path.sampleCount());
 
-			cost += config.getWeightContour() * contour * contour;
+			cost += config.getWeightContour() * contourExcess * contourExcess;
 			cost += config.getWeightHeading() * headingError * headingError;
 			cost += config.getWeightLag() * lagMeters * lagMeters;
 			cost -= config.getWeightProgress() * forwardSamples * sampleSpacing;
+
+			double speedShortfall = Math.max(0.0, cruise - rollout.getSpeed());
+			cost += config.getWeightSpeed() * speedShortfall * speedShortfall;
+
 			double deltaSpeed = speeds[index] - previousSpeedCommand;
 			double deltaTurn = turns[index] - previousTurnCommand;
 			cost += config.getWeightControl() * (deltaSpeed * deltaSpeed + deltaTurn * deltaTurn);
@@ -270,9 +334,7 @@ public final class DubinsMpccPlanner {
 	}
 
 	/**
-	 * Soft barrier against the track walls. Uses cross-track error versus the
-	 * lane half-width so leaving the asphalt is penalized far more heavily than
-	 * a comparable car-to-car clearance violation.
+	 * Soft barrier against the track walls. Leaving the asphalt is near no-go.
 	 */
 	private double wallCost(double crossTrackError) {
 		double absCrossTrack = Math.abs(crossTrackError);
@@ -283,17 +345,13 @@ public final class DubinsMpccPlanner {
 		if (violation <= 0.0) {
 			return 0.0;
 		}
-		// Quadratic near the wall, with an extra cubic kick once the body would
-		// intersect the boundary so off-track plans are almost never chosen.
 		double outside = Math.max(0.0, -wallClearance);
 		return config.getWeightWall() * (violation * violation + 8.0 * outside * outside * outside);
 	}
 
 	/**
-	 * Mild, saturating preference against other cars. Close traffic is
-	 * discouraged, but the cost stays finite under overlap so the planner can
-	 * accept a brush when progress / bypass is worth the risk. Walls remain the
-	 * real no-go via {@link #wallCost(double)}.
+	 * Mild, saturating preference against other cars — avoid if cheap, never a
+	 * hard barrier so progress / speed can still force a bypass.
 	 */
 	private double obstacleCost(
 			double x,
@@ -311,32 +369,11 @@ public final class DubinsMpccPlanner {
 			double clearance = distance - config.getEgoRadiusMeters() - obstacle.getRadiusMeters();
 			double violation = config.getObstacleSafeMarginMeters() - clearance;
 			if (violation > 0.0) {
-				// Saturate so deep overlap does not explode into a hard barrier.
-				double saturated = violation / (1.0 + 0.45 * violation);
+				double saturated = violation / (1.0 + 0.65 * violation);
 				total += config.getWeightObstacle() * saturated * saturated;
 			}
 		}
 		return total;
-	}
-
-	private static void applySpeedBias(
-			double[] source,
-			double[] destination,
-			double relativeBias,
-			double maxSpeed) {
-		for (int index = 0; index < source.length; index++) {
-			destination[index] = clamp(source[index] * (1.0 + relativeBias), 0.0, maxSpeed);
-		}
-	}
-
-	private static void applyTurnBias(
-			double[] source,
-			double[] destination,
-			double absoluteBias,
-			double maxTurnRate) {
-		for (int index = 0; index < source.length; index++) {
-			destination[index] = clamp(source[index] + absoluteBias, -maxTurnRate, maxTurnRate);
-		}
 	}
 
 	private static double estimateSampleSpacing(ReferencePath path) {

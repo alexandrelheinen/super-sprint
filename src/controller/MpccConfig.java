@@ -6,10 +6,13 @@ import model.WorldUnits;
 /**
  * Tunable horizon and weights for the hand-rolled Dubins MPCC planner.
  *
- * <p>Wall / track-boundary soft constraints are intentionally weighted much
- * higher than opponent soft constraints: leaving the asphalt is more critical
- * than brushing another car. Opponent costs are only a mild preference — the
- * planner should still take risks to bypass traffic when progress pays for it.
+ * <p>Priority order:
+ * <ol>
+ *   <li>Stay on asphalt (walls are near no-go)</li>
+ *   <li>Keep speed / make progress (overtakes are encouraged)</li>
+ *   <li>Prefer not to hit cars (soft, saturating — never a hard barrier)</li>
+ *   <li>Stay near the racing line (weak; free band allows passing offsets)</li>
+ * </ol>
  */
 public final class MpccConfig {
 
@@ -18,26 +21,28 @@ public final class MpccConfig {
 			(Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS) / 2.0);
 
 	public static final MpccConfig DEFAULT = new MpccConfig(
-			10,
-			0.05,
-			20,
-			6.0,
-			3.0,
-			8.0,
-			2.4,
-			0.15,
-			12.0,
-			1.8,
-			2.0,
-			2.5,
-			500.0,
-			DEFAULT_LANE_HALF_WIDTH_METERS,
-			2.0,
-			3.0,
-			3.0,
-			4,
+			12,
+			0.06,
+			48,
+			0.7,
 			0.8,
-			0.35);
+			3.0,
+			12.0,
+			2.8,
+			3.0,
+			3.5,
+			1.2,
+			2.0,
+			4.5,
+			900.0,
+			DEFAULT_LANE_HALF_WIDTH_METERS,
+			2.4,
+			2.2,
+			2.5,
+			1.2,
+			2,
+			0.94,
+			0.30);
 
 	private final int horizonStepCount;
 	private final double dtSeconds;
@@ -47,6 +52,7 @@ public final class MpccConfig {
 	private final double weightLag;
 	private final double weightProgress;
 	private final double weightControl;
+	private final double weightSpeed;
 	private final double weightObstacle;
 	private final double obstacleSafeMarginMeters;
 	private final double egoRadiusMeters;
@@ -55,6 +61,7 @@ public final class MpccConfig {
 	private final double laneHalfWidthMeters;
 	private final double wallSafeMarginMeters;
 	private final double wallTriggerMarginMeters;
+	private final double contourDeadzoneMeters;
 	private final double refineStepScale;
 	private final int refinePassCount;
 	private final double cruiseSpeedRatio;
@@ -69,6 +76,7 @@ public final class MpccConfig {
 			double weightLag,
 			double weightProgress,
 			double weightControl,
+			double weightSpeed,
 			double weightObstacle,
 			double obstacleSafeMarginMeters,
 			double egoRadiusMeters,
@@ -77,6 +85,7 @@ public final class MpccConfig {
 			double laneHalfWidthMeters,
 			double wallSafeMarginMeters,
 			double wallTriggerMarginMeters,
+			double contourDeadzoneMeters,
 			double refineStepScale,
 			int refinePassCount,
 			double cruiseSpeedRatio,
@@ -93,6 +102,7 @@ public final class MpccConfig {
 		this.weightLag = weightLag;
 		this.weightProgress = weightProgress;
 		this.weightControl = weightControl;
+		this.weightSpeed = weightSpeed;
 		this.weightObstacle = weightObstacle;
 		this.obstacleSafeMarginMeters = obstacleSafeMarginMeters;
 		this.egoRadiusMeters = egoRadiusMeters;
@@ -101,6 +111,7 @@ public final class MpccConfig {
 		this.laneHalfWidthMeters = laneHalfWidthMeters;
 		this.wallSafeMarginMeters = wallSafeMarginMeters;
 		this.wallTriggerMarginMeters = wallTriggerMarginMeters;
+		this.contourDeadzoneMeters = contourDeadzoneMeters;
 		this.refineStepScale = refineStepScale;
 		this.refinePassCount = refinePassCount;
 		this.cruiseSpeedRatio = cruiseSpeedRatio;
@@ -139,6 +150,10 @@ public final class MpccConfig {
 		return weightControl;
 	}
 
+	public double getWeightSpeed() {
+		return weightSpeed;
+	}
+
 	public double getWeightObstacle() {
 		return weightObstacle;
 	}
@@ -169,6 +184,10 @@ public final class MpccConfig {
 
 	public double getWallTriggerMarginMeters() {
 		return wallTriggerMarginMeters;
+	}
+
+	public double getContourDeadzoneMeters() {
+		return contourDeadzoneMeters;
 	}
 
 	public double getRefineStepScale() {
