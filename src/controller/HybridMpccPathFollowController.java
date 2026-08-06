@@ -8,12 +8,11 @@ import model.ReferencePath;
 
 /**
  * Path follower that uses PD by default and a short-horizon MPCC when opponents
- * are nearby, the car is close to a wall, or a sparse replan cadence is due
- * while avoidance is active.
+ * are nearby or the car is close to a wall.
  *
- * <p>MPCC solutions are applied open-loop for a few planner steps, then control
- * falls back to {@link PdPathFollowController} until the next trigger. Wall
- * soft constraints in the planner dominate opponent soft constraints.
+ * <p>Committed open-loop MPCC plans run to completion to avoid replan chatter.
+ * Wall emergencies may interrupt early; otherwise traffic plans are held until
+ * exhausted so steering does not oscillate between left/right seeds.
  */
 public class HybridMpccPathFollowController implements PathFollowController {
 
@@ -84,19 +83,18 @@ public class HybridMpccPathFollowController implements PathFollowController {
 		boolean nearWall = projection != null && isNearWall(projection.crossTrackError());
 		boolean needsMpcc = threatNearby || nearWall;
 		boolean planExhausted = planCommandIndex >= activePlan.length;
-		boolean dueForReplan = ticksSinceReplan >= config.getReplanIntervalTicks();
+		boolean planStale = ticksSinceReplan >= config.getReplanIntervalTicks();
 
-		if (!needsMpcc) {
-			// Drop open-loop plans once traffic and walls are clear so PD resumes.
+		if (!needsMpcc && planExhausted) {
 			activePlan = new DubinsMpccPlanner.Command[0];
 			planCommandIndex = 0;
 			planCommandElapsedSeconds = 0.0;
-		} else if (planExhausted || dueForReplan) {
-			DubinsMpccPlanner.Plan plan = planner.plan(vehicle, path, obstacles);
-			activePlan = plan.commands();
-			planCommandIndex = 0;
-			planCommandElapsedSeconds = 0.0;
-			ticksSinceReplan = 0;
+		} else if (nearWall && (planExhausted || planStale)) {
+			// Walls may interrupt a traffic plan; asphalt first.
+			commitPlan(planner.plan(vehicle, path, obstacles));
+		} else if (threatNearby && planExhausted) {
+			// Commit a pass plan and hold it open-loop until done (stability).
+			commitPlan(planner.plan(vehicle, path, obstacles));
 		}
 
 		if (planCommandIndex < activePlan.length) {
@@ -112,6 +110,13 @@ public class HybridMpccPathFollowController implements PathFollowController {
 
 		lastCommandFromMpcc = false;
 		return pdController.track(x, y, heading, speed, path, deltaSeconds);
+	}
+
+	private void commitPlan(DubinsMpccPlanner.Plan plan) {
+		activePlan = plan.commands();
+		planCommandIndex = 0;
+		planCommandElapsedSeconds = 0.0;
+		ticksSinceReplan = 0;
 	}
 
 	private boolean isNearWall(double crossTrackError) {

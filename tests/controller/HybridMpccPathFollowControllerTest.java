@@ -53,8 +53,8 @@ public class HybridMpccPathFollowControllerTest {
 		}
 
 		hybrid.setObstacles(List.of());
-		// With no threat and an exhausted plan, the next command must be PD.
-		for (int step = 0; step < 5; step++) {
+		// Committed open-loop plans finish before PD resumes (stability).
+		for (int step = 0; step < 120; step++) {
 			hybrid.track(20.0, 0.0, 0.0, 14.0, path, DELTA_SECONDS);
 		}
 		assertFalse(hybrid.wasLastCommandFromMpcc());
