@@ -1,9 +1,9 @@
-/bin/
 /build/
+/bin/
 *.class
-.DS_Store
-*.Identifierartifacts/
-__pycache__/
 /src/*/*.class
 Thumbs.db
+.DS_Store
+*.Identifier
 artifacts/
+__pycache__/
