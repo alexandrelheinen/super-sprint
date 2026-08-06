@@ -41,6 +41,7 @@ public class HallPanel extends BackgroundPanel implements Observer, ActionListen
 	private static final String[] COLUMN_NAMES = {
 			ConfigLoader.getString("messages.hall.table.rank", "Rank"),
 			ConfigLoader.getString("messages.hall.table.name", "Name"),
+			ConfigLoader.getString("messages.hall.table.car", "Car"),
 			ConfigLoader.getString("messages.hall.table.duration", "Duration"),
 			ConfigLoader.getString("messages.hall.table.laps", "Laps"),
 			ConfigLoader.getString("messages.hall.table.mean", "Mean"),
@@ -106,11 +107,12 @@ public class HallPanel extends BackgroundPanel implements Observer, ActionListen
 		resultsTable.setBackground(GameTheme.PANEL_SURFACE);
 		resultsTable.setFillsViewportHeight(true);
 		resultsTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		resultsTable.getColumnModel().getColumn(0).setPreferredWidth(UiScale.scale(scaleContext, 52));
-		resultsTable.getColumnModel().getColumn(1).setPreferredWidth(UiScale.scale(scaleContext, 100));
-		resultsTable.getColumnModel().getColumn(2).setPreferredWidth(UiScale.scale(scaleContext, 80));
-		resultsTable.getColumnModel().getColumn(3).setPreferredWidth(UiScale.scale(scaleContext, 52));
-		resultsTable.getColumnModel().getColumn(4).setPreferredWidth(UiScale.scale(scaleContext, 90));
+		resultsTable.getColumnModel().getColumn(0).setPreferredWidth(UiScale.scale(scaleContext, 48));
+		resultsTable.getColumnModel().getColumn(1).setPreferredWidth(UiScale.scale(scaleContext, 88));
+		resultsTable.getColumnModel().getColumn(2).setPreferredWidth(UiScale.scale(scaleContext, 150));
+		resultsTable.getColumnModel().getColumn(3).setPreferredWidth(UiScale.scale(scaleContext, 72));
+		resultsTable.getColumnModel().getColumn(4).setPreferredWidth(UiScale.scale(scaleContext, 48));
+		resultsTable.getColumnModel().getColumn(5).setPreferredWidth(UiScale.scale(scaleContext, 80));
 		resultsTable.setRowHeight(Math.max(MIN_ROW_HEIGHT, UiScale.scale(scaleContext, TABLE_ROW_HEIGHT)));
 		resultsTable.setFont(GameTheme.scaled(GameTheme.FONT_BODY, scaleContext));
 		resultsTable.setDefaultRenderer(Object.class, new ThemedCellRenderer());
@@ -198,6 +200,7 @@ public class HallPanel extends BackgroundPanel implements Observer, ActionListen
 				tableModel.addRow(new Object[] {
 						Integer.toString(rankIndex + ONE_BASED_INDEX_OFFSET),
 						result.getName(),
+						GameCatalog.carModelOptionLabel(result.getCarModelIndex()),
 						formatSeconds(result.getDurationMs()) + TIME_SUFFIX,
 						Integer.toString(result.getLapCount()),
 						formatSeconds(result.getMeanLapTimeMs()) + TIME_SUFFIX,
@@ -206,6 +209,7 @@ public class HallPanel extends BackgroundPanel implements Observer, ActionListen
 			} catch (RuntimeException exception) {
 				tableModel.addRow(new Object[] {
 						Integer.toString(rankIndex + ONE_BASED_INDEX_OFFSET),
+						EMPTY_CELL,
 						EMPTY_CELL,
 						EMPTY_CELL,
 						EMPTY_CELL,

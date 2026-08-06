@@ -6,26 +6,30 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * One Hall of Fame entry: player name, total race duration, and lap count.
- * Rankings use {@link #getMeanLapTimeMs()} so races with different lap counts
- * remain comparable.
+ * One Hall of Fame entry: player name, total race duration, lap count, and the
+ * car model used. Rankings use {@link #getMeanLapTimeMs()} so races with
+ * different lap counts remain comparable.
  */
 public class Result implements Serializable {
 
-	private static final long serialVersionUID = 2L;
+	/** Bumped when {@code carModelIndex} was added; incompatible with UID 2 files. */
+	private static final long serialVersionUID = 3L;
 
 	private final String name;
 	private final double durationMs;
 	private final int lapCount;
+	private final int carModelIndex;
 	private final String date;
 
-	public Result(String name, double durationMs, int lapCount) {
+	public Result(String name, double durationMs, int lapCount, int carModelIndex) {
 		if (lapCount <= 0) {
 			throw new IllegalArgumentException("Lap count must be positive: " + lapCount);
 		}
+		GameCatalog.carModelName(carModelIndex);
 		this.name = name;
 		this.durationMs = durationMs;
 		this.lapCount = lapCount;
+		this.carModelIndex = carModelIndex;
 		DateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 		this.date = format.format(new Date());
 	}
@@ -41,6 +45,11 @@ public class Result implements Serializable {
 
 	public int getLapCount() {
 		return lapCount;
+	}
+
+	/** Zero-based car model index from {@link GameCatalog}. */
+	public int getCarModelIndex() {
+		return carModelIndex;
 	}
 
 	/** Mean duration per lap in milliseconds (ranking key). */

@@ -88,7 +88,8 @@ public class HallOfFame extends Observable {
 				results[trackIndex][rankIndex] = new Result(
 						defaultNames[rankIndex],
 						DEFAULT_BASE_TIME_MS + (long) DEFAULT_TIME_STEP_MS * rankIndex,
-						defaultLaps);
+						defaultLaps,
+						rankIndex % Car.CAR_MODEL_COUNT);
 			}
 		}
 		persistResults();
@@ -132,7 +133,12 @@ public class HallOfFame extends Observable {
 	 * Hall of Fame. Caller must ensure the result places ({@link #findPlacementRank}
 	 * is not {@link #NO_PLACEMENT}).
 	 */
-	public void addResult(String playerName, double durationMs, int lapCount, int trackIndex) {
+	public void addResult(
+			String playerName,
+			double durationMs,
+			int lapCount,
+			int trackIndex,
+			int carModelIndex) {
 		int rankIndex = findPlacementRank(durationMs, lapCount, trackIndex);
 		if (rankIndex == NO_PLACEMENT) {
 			setChanged();
@@ -143,7 +149,7 @@ public class HallOfFame extends Observable {
 			results[trackIndex][shiftIndex] = results[trackIndex][shiftIndex - ONE_BASED_INDEX_OFFSET];
 		}
 		lastUpdatedTrackIndex = trackIndex;
-		results[trackIndex][rankIndex] = new Result(playerName, durationMs, lapCount);
+		results[trackIndex][rankIndex] = new Result(playerName, durationMs, lapCount, carModelIndex);
 		persistResults();
 		setChanged();
 		notifyObservers();

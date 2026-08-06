@@ -15,6 +15,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import model.ConfigLoader;
+import model.GameCatalog;
 import model.HallOfFame;
 import view.components.ArcadeButton;
 import view.components.GlassCard;
@@ -31,6 +32,7 @@ public class RaceCompletePanel extends BackgroundPanel {
 
 	private static final String TITLE = ConfigLoader.getString("messages.race.complete.title", "Race Complete");
 	private static final String WINNER_LABEL = ConfigLoader.getString("messages.race.complete.winner", "Winner");
+	private static final String CAR_LABEL = ConfigLoader.getString("messages.race.complete.car", "Car");
 	private static final String TIME_LABEL = ConfigLoader.getString("messages.race.complete.time", "Time");
 	private static final String LAPS_LABEL = ConfigLoader.getString("messages.race.complete.laps", "Laps");
 	private static final String MEAN_LABEL = ConfigLoader.getString("messages.race.complete.mean", "Mean lap time");
@@ -67,6 +69,7 @@ public class RaceCompletePanel extends BackgroundPanel {
 	private final double durationMs;
 	private final int lapCount;
 	private final int trackIndex;
+	private final int winnerCarModelIndex;
 	private final boolean humanWinner;
 	private final int placementRank;
 	private final JTextField nameField;
@@ -80,6 +83,7 @@ public class RaceCompletePanel extends BackgroundPanel {
 			double durationMs,
 			int lapCount,
 			int trackIndex,
+			int winnerCarModelIndex,
 			Runnable onContinueWithoutSave) {
 		super(BackgroundPanel.Style.SCREEN);
 		this.hallOfFame = hallOfFame;
@@ -87,6 +91,7 @@ public class RaceCompletePanel extends BackgroundPanel {
 		this.durationMs = durationMs;
 		this.lapCount = lapCount;
 		this.trackIndex = trackIndex;
+		this.winnerCarModelIndex = winnerCarModelIndex;
 		this.humanWinner = winnerIndex < humanPlayerCount;
 		this.placementRank = hallOfFame.findPlacementRank(durationMs, lapCount, trackIndex);
 
@@ -103,6 +108,10 @@ public class RaceCompletePanel extends BackgroundPanel {
 		JPanel summary = new JPanel(new GridLayout(0, 1, 0, ROW_GAP));
 		summary.setOpaque(false);
 		summary.add(buildInfoRow(scaleContext, WINNER_LABEL, winnerName));
+		summary.add(buildInfoRow(
+				scaleContext,
+				CAR_LABEL,
+				GameCatalog.carModelOptionLabel(winnerCarModelIndex)));
 		summary.add(buildInfoRow(scaleContext, TIME_LABEL, formatSeconds(durationMs) + TIME_SUFFIX));
 		summary.add(buildInfoRow(scaleContext, LAPS_LABEL, Integer.toString(lapCount)));
 		summary.add(buildInfoRow(
@@ -207,7 +216,12 @@ public class RaceCompletePanel extends BackgroundPanel {
 			if (playerName == null || playerName.isBlank()) {
 				playerName = DEFAULT_PLAYER;
 			}
-			hallOfFame.addResult(playerName.trim(), durationMs, lapCount, trackIndex);
+			hallOfFame.addResult(
+					playerName.trim(),
+					durationMs,
+					lapCount,
+					trackIndex,
+					winnerCarModelIndex);
 			return;
 		}
 		onContinueWithoutSave.run();

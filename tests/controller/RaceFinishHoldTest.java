@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import model.Car;
 import model.Circuit;
 import model.GameCatalog;
-import model.WorldUnits;
 import view.GameFrame;
 
 /**
