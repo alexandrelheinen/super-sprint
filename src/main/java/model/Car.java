@@ -40,8 +40,9 @@ public class Car extends Observable {
 	/**
 	 * Yaw rate scale shared by human and AI arcade controls: max turn rate is
 	 * {@code handling * TURN_RATE_PER_HANDLING} rad/s while moving.
+	 * Retuned for human-drivable steering (was 0.2 ≈ 5°/tick at handling 44).
 	 */
-	public static final double TURN_RATE_PER_HANDLING = 0.2;
+	public static final double TURN_RATE_PER_HANDLING = 0.075;
 
 	private static final double INITIAL_ANGLE = -Math.PI / 2;
 	private static final double STOP_THRESHOLD_MS = 1.1;

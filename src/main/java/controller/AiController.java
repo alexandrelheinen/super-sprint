@@ -19,11 +19,17 @@ import view.GameFrame;
 public class AiController extends Controller {
 
 	private static final double MS_PER_SECOND = 1000.0;
-	private static final double TURN_RATE_DOT = 40.0;
+	/** Turn-rate slew for the planner plant; keeps MPCC commands responsive. */
+	private static final double TURN_RATE_DOT = 24.0;
 	private static final double CURVATURE_GAIN = 0.45;
-	private static final double HEADING_KP_PER_HANDLING = 0.09;
-	private static final double HEADING_KD_PER_HANDLING = 0.025;
-	private static final double CROSS_TRACK_KP_PER_HANDLING = 0.06;
+	/**
+	 * PD turn gains as fractions of {@link Car#getMaxTurnRate()} so AI commands
+	 * stay on the same relative scale when {@link Car#TURN_RATE_PER_HANDLING}
+	 * is retuned for human piloting.
+	 */
+	private static final double HEADING_KP_PER_MAX_TURN = 0.45;
+	private static final double HEADING_KD_PER_MAX_TURN = 0.125;
+	private static final double CROSS_TRACK_KP_PER_MAX_TURN = 0.30;
 	private static final double SPEED_KP = 2.4;
 	private static final double SPEED_KD = 0.8;
 	/**
@@ -239,22 +245,24 @@ public class AiController extends Controller {
 			double xMeters,
 			double yMeters,
 			double heading) {
+		double maxTurnRate = handling * Car.TURN_RATE_PER_HANDLING;
 		return new DubinsVehicle(
 				xMeters,
 				yMeters,
 				heading,
 				maxSpeedMs,
 				0.0,
-				handling * Car.TURN_RATE_PER_HANDLING,
+				maxTurnRate,
 				maxAccelerationMs2,
 				TURN_RATE_DOT);
 	}
 
 	private static PdPathFollowController createPdController(double maxSpeedMs, double handling) {
+		double maxTurnRate = handling * Car.TURN_RATE_PER_HANDLING;
 		return new PdPathFollowController(
-				handling * HEADING_KP_PER_HANDLING,
-				handling * HEADING_KD_PER_HANDLING,
-				handling * CROSS_TRACK_KP_PER_HANDLING,
+				maxTurnRate * HEADING_KP_PER_MAX_TURN,
+				maxTurnRate * HEADING_KD_PER_MAX_TURN,
+				maxTurnRate * CROSS_TRACK_KP_PER_MAX_TURN,
 				SPEED_KP,
 				SPEED_KD,
 				maxSpeedMs * CRUISE_SPEED_RATIO,
