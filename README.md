@@ -61,6 +61,18 @@ Pushing a `v*` tag runs `.github/workflows/release-demos.yml`, which calls `make
 1. **Four fastest cars** (`2,1,7,4`) on Dune Horseshoe, ascending `maxSpeed` grid order.
 2. **Four slowest cars** (`5,6,3,0`) on Desert Elbow, same ascending grid order.
 
+The same tag also runs `.github/workflows/release-binaries.yml`, which attaches playable downloads:
+
+| Asset | Notes |
+|-------|-------|
+| Linux `*-linux-x64.tar.gz` | Bundled JRE — unpack and run the binary under `bin/` |
+| Windows `*-windows-x64.zip` | Bundled JRE — unpack and run `SuperSprintSupelec.exe` |
+| Portable `*-portable.zip` | Needs JDK/JRE 17+; use `run.sh` / `run.bat` |
+
+Prefer the Linux/Windows app-image packages when you just want to play without installing Java. Local builds: `make package` / `make package-appimage`.
+
+Mobile builds are not available (desktop Swing app).
+
 See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and troubleshooting.
 
 ## Controls
@@ -86,7 +98,7 @@ docs/           Markdown documentation
 build/          Compiled classes and prepared car sprites (generated)
 ```
 
-On Linux, runtime Hall of Fame data is stored at `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default: `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), initialized from `src/data/hall_of_fame.dat` when missing.
+On Linux, runtime Hall of Fame data is stored at `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default: `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), initialized from `src/data/hall_of_fame.dat` when missing. Windows uses `%APPDATA%\super-sprint-supelec\`; macOS uses `~/Library/Application Support/super-sprint-supelec/`.
 
 ## Architecture
 
@@ -124,7 +136,9 @@ See [docs/REPORT.md](docs/REPORT.md) for the full design document (English trans
 
 ## Continuous integration
 
-GitHub Actions (`.github/workflows/ci.yml`) compiles the project and runs a headless launch smoke test on every push and pull request to `master`.
+GitHub Actions (`.github/workflows/ci.yml`) compiles the project, runs unit tests, and performs a headless launch smoke test on every push and pull request to `master`.
+
+Tagged releases (`v*`) additionally record demo videos and publish Linux/Windows downloadable binaries (see [docs/BUILD.md](docs/BUILD.md)).
 
 ## License
 

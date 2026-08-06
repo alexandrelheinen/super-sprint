@@ -3,6 +3,8 @@ package model;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,15 +16,23 @@ import view.SpriteImageProcessor;
 
 public final class ResourcePaths {
 
-	private static final Path BUNDLED_SPRITE_DIR = Paths.get("src", "sprites");
-	private static final Path PREPARED_SPRITE_DIR = Paths.get("build", "sprites");
-	private static final Path SEED_HALL_OF_FAME = Paths.get("src", "data", "hall_of_fame.dat");
+	/** Optional absolute app root override for packaged launches. */
+	public static final String APP_HOME_PROPERTY = "super.sprint.home";
+
+	private static final Path APP_HOME = resolveAppHome();
+	private static final Path BUNDLED_SPRITE_DIR = APP_HOME.resolve(Paths.get("src", "sprites"));
+	private static final Path PREPARED_SPRITE_DIR = APP_HOME.resolve(Paths.get("build", "sprites"));
+	private static final Path SEED_HALL_OF_FAME = APP_HOME.resolve(Paths.get("src", "data", "hall_of_fame.dat"));
 	private static final String APP_DATA_DIR_NAME = "super-sprint-supelec";
 	private static final String HALL_OF_FAME_FILE_NAME = "hall_of_fame.dat";
 	private static final String XDG_DATA_HOME_ENV = "XDG_DATA_HOME";
+	private static final String APPDATA_ENV = "APPDATA";
 	private static final String USER_HOME_PROPERTY = "user.home";
+	private static final String OS_NAME_PROPERTY = "os.name";
 	private static final String LOCAL_SHARE_DIR = ".local";
 	private static final String SHARE_DIR = "share";
+	private static final String MAC_APP_SUPPORT = "Library";
+	private static final String MAC_APPLICATION_SUPPORT = "Application Support";
 
 	/** Zero-padded width for indexed sprite stems (`car_00.png`, `track_01.png`). */
 	public static final int SPRITE_INDEX_DIGITS = 2;
@@ -30,11 +40,37 @@ public final class ResourcePaths {
 	private static final String CAR_MENU_SPRITE_SUFFIX = "_menu";
 	private static final String TRACK_TILE_STEM = "track";
 	private static final String TRACK_PREVIEW_STEM = "track_preview";
+	private static final int CODE_SOURCE_PARENT_WALK_LIMIT = 4;
 
 	private ResourcePaths() {
 	}
 
+	/**
+	 * Root directory that contains {@code src/sprites} and {@code build/sprites}.
+	 * In development this is the repository root; in a packaged app it is the
+	 * directory next to the application jar (or the value of
+	 * {@value #APP_HOME_PROPERTY}).
+	 */
+	public static Path appHome() {
+		return APP_HOME;
+	}
+
 	public static Path userDataDirectory() {
+		String osName = System.getProperty(OS_NAME_PROPERTY, "").toLowerCase(Locale.ROOT);
+		if (osName.contains("win")) {
+			String appData = System.getenv(APPDATA_ENV);
+			if (appData != null && !appData.isBlank()) {
+				return Paths.get(appData, APP_DATA_DIR_NAME);
+			}
+			return Paths.get(System.getProperty(USER_HOME_PROPERTY), "AppData", "Roaming", APP_DATA_DIR_NAME);
+		}
+		if (osName.contains("mac")) {
+			return Paths.get(
+					System.getProperty(USER_HOME_PROPERTY),
+					MAC_APP_SUPPORT,
+					MAC_APPLICATION_SUPPORT,
+					APP_DATA_DIR_NAME);
+		}
 		String xdgDataHome = System.getenv(XDG_DATA_HOME_ENV);
 		Path baseDirectory = (xdgDataHome != null && !xdgDataHome.isBlank())
 				? Paths.get(xdgDataHome)
@@ -137,5 +173,43 @@ public final class ResourcePaths {
 			return prepared.toString();
 		}
 		return bundledSprite(fileName);
+	}
+
+	private static Path resolveAppHome() {
+		String configured = System.getProperty(APP_HOME_PROPERTY);
+		if (configured != null && !configured.isBlank()) {
+			return Paths.get(configured).toAbsolutePath().normalize();
+		}
+		Path fromCodeSource = detectAppHomeFromCodeSource();
+		if (fromCodeSource != null) {
+			return fromCodeSource;
+		}
+		return Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
+	}
+
+	private static Path detectAppHomeFromCodeSource() {
+		try {
+			URL location = ResourcePaths.class.getProtectionDomain().getCodeSource().getLocation();
+			if (location == null) {
+				return null;
+			}
+			Path codePath = Paths.get(location.toURI()).toAbsolutePath().normalize();
+			Path candidate = Files.isRegularFile(codePath) ? codePath.getParent() : codePath;
+			for (int depth = 0; depth < CODE_SOURCE_PARENT_WALK_LIMIT && candidate != null; depth++) {
+				if (looksLikeAppHome(candidate)) {
+					return candidate;
+				}
+				candidate = candidate.getParent();
+			}
+		} catch (URISyntaxException | RuntimeException ignored) {
+			// Fall back to user.dir.
+		}
+		return null;
+	}
+
+	private static boolean looksLikeAppHome(Path directory) {
+		return Files.isDirectory(directory.resolve("src").resolve("sprites"))
+				|| Files.isDirectory(directory.resolve("build").resolve("sprites"))
+				|| Files.isDirectory(directory.resolve("src").resolve("data"));
 	}
 }

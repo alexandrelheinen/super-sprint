@@ -1,0 +1,113 @@
+name: Release binaries
+
+# Builds downloadable game packages on every v* tag and attaches them to the
+# GitHub Release. Produces:
+#   - portable zip (needs JDK 17+): SuperSprintSupelec-VERSION-portable.zip
+#   - Linux app-image tarball with bundled JRE (download & run)
+#   - Windows app-image zip with bundled JRE (download & run)
+#
+# Mobile builds are intentionally out of scope: this is a Java Swing desktop game.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version label used in artifact names (e.g. 2.1.0)'
+        required: false
+        default: '0.0.0-dev'
+
+concurrency:
+  group: release-binaries-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x64
+          - os: windows-latest
+            platform: windows-x64
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-pil
+
+      - name: Install Windows packaging dependencies
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip Pillow
+          choco install make -y --no-progress
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            RAW="${GITHUB_REF_NAME}"
+          else
+            RAW="${{ github.event.inputs.version }}"
+          fi
+          RAW="${RAW:-0.0.0-dev}"
+          echo "tag=${RAW}" >> "$GITHUB_OUTPUT"
+          echo "app=${RAW#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build portable package and app-image
+        shell: bash
+        run: |
+          bash scripts/package-release.sh \
+            --app-image \
+            --version "${{ steps.version.outputs.app }}" \
+            --dest artifacts/release
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-binaries-${{ matrix.platform }}
+          path: |
+            artifacts/release/*.zip
+            artifacts/release/*.tar.gz
+          if-no-files-found: error
+
+      - name: Attach Linux binaries to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') && matrix.platform == 'linux-x64'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/release/*-portable.zip
+            artifacts/release/*-linux-x64.tar.gz
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attach Windows binaries to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') && matrix.platform == 'windows-x64'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/release/*-windows-x64.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

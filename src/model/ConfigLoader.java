@@ -18,8 +18,8 @@ import java.util.Properties;
  */
 public final class ConfigLoader {
 
-	private static final Path CONFIG_DIR = Path.of("src", "data", "config");
-	private static final Path BUILD_CONFIG_DIR = Path.of("build", "config");
+	private static final Path CONFIG_DIR = ResourcePaths.appHome().resolve(Path.of("src", "data", "config"));
+	private static final Path BUILD_CONFIG_DIR = ResourcePaths.appHome().resolve(Path.of("build", "config"));
 	private static final String PROPERTIES_SUFFIX = ".properties";
 	private static final String NEWLINE_ESCAPE = "\\n";
 	private static final String LIST_SEPARATOR = ",";
