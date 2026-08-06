@@ -8,27 +8,26 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.SwingUtilities;
 
 import model.Car;
+import model.Circuit;
 import model.GameCatalog;
 import model.GameConfig;
 
 /**
  * Launches a headless-friendly all-AI exhibition race for release demos.
  *
- * <p>Defaults: Dune Horseshoe, three laps, four distinct car models, zero human
- * players.
+ * <p>Args: {@code <trackId> <carIds> [laps]}.
  *
- * <p>Args: {@code [laps] [cars]}. {@code cars} may be a comma-separated list of
- * model indexes ({@code 0,1,2,3}), {@code identical} (all model 0), or
- * {@code identical:N}. The {@code DEMO_CARS} environment variable is used when
- * the cars argument is omitted.
+ * <ul>
+ *   <li>{@code trackId} — zero-based track catalog index
+ *   <li>{@code carIds} — comma- or whitespace-separated model indexes
+ *       ({@code 0,0,0,0} / {@code 0 0 0 0}), or {@code identical} /
+ *       {@code identical:N}
+ *   <li>{@code laps} — optional lap count (default 3)
+ * </ul>
  */
 public final class DemoRaceCapture {
 
-	private static final int DUNE_HORSESHOE_TRACK_INDEX = 3;
-	/** Yellow, green, blue, and red liveries - visually distinct on sand. */
-	private static final int[] DEFAULT_DISTINCT_CAR_MODELS = {0, 1, 2, 3};
 	private static final int DEFAULT_LAP_COUNT = 3;
-	private static final String ENV_DEMO_CARS = "DEMO_CARS";
 	/** Hold the Race Complete screen long enough for the release clip to show results. */
 	private static final long POST_RACE_HOLD_MS = 5_000L;
 	/** Includes racing, post-win coast-down, and the results hold. */
@@ -38,13 +37,22 @@ public final class DemoRaceCapture {
 	}
 
 	public static void main(String[] args) throws Exception {
-		int lapCount = args.length > 0
-				? Integer.parseInt(args[0])
+		if (args.length < 2) {
+			System.err.println("Usage: DemoRaceCapture <trackId> <carIds> [laps]");
+			System.err.println("  trackId  zero-based track index (0.."
+					+ (Circuit.TRACK_COUNT - 1) + ")");
+			System.err.println("  carIds   comma/space list, e.g. 0,0,0,0 or \"0 0 0 0\"");
+			System.err.println("           or identical / identical:N");
+			System.err.println("  laps     optional, default " + DEFAULT_LAP_COUNT);
+			System.exit(2);
+		}
+
+		int trackIndex = parseTrackIndex(args[0], Circuit.TRACK_COUNT);
+		int[] carModels = parseCarModels(args[1], GameConfig.MAX_CARS, Car.CAR_MODEL_COUNT);
+		int lapCount = args.length > 2
+				? Integer.parseInt(args[2])
 				: DEFAULT_LAP_COUNT;
 		GameCatalog.validateLapCount(lapCount);
-
-		String carSpec = args.length > 1 ? args[1] : System.getenv(ENV_DEMO_CARS);
-		int[] carModels = parseCarModels(carSpec, GameConfig.MAX_CARS, Car.CAR_MODEL_COUNT);
 
 		CountDownLatch raceFinished = new CountDownLatch(1);
 		AtomicReference<AppShell> shellRef = new AtomicReference<>();
@@ -58,7 +66,7 @@ public final class DemoRaceCapture {
 				shell.requestFocus();
 				shell.startAiExhibitionRace(
 						carModels,
-						DUNE_HORSESHOE_TRACK_INDEX,
+						trackIndex,
 						lapCount,
 						() -> new Thread(() -> {
 							try {
@@ -71,7 +79,7 @@ public final class DemoRaceCapture {
 						}, "demo-race-hold").start());
 				System.out.println(
 						"Demo race started: track="
-								+ GameCatalog.trackName(DUNE_HORSESHOE_TRACK_INDEX)
+								+ trackIndex + " (" + GameCatalog.trackName(trackIndex) + ")"
 								+ " laps=" + lapCount
 								+ " cars=" + Arrays.toString(carModels)
 								+ " (all AI)");
@@ -102,10 +110,26 @@ public final class DemoRaceCapture {
 	}
 
 	/**
+	 * Parses a zero-based track catalog index.
+	 */
+	public static int parseTrackIndex(String spec, int trackCount) {
+		if (spec == null || spec.isBlank()) {
+			throw new IllegalArgumentException("trackId is required");
+		}
+		int trackIndex = Integer.parseInt(spec.trim());
+		if (trackIndex < 0 || trackIndex >= trackCount) {
+			throw new IllegalArgumentException(
+					"Track index out of range: " + trackIndex
+							+ " (valid 0.." + (trackCount - 1) + ")");
+		}
+		return trackIndex;
+	}
+
+	/**
 	 * Parses a demo car-model specification.
 	 *
-	 * @param spec {@code null}/blank for the default distinct liveries;
-	 *        {@code identical} / {@code identical:N}; or comma-separated indexes
+	 * @param spec comma- or whitespace-separated indexes; {@code identical} /
+	 *        {@code identical:N}
 	 * @param slotCount number of race slots to fill
 	 * @param modelCount valid model index upper bound (exclusive)
 	 */
@@ -117,7 +141,7 @@ public final class DemoRaceCapture {
 			throw new IllegalArgumentException("modelCount must be positive");
 		}
 		if (spec == null || spec.isBlank()) {
-			return defaultDistinctModels(slotCount);
+			throw new IllegalArgumentException("carIds is required");
 		}
 
 		String trimmed = spec.trim();
@@ -133,7 +157,7 @@ public final class DemoRaceCapture {
 			return models;
 		}
 
-		String[] parts = trimmed.split(",");
+		String[] parts = trimmed.split("[,\\s]+");
 		if (parts.length != slotCount) {
 			throw new IllegalArgumentException(
 					"Expected " + slotCount + " car model indexes, got " + parts.length
@@ -144,16 +168,6 @@ public final class DemoRaceCapture {
 			int modelIndex = Integer.parseInt(parts[index].trim());
 			validateModelIndex(modelIndex, modelCount);
 			models[index] = modelIndex;
-		}
-		return models;
-	}
-
-	private static int[] defaultDistinctModels(int slotCount) {
-		int[] models = new int[slotCount];
-		for (int index = 0; index < slotCount; index++) {
-			models[index] = index < DEFAULT_DISTINCT_CAR_MODELS.length
-					? DEFAULT_DISTINCT_CAR_MODELS[index]
-					: index % Car.CAR_MODEL_COUNT;
 		}
 		return models;
 	}

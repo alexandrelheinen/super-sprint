@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
-# Record an all-AI Dune Horseshoe exhibition race to MP4 for release assets.
+# Record an all-AI exhibition race to MP4 for release assets.
+# Usage: record-demo-race.sh [output.mp4] <trackId> <carIds> [laps]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="${ROOT}/build"
-OUTPUT="${1:-${ROOT}/artifacts/demo/dune-horseshoe-ai-demo.mp4}"
-LAPS="${2:-3}"
+
+if [[ "${1:-}" == *.mp4 || "${1:-}" == */* ]]; then
+	OUTPUT="$1"
+	TRACK="${2:?trackId required}"
+	CARS="${3:?carIds required}"
+	LAPS="${4:-3}"
+else
+	TRACK="${1:?trackId required}"
+	CARS="${2:?carIds required}"
+	LAPS="${3:-3}"
+	OUTPUT="${ROOT}/artifacts/demo/ai-demo-track${TRACK}.mp4"
+fi
+
 DISPLAY_NUM="${DISPLAY:-:1}"
 FPS="${DEMO_FPS:-30}"
 
@@ -36,13 +48,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "Starting demo race on ${DISPLAY_NUM}..."
-DEMO_ARGS=("$LAPS")
-if [[ -n "${DEMO_CARS:-}" ]]; then
-	DEMO_ARGS+=("$DEMO_CARS")
-	echo "Using DEMO_CARS=${DEMO_CARS}"
-fi
-java -cp "$BUILD_DIR" view.DemoRaceCapture "${DEMO_ARGS[@]}" &
+echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=${LAPS})..."
+java -cp "$BUILD_DIR" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
 GAME_PID=$!
 
 WINDOW_ID=""
