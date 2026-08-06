@@ -25,7 +25,9 @@ help:
 	@echo "  make test        Run the JUnit test suite in tests/"
 	@echo "  make smoke-test  Headless launch test for CI"
 	@echo "  make demo-race   All-AI Dune Horseshoe exhibition race"
+	@echo "                   Optional: LAPS=3 DEMO_CARS=identical:0"
 	@echo "  make record-demo Record demo race MP4 (needs DISPLAY/ffmpeg)"
+	@echo "                   Optional: DEMO_CARS=0,0,0,0 DEMO_MP4=..."
 	@echo "  make clean       Remove build artifacts"
 	@echo "  make help        Show this message"
 
@@ -83,11 +85,18 @@ smoke-test: compile
 	@xvfb-run -a timeout $(SMOKE_TIMEOUT_SEC)s java -cp $(BUILD_DIR) $(MAIN_CLASS) || test $$? -eq 124
 	@echo "Smoke test passed (process started successfully)"
 
-# All-AI Dune Horseshoe exhibition (no recording). Optional: LAPS=1 make demo-race
+# All-AI Dune Horseshoe exhibition (no recording).
+# Optional: LAPS=1 DEMO_CARS=identical:0 make demo-race
+# DEMO_CARS accepts 0,1,2,3 | identical | identical:N
 demo-race: compile
-	java -cp $(BUILD_DIR) view.DemoRaceCapture $(or $(LAPS),3)
+	@if [ -n "$(DEMO_CARS)" ]; then \
+		java -cp $(BUILD_DIR) view.DemoRaceCapture $(or $(LAPS),3) "$(DEMO_CARS)"; \
+	else \
+		java -cp $(BUILD_DIR) view.DemoRaceCapture $(or $(LAPS),3); \
+	fi
 
 # Record the exhibition race to artifacts/demo/ (requires DISPLAY + ffmpeg + xdotool)
+# Optional: DEMO_CARS=identical:0 LAPS=3 make record-demo
 record-demo: compile
 	@bash scripts/record-demo-race.sh $(or $(DEMO_MP4),artifacts/demo/dune-horseshoe-ai-demo.mp4) $(or $(LAPS),3)
 

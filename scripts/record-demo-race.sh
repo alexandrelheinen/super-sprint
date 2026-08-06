@@ -37,7 +37,12 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Starting demo race on ${DISPLAY_NUM}..."
-java -cp "$BUILD_DIR" view.DemoRaceCapture "$LAPS" &
+DEMO_ARGS=("$LAPS")
+if [[ -n "${DEMO_CARS:-}" ]]; then
+	DEMO_ARGS+=("$DEMO_CARS")
+	echo "Using DEMO_CARS=${DEMO_CARS}"
+fi
+java -cp "$BUILD_DIR" view.DemoRaceCapture "${DEMO_ARGS[@]}" &
 GAME_PID=$!
 
 WINDOW_ID=""

@@ -8,10 +8,12 @@ import model.ReferencePath;
 
 /**
  * Path follower that uses PD by default and a short-horizon MPCC when opponents
- * are nearby (or on a sparse replan cadence while avoidance is active).
+ * are nearby, the car is close to a wall, or a sparse replan cadence is due
+ * while avoidance is active.
  *
  * <p>MPCC solutions are applied open-loop for a few planner steps, then control
- * falls back to {@link PdPathFollowController} until the next trigger.
+ * falls back to {@link PdPathFollowController} until the next trigger. Wall
+ * soft constraints in the planner dominate opponent soft constraints.
  */
 public class HybridMpccPathFollowController implements PathFollowController {
 
@@ -26,6 +28,7 @@ public class HybridMpccPathFollowController implements PathFollowController {
 	private double planCommandElapsedSeconds;
 	private int ticksSinceReplan = Integer.MAX_VALUE / 4;
 	private boolean lastCommandFromMpcc;
+	private int lastProjectionHint = ReferencePath.NO_HINT;
 
 	public HybridMpccPathFollowController(
 			PdPathFollowController pdController,
@@ -70,12 +73,21 @@ public class HybridMpccPathFollowController implements PathFollowController {
 			ReferencePath path,
 			double deltaSeconds) {
 		ticksSinceReplan++;
+		ReferencePath.Projection projection = path.isEmpty()
+				? null
+				: path.project(x, y, lastProjectionHint);
+		if (projection != null) {
+			lastProjectionHint = projection.closestIndex();
+		}
+
 		boolean threatNearby = nearestObstacleDistance(x, y) <= config.getTriggerDistanceMeters();
+		boolean nearWall = projection != null && isNearWall(projection.crossTrackError());
+		boolean needsMpcc = threatNearby || nearWall;
 		boolean planExhausted = planCommandIndex >= activePlan.length;
 		boolean dueForReplan = ticksSinceReplan >= config.getReplanIntervalTicks();
 
-		if (!threatNearby) {
-			// Drop open-loop avoidance as soon as traffic clears so PD resumes.
+		if (!needsMpcc) {
+			// Drop open-loop plans once traffic and walls are clear so PD resumes.
 			activePlan = new DubinsMpccPlanner.Command[0];
 			planCommandIndex = 0;
 			planCommandElapsedSeconds = 0.0;
@@ -100,6 +112,13 @@ public class HybridMpccPathFollowController implements PathFollowController {
 
 		lastCommandFromMpcc = false;
 		return pdController.track(x, y, heading, speed, path, deltaSeconds);
+	}
+
+	private boolean isNearWall(double crossTrackError) {
+		double wallClearance = config.getLaneHalfWidthMeters()
+				- config.getEgoRadiusMeters()
+				- Math.abs(crossTrackError);
+		return wallClearance <= config.getWallTriggerMarginMeters();
 	}
 
 	private double nearestObstacleDistance(double x, double y) {
