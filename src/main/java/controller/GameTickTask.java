@@ -2,7 +2,9 @@ package controller;
 
 import java.util.TimerTask;
 
+import model.Car;
 import model.Circuit;
+import model.PhysicsSimulator;
 import view.GameFrame;
 
 public class GameTickTask extends TimerTask {
@@ -52,12 +54,13 @@ public class GameTickTask extends TimerTask {
 			}
 		}
 		for (int index = 0; index < controllers.length; index++) {
-			circuit.enforceTrackBoundaries(controllers[index].getCar());
 			controllers[index].update();
-			for (int otherIndex = 0; otherIndex < index; otherIndex++) {
-				controllers[index].getCar().collideWith(controllers[otherIndex].getCar());
-			}
 		}
+		Car[] cars = new Car[controllers.length];
+		for (int index = 0; index < controllers.length; index++) {
+			cars[index] = controllers[index].getCar();
+		}
+		PhysicsSimulator.simulateStep(cars, circuit, Game.TICK_INTERVAL_MS / 1000.0);
 		// Evaluate after movement so a car that completes the final lap this
 		// tick ends the race immediately, and same-tick ties use the highest
 		// lap counter rather than controller order from the previous step.

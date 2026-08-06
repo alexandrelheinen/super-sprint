@@ -6,7 +6,7 @@ without changing Java source code. They are shipped on the classpath as
 
 | File | Purpose |
 |------|---------|
-| `cars.properties` | Per-car index, racing number, name, mean color, race/menu sprite sizes, and stats (regenerated from `cars.png` at build time into `build/generated/…`) |
+| `cars.properties` | Per-car index, racing number, name, mean color, race/menu sprite sizes, opaque pixel counts, mass scale (`cars.kilogramsPerOpaquePixel`), and stats (regenerated from `cars.png` at build time into `build/generated/…`) |
 | `tracks.properties` | Per-track index, name, terrain (`grass`/`sand`), and tile map rows |
 | `catalog.properties` | Lap options and Hall of Fame seed names |
 | `game.properties` | Window title and race rules (max cars, human players) |

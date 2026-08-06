@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import model.Car;
 import model.Circuit;
 import model.GameCatalog;
+import model.PhysicsSimulator;
 import model.ReferencePath;
 import model.TrackGeometry;
 import model.WorldUnits;
@@ -14,7 +15,7 @@ import view.GameFrame;
 
 /**
  * End-to-end simulation of the in-game AI stack: PD/MPCC commands mapped to
- * arcade Car controls and integrated with {@link Car#applyPhysics(double)}.
+ * arcade Car controls and integrated via {@link PhysicsSimulator#simulateStep}.
  */
 public class AiTrackingSimulationTest {
 
@@ -73,8 +74,8 @@ public class AiTrackingSimulationTest {
 
 		for (int step = 0; step < steps; step++) {
 			circuit.shouldRenderAfterVisualTick();
-			circuit.enforceTrackBoundaries(car);
 			ai.update();
+			PhysicsSimulator.simulateStep(new Car[] {car}, circuit, DELTA_SECONDS);
 
 			double elapsed = (step + 1) * DELTA_SECONDS;
 			ReferencePath.Projection projection = path.project(

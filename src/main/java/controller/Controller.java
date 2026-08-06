@@ -14,8 +14,6 @@ public abstract class Controller {
 	private static final String LOG_CAR_CREATED = "Car created: ";
 	private static final String LOG_START_POSITION = "; start position ";
 	private static final String LOG_SEPARATOR = " ------------- ";
-	private static final double MS_PER_SECOND = 1000.0;
-
 	private static int playerCount = 0;
 	protected Car car;
 	protected GameFrame frame;
@@ -45,8 +43,12 @@ public abstract class Controller {
 		playerCount = 0;
 	}
 
+	/**
+	 * Applies driver controls for this tick. Integration and collisions run in
+	 * {@link model.PhysicsSimulator#simulateStep}.
+	 */
 	public void update() {
-		car.applyPhysics(Game.TICK_INTERVAL_MS / MS_PER_SECOND);
+		// Subclasses set arcade controls; the shared physics step integrates.
 	}
 
 	/** Drops throttle, brake and steering so the shared plant can coast cleanly. */

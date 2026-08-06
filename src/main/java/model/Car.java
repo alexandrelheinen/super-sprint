@@ -1,8 +1,5 @@
 package model;
 
-import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.geom.AffineTransform;
 import java.util.Observable;
 
 import view.GameFrame;
@@ -28,18 +25,27 @@ public class Car extends Observable {
 	 */
 	public static final int[][] CAR_MODEL_SPRITE_DIMENSIONS = GameConfig.CAR_MODEL_SPRITE_DIMENSIONS;
 
+	/** Non-transparent race-sprite pixel counts per model (mass proxy). */
+	public static final int[] CAR_MODEL_OPAQUE_PIXELS = GameConfig.CAR_MODEL_OPAQUE_PIXELS;
+
+	/** Curb weight in kg per model: opaque pixels × {@link #KILOGRAMS_PER_OPAQUE_PIXEL}. */
+	public static final double[] CAR_MODEL_MASS_KG = GameConfig.CAR_MODEL_MASS_KG;
+
+	/**
+	 * Mass scale from the green reference car ({@code 500 kg / opaque pixel count}).
+	 * Used for UI display and relative collision impulses.
+	 */
+	public static final double KILOGRAMS_PER_OPAQUE_PIXEL = GameConfig.KILOGRAMS_PER_OPAQUE_PIXEL;
+
 	/**
 	 * Yaw rate scale shared by human and AI arcade controls: max turn rate is
 	 * {@code handling * TURN_RATE_PER_HANDLING} rad/s while moving.
 	 */
 	public static final double TURN_RATE_PER_HANDLING = 0.2;
 
-	private static final double COLLISION_BLEND = 0.1;
 	private static final double INITIAL_ANGLE = -Math.PI / 2;
 	private static final double STOP_THRESHOLD_MS = 1.1;
 	private static final double DECELERATION_FACTOR = 0.5;
-	private static final double COLLISION_ANGLE_FACTOR = 0.01;
-	private static final double COLLISION_NUDGE_METERS = WorldUnits.pxToM(1.0);
 	private static final int MOTION_STATE_IDLE = 0;
 	private static final int MOTION_STATE_ACCELERATING = 1;
 	private static final int MOTION_STATE_DECELERATING = 2;
@@ -48,6 +54,7 @@ public class Car extends Observable {
 
 	private final double[] stats;
 	private final double[] positionMeters;
+	private final double massKg;
 	private double angle;
 	private double speedMs;
 	private double accelerationMs2;
@@ -80,6 +87,7 @@ public class Car extends Observable {
 		this.name = name;
 		this.modelIndex = modelIndex;
 		stats = CAR_MODEL_STATS[modelIndex].clone();
+		massKg = CAR_MODEL_MASS_KG[modelIndex];
 		try {
 			float[] startPositionPixels = Circuit.START_POSITIONS[frame.getTrackNumber()][ranking
 					- ONE_BASED_INDEX_OFFSET].clone();
@@ -166,6 +174,24 @@ public class Car extends Observable {
 
 	public static double getModelStat(int modelIndex, int statIndex) {
 		return CAR_MODEL_STATS[modelIndex][statIndex];
+	}
+
+	public static int getModelOpaquePixels(int modelIndex) {
+		return CAR_MODEL_OPAQUE_PIXELS[modelIndex];
+	}
+
+	public static double getModelMassKg(int modelIndex) {
+		return CAR_MODEL_MASS_KG[modelIndex];
+	}
+
+	/** Non-transparent race-sprite pixel count for this car's model. */
+	public int getOpaquePixels() {
+		return CAR_MODEL_OPAQUE_PIXELS[modelIndex];
+	}
+
+	/** Curb weight in kilograms derived from opaque pixels × kg/pixel. */
+	public double getMassKg() {
+		return massKg;
 	}
 
 	/** Max yaw rate for this car's handling, in rad/s. */
@@ -340,37 +366,4 @@ public class Car extends Observable {
 		}
 	}
 
-	public void collideWith(Car otherCar) {
-		Shape thisShape = new Rectangle(getX(), getY(), getSpriteWidth(), getSpriteHeight());
-		Shape otherShape = new Rectangle(
-				otherCar.getX(),
-				otherCar.getY(),
-				otherCar.getSpriteWidth(),
-				otherCar.getSpriteHeight());
-
-		AffineTransform thisTransform = new AffineTransform();
-		AffineTransform otherTransform = new AffineTransform();
-
-		thisTransform.rotate(getAngle(), getX(), getY());
-		otherTransform.rotate(otherCar.getAngle(), otherCar.getX(), otherCar.getY());
-
-		thisShape = thisTransform.createTransformedShape(thisShape);
-		otherShape = otherTransform.createTransformedShape(otherShape);
-
-		if (thisShape.intersects(otherShape.getBounds2D()) || otherShape.intersects(thisShape.getBounds2D())) {
-			float deltaAngle = getAngle() - otherCar.getAngle();
-			float angleAdjustment = (float) (COLLISION_ANGLE_FACTOR * deltaAngle);
-			angle -= angleAdjustment;
-			otherCar.setAngle(otherCar.getAngle() + angleAdjustment);
-			double previousSpeed = speedMs;
-			speedMs = (1 - COLLISION_BLEND) * speedMs + Math.cos(deltaAngle) * COLLISION_BLEND * otherCar.getSpeed();
-			otherCar.setSpeed(
-					(float) ((1 - COLLISION_BLEND) * otherCar.getSpeed()
-							+ Math.cos(deltaAngle) * COLLISION_BLEND * previousSpeed));
-			double deltaX = Math.signum(positionMeters[0] - otherCar.getPositionXMeters()) * COLLISION_NUDGE_METERS;
-			double deltaY = Math.signum(positionMeters[1] - otherCar.getPositionYMeters()) * COLLISION_NUDGE_METERS;
-			translateByMeters(deltaX, deltaY);
-			otherCar.translateByMeters(-deltaX, -deltaY);
-		}
-	}
 }

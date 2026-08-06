@@ -24,9 +24,6 @@ public class Circuit extends Observable {
 	public static final int OUTER_RADIUS = 191;
 	/** Extra width beyond the painted finish segment so wall-hugging cars still score. */
 	private static final double FINISH_LINE_LATERAL_MARGIN_PX = 8;
-	private static final double OFF_TRACK_SPEED_FACTOR = -0.2;
-	private static final double TILE_CENTER_DIVISOR = 2.0;
-	private static final int ONE_BASED_INDEX_OFFSET = 1;
 	private static final String LOG_TRACK_ROWS = "Track rows: ";
 	private static final String LOG_TRACK_COLUMNS = ", columns: ";
 	private static final String LOG_FRAME_WIDTH = "Frame width: ";
@@ -183,67 +180,100 @@ public class Circuit extends Observable {
 		return raceTimeMs;
 	}
 
+	/**
+	 * Legacy helper retained for tests: applies the infinite-mass wall response
+	 * used by {@link PhysicsSimulator}.
+	 */
 	public void enforceTrackBoundaries(Car car) {
-		boolean onTrack = true;
-		int[] gridCell = getGridCoordinates(car);
+		PhysicsSimulator.resolveWallCollision(car, this);
+	}
 
+	/**
+	 * Probes whether {@code car} is off asphalt and, if so, returns a contact
+	 * with an inward unit normal (onto the track) and a penetration depth.
+	 * Walls are treated as infinite-mass obstacles by the physics step.
+	 */
+	public WallContact findWallContact(Car car) {
+		int[] gridCell;
 		try {
+			gridCell = getGridCoordinates(car);
 			int tileType = trackMap[gridCell[0]][gridCell[1]];
-			float[] localPosition = {
-					car.getX() - (float) gridCell[1] * GameFrame.TILE_SIZE,
-					car.getY() - (float) gridCell[0] * GameFrame.TILE_SIZE
-			};
-
-			switch (tileType) {
-				case TILE_STRAIGHT_HORIZONTAL:
-					if (localPosition[0] <= Circuit.INNER_RADIUS || localPosition[0] >= Circuit.OUTER_RADIUS) {
-						onTrack = false;
-					}
-					break;
-				case TILE_STRAIGHT_VERTICAL:
-					if (localPosition[1] <= Circuit.INNER_RADIUS || localPosition[1] >= Circuit.OUTER_RADIUS) {
-						onTrack = false;
-					}
-					break;
-				case TILE_CORNER_BOTTOM_RIGHT:
-					onTrack = isInsideCircularCorner(localPosition[0], localPosition[1], 0, GameFrame.TILE_SIZE);
-					break;
-				case TILE_CORNER_TOP_RIGHT:
-					onTrack = isInsideCircularCorner(
-							localPosition[0], localPosition[1], GameFrame.TILE_SIZE, GameFrame.TILE_SIZE);
-					break;
-				case TILE_CORNER_TOP_LEFT:
-					onTrack = isInsideCircularCorner(
-							localPosition[0], localPosition[1], GameFrame.TILE_SIZE, 0);
-					break;
-				case TILE_CORNER_BOTTOM_LEFT:
-					onTrack = isInsideCircularCorner(localPosition[0], localPosition[1], 0, 0);
-					break;
-				case TILE_OPEN:
-				default:
-					break;
-			}
-
-			if (!onTrack) {
-				car.setSpeed((float) (OFF_TRACK_SPEED_FACTOR * car.getSpeed()));
-				car.translateByMeters(
-						-WorldUnits.pxToM(Math.signum(localPosition[0] - GameFrame.TILE_SIZE / TILE_CENTER_DIVISOR)),
-						-WorldUnits.pxToM(Math.signum(localPosition[1] - GameFrame.TILE_SIZE / TILE_CENTER_DIVISOR)));
-			}
+			float localX = car.getX() - (float) gridCell[1] * GameFrame.TILE_SIZE;
+			float localY = car.getY() - (float) gridCell[0] * GameFrame.TILE_SIZE;
+			return wallContactForTile(tileType, localX, localY);
 		} catch (RuntimeException exception) {
 			System.err.println(ERROR_LEFT_TRACK);
 			System.err.println(exception.getMessage());
 			System.err.println("==============");
+			return null;
 		}
+	}
+
+	private WallContact wallContactForTile(int tileType, float localX, float localY) {
+		switch (tileType) {
+			case TILE_STRAIGHT_HORIZONTAL:
+				if (localX <= INNER_RADIUS) {
+					return new WallContact(1.0, 0.0, WorldUnits.pxToM(INNER_RADIUS - localX + 1.0));
+				}
+				if (localX >= OUTER_RADIUS) {
+					return new WallContact(-1.0, 0.0, WorldUnits.pxToM(localX - OUTER_RADIUS + 1.0));
+				}
+				return null;
+			case TILE_STRAIGHT_VERTICAL:
+				if (localY <= INNER_RADIUS) {
+					return new WallContact(0.0, 1.0, WorldUnits.pxToM(INNER_RADIUS - localY + 1.0));
+				}
+				if (localY >= OUTER_RADIUS) {
+					return new WallContact(0.0, -1.0, WorldUnits.pxToM(localY - OUTER_RADIUS + 1.0));
+				}
+				return null;
+			case TILE_CORNER_BOTTOM_RIGHT:
+				return circularCornerContact(localX, localY, 0, GameFrame.TILE_SIZE);
+			case TILE_CORNER_TOP_RIGHT:
+				return circularCornerContact(localX, localY, GameFrame.TILE_SIZE, GameFrame.TILE_SIZE);
+			case TILE_CORNER_TOP_LEFT:
+				return circularCornerContact(localX, localY, GameFrame.TILE_SIZE, 0);
+			case TILE_CORNER_BOTTOM_LEFT:
+				return circularCornerContact(localX, localY, 0, 0);
+			case TILE_OPEN:
+			default:
+				return null;
+		}
+	}
+
+	private WallContact circularCornerContact(float localX, float localY, int cornerX, int cornerY) {
+		double deltaX = localX - cornerX;
+		double deltaY = localY - cornerY;
+		double radius = Math.hypot(deltaX, deltaY);
+		if (radius <= 1e-6) {
+			return null;
+		}
+		double normalX = deltaX / radius;
+		double normalY = deltaY / radius;
+		if (radius < INNER_RADIUS) {
+			return new WallContact(
+					normalX,
+					normalY,
+					WorldUnits.pxToM(INNER_RADIUS - radius + 1.0));
+		}
+		if (radius > OUTER_RADIUS) {
+			return new WallContact(
+					-normalX,
+					-normalY,
+					WorldUnits.pxToM(radius - OUTER_RADIUS + 1.0));
+		}
+		return null;
+	}
+
+	/**
+	 * Infinite-mass wall contact. {@code normalX/normalY} point back onto the
+	 * asphalt; {@code penetrationMeters} is how far to push along that normal.
+	 */
+	public record WallContact(double normalX, double normalY, double penetrationMeters) {
 	}
 
 	public Line2D getFinishLine() {
 		return finishLine;
-	}
-
-	private boolean isInsideCircularCorner(float x, float y, int cornerX, int cornerY) {
-		double radius = Math.sqrt(Math.pow(x - cornerX, 2) + Math.pow(y - cornerY, 2));
-		return radius > Circuit.INNER_RADIUS && radius < Circuit.OUTER_RADIUS;
 	}
 
 	public int[] getGridCoordinates(Car car) {

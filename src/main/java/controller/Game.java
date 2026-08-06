@@ -9,6 +9,7 @@ import model.Circuit;
 import model.GameCatalog;
 import model.GameConfig;
 import model.HallOfFame;
+import model.PhysicsSimulator;
 import model.ReferencePath;
 import model.TrackGeometry;
 import view.AppShell;
@@ -201,15 +202,13 @@ public class Game {
 
 		boolean shouldRender = circuit.shouldRenderAfterVisualTick();
 		double deltaSeconds = TICK_INTERVAL_MS / MS_PER_SECOND_D;
+		Car[] cars = new Car[controllers.length];
 		for (int index = 0; index < controllers.length; index++) {
 			Car car = controllers[index].getCar();
 			car.clearControls();
-			circuit.enforceTrackBoundaries(car);
-			car.applyPhysics(deltaSeconds);
-			for (int otherIndex = 0; otherIndex < index; otherIndex++) {
-				car.collideWith(controllers[otherIndex].getCar());
-			}
+			cars[index] = car;
 		}
+		PhysicsSimulator.simulateStep(cars, circuit, deltaSeconds);
 
 		Car winner = controllers[winnerIndex].getCar();
 		if (!winnerStopped) {
