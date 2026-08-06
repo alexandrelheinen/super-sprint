@@ -22,36 +22,37 @@ public final class MpccConfig {
 			(Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS) / 2.0);
 
 	/**
-	 * Retuned for earlier, longer-horizon traffic avoidance: ~1.2 s look-ahead,
-	 * stronger soft car proximity, and a wider trigger so MPCC engages before
-	 * contact. Ego radius tracks car half-width more than the bounding circle so
-	 * side-by-side passes stay geometrically feasible in-lane. Walls remain
-	 * strictly heavier than soft opponent proximity.
+	 * Middle ground between the short stable planner and the aggressive v2.4/v2.5
+	 * traffic retune: ~1.0 s look-ahead, earlier engagement than the original
+	 * 12-step horizon, but softer opponent weights / fewer refine passes so AI
+	 * steering does not chatter under load. Ego radius stays slightly under the
+	 * bounding circle so in-lane passes remain feasible. Walls remain strictly
+	 * heavier than soft opponent proximity.
 	 */
 	public static final MpccConfig DEFAULT = new MpccConfig(
-			20,
+			16,
 			0.06,
-			40,
-			0.55,
+			44,
+			0.6,
 			0.8,
+			2.7,
+			10.0,
 			2.5,
-			9.0,
-			2.2,
-			2.5,
+			2.7,
 			14.0,
 			14.0,
 			12.0,
-			18.0,
-			1.8,
-			1.55,
-			7.5,
+			8.0,
+			1.5,
+			1.7,
+			6.0,
 			900.0,
 			DEFAULT_LANE_HALF_WIDTH_METERS,
 			2.4,
 			2.2,
-			3.0,
-			1.35,
-			3);
+			2.7,
+			1.25,
+			2);
 
 	private final int horizonStepCount;
 	private final double dtSeconds;

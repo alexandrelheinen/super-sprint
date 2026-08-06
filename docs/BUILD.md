@@ -63,8 +63,10 @@ During the build, Gradle:
 ## Release demo videos
 
 Pushing a `v*` tag triggers `.github/workflows/release-demos.yml`. The job runs
-`./gradlew recordDemo` twice under Xvfb and attaches the MP4s to the GitHub Release
-(fastest pack on Dune Horseshoe, slowest pack on Desert Elbow).
+`./gradlew recordDemo` twice under a shared 1280×1024 Xvfb session and attaches the
+MP4s to the GitHub Release (fastest pack on Dune Horseshoe, slowest pack on Desert
+Elbow). The recorder grabs the mapped Swing window (not the full framebuffer) and
+rejects near-black captures.
 
 ## Release binaries
 
