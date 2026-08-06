@@ -14,6 +14,25 @@ java {
 	targetCompatibility = JavaVersion.VERSION_17
 }
 
+tasks.withType<JavaCompile>().configureEach {
+	options.encoding = "UTF-8"
+}
+
+fun bashExecutable(): String {
+	val osName = System.getProperty("os.name").lowercase()
+	if (!osName.contains("windows")) {
+		return "bash"
+	}
+	val candidates = listOfNotNull(
+		System.getenv("ProgramFiles")?.let { "$it\\Git\\bin\\bash.exe" },
+		System.getenv("ProgramFiles(x86)")?.let { "$it\\Git\\bin\\bash.exe" },
+		"C:\\Program Files\\Git\\bin\\bash.exe"
+	)
+	return candidates.firstOrNull { file(it).exists() } ?: "bash"
+}
+
+val bash = bashExecutable()
+
 repositories {
 	mavenCentral()
 }
@@ -52,7 +71,7 @@ tasks.register<Exec>("prepareCarSprites") {
 	inputs.file("scripts/prepare-car-sprites.sh")
 	outputs.dir(outputDir.map { it.dir("sprites") })
 	outputs.file(outputDir.map { it.file("data/config/cars.properties") })
-	commandLine("bash", "scripts/prepare-car-sprites.sh", outputDir.get().asFile.absolutePath)
+	commandLine(bash, "scripts/prepare-car-sprites.sh", outputDir.get().asFile.absolutePath)
 }
 
 tasks.register<Exec>("prepareKenneySprites") {
@@ -62,7 +81,7 @@ tasks.register<Exec>("prepareKenneySprites") {
 	inputs.file("third_party/kenney-top-down-tanks-redux/kenney_topdownTanksRedux.zip")
 	inputs.file("scripts/prepare-kenney-sprites.sh")
 	outputs.dir(outputDir.map { it.dir("sprites/kenney") })
-	commandLine("bash", "scripts/prepare-kenney-sprites.sh", outputDir.get().asFile.absolutePath)
+	commandLine(bash, "scripts/prepare-kenney-sprites.sh", outputDir.get().asFile.absolutePath)
 }
 
 tasks.register<JavaExec>("generateTrackPreviews") {
@@ -103,7 +122,7 @@ tasks.register<Exec>("smokeTest") {
 	group = "verification"
 	description = "Headless launch smoke test (Xvfb + short timeout)"
 	dependsOn(tasks.installDist)
-	commandLine("bash", "scripts/smoke-test.sh")
+	commandLine(bash, "scripts/smoke-test.sh")
 }
 
 tasks.register<Exec>("packageRelease") {
@@ -114,7 +133,7 @@ tasks.register<Exec>("packageRelease") {
 	val doAppImage = providers.gradleProperty("appImage").orElse("false")
 	environment("PACKAGE_JAR", tasks.jar.get().archiveFile.get().asFile.absolutePath)
 	commandLine(
-		"bash",
+		bash,
 		"scripts/package-release.sh",
 		"--version", appVersion,
 		*(if (doAppImage.get() == "true") arrayOf("--app-image") else emptyArray())
@@ -137,7 +156,7 @@ tasks.register<Exec>("recordDemo") {
 			throw GradleException("Missing -PTRACK=<trackId> and/or -PCARS=<carIds>")
 		}
 		environment("RECORD_JAR", jarPath.get().asFile.absolutePath)
-		val args = mutableListOf("bash", "scripts/record-demo-race.sh")
+		val args = mutableListOf(bash, "scripts/record-demo-race.sh")
 		if (output.isPresent) {
 			args += output.get()
 		}

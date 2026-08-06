@@ -65,23 +65,33 @@ echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=$
 java -cp "${JAR_FILE}" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
 GAME_PID=$!
 
+# Wait until a Super Sprint window is mapped with a real non-zero size.
+# Finding the window too early yields WIDTH=0 HEIGHT=0 on Xvfb/CI.
 WINDOW_ID=""
-for _ in $(seq 1 50); do
-	WINDOW_ID="$(xdotool search --name 'Super Sprint' 2>/dev/null | head -n 1 || true)"
-	if [[ -n "$WINDOW_ID" ]]; then
-		break
-	fi
+WIDTH=0
+HEIGHT=0
+X=0
+Y=0
+for _ in $(seq 1 150); do
+	while read -r candidate; do
+		[[ -z "${candidate}" ]] && continue
+		eval "$(xdotool getwindowgeometry --shell "${candidate}" 2>/dev/null || true)"
+		if (( WIDTH >= 2 && HEIGHT >= 2 )); then
+			WINDOW_ID="${candidate}"
+			break 2
+		fi
+	done < <(xdotool search --name 'Super Sprint' 2>/dev/null || true)
 	sleep 0.2
 done
-if [[ -z "$WINDOW_ID" ]]; then
-	echo "Could not find Super Sprint window" >&2
+if [[ -z "${WINDOW_ID}" ]]; then
+	echo "Could not find a mapped Super Sprint window with non-zero size" >&2
 	exit 1
 fi
 
-xdotool windowactivate --sync "$WINDOW_ID" >/dev/null 2>&1 || true
+xdotool windowactivate --sync "${WINDOW_ID}" >/dev/null 2>&1 || true
 sleep 0.4
+eval "$(xdotool getwindowgeometry --shell "${WINDOW_ID}")"
 
-eval "$(xdotool getwindowgeometry --shell "$WINDOW_ID")"
 # Keep even dimensions for yuv420p
 WIDTH=$(( WIDTH - WIDTH % 2 ))
 HEIGHT=$(( HEIGHT - HEIGHT % 2 ))

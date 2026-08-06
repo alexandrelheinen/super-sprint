@@ -42,31 +42,41 @@ jobs:
         env:
           DEMO_FPS: '30'
         run: |
+          set -euo pipefail
           # Grid order is ascending maxSpeed (slowest in front, fastest last).
           # Fastest four: 2,1,7,4 on Dune Horseshoe. Slowest four: 5,6,3,0 on Desert Elbow.
-          xvfb-run -a -s '-screen 0 1280x1024x24' bash -lc '
+          FAST_MP4=artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
+          SLOW_MP4=artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
+          xvfb-run -a -s '-screen 0 1280x1024x24' bash -lc "
+            set -euo pipefail
             openbox &
             sleep 1
             ./gradlew --no-daemon recordDemo \
               -PTRACK=3 -PCARS=2,1,7,4 -PLAPS=3 \
-              -PDEMO_MP4=artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
+              -PDEMO_MP4=${FAST_MP4}
             ./gradlew --no-daemon recordDemo \
               -PTRACK=1 -PCARS=5,6,3,0 -PLAPS=3 \
-              -PDEMO_MP4=artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
-          '
+              -PDEMO_MP4=${SLOW_MP4}
+          "
+          test -s "${FAST_MP4}"
+          test -s "${SLOW_MP4}"
 
       - name: Upload demo videos as workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-demo-videos
-          path: artifacts/demo/*.mp4
+          path: |
+            artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
+            artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
           if-no-files-found: error
 
       - name: Attach demo videos to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/demo/*.mp4
+          files: |
+            artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
+            artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
           fail_on_unmatched_files: true
           generate_release_notes: true
         env:
