@@ -221,29 +221,4 @@ public class DubinsMpccPlannerTest {
 		return values;
 	}
 
-	private static DubinsMpccPlanner.Plan straightPlan(double speed, int horizon) {
-		DubinsMpccPlanner.Command[] commands = new DubinsMpccPlanner.Command[horizon];
-		for (int index = 0; index < horizon; index++) {
-			commands[index] = new DubinsMpccPlanner.Command(speed, 0.0);
-		}
-		return new DubinsMpccPlanner.Plan(commands, 0.0);
-	}
-
-	private static double closestApproach(
-			DubinsVehicle start,
-			DubinsMpccPlanner.Plan plan,
-			DynamicObstacle obstacle) {
-		DubinsVehicle rollout = start.copy();
-		double closest = Double.POSITIVE_INFINITY;
-		double time = 0.0;
-		for (DubinsMpccPlanner.Command command : plan.commands()) {
-			rollout.step(command.speedCommand(), command.turnRateCommand(), DELTA_SECONDS);
-			time += DELTA_SECONDS;
-			double distance = Math.hypot(
-					rollout.getX() - obstacle.predictedX(time),
-					rollout.getY() - obstacle.predictedY(time));
-			closest = Math.min(closest, distance);
-		}
-		return closest;
-	}
 }
