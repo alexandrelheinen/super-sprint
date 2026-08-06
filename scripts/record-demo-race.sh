@@ -42,10 +42,6 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
 	echo "ffmpeg is required to record the demo" >&2
 	exit 1
 fi
-if ! command -v xdotool >/dev/null 2>&1; then
-	echo "xdotool is required to locate the game window" >&2
-	exit 1
-fi
 
 RAW_OUTPUT="$(mktemp --suffix=.mp4)"
 cleanup() {
@@ -61,153 +57,84 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Resolve framebuffer size without tripping set -e / pipefail when xdpyinfo is
+# missing or the display is not ready yet.
 screen_size() {
+	local dims=""
 	if command -v xdpyinfo >/dev/null 2>&1; then
-		local dims
-		dims="$(xdpyinfo 2>/dev/null | awk '/dimensions:/ {print $2; exit}')"
-		if [[ "${dims}" =~ ^([0-9]+)x([0-9]+)$ ]]; then
-			echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"
-			return
-		fi
+		dims="$( { xdpyinfo 2>/dev/null || true; } | awk '/dimensions:/ {print $2; exit}' || true)"
 	fi
-	echo "1920 1440"
-}
-
-read_geometry() {
-	# Sets GEOM_W GEOM_H GEOM_X GEOM_Y for the given window id.
-	local window_id="$1"
-	local geom
-	GEOM_W=0
-	GEOM_H=0
-	GEOM_X=0
-	GEOM_Y=0
-	geom="$(xdotool getwindowgeometry --shell "${window_id}" 2>/dev/null || true)"
-	[[ -z "${geom}" ]] && return 1
-	GEOM_W="$(printf '%s\n' "${geom}" | awk -F= '/^WIDTH=/ {print $2; exit}')"
-	GEOM_H="$(printf '%s\n' "${geom}" | awk -F= '/^HEIGHT=/ {print $2; exit}')"
-	GEOM_X="$(printf '%s\n' "${geom}" | awk -F= '/^X=/ {print $2; exit}')"
-	GEOM_Y="$(printf '%s\n' "${geom}" | awk -F= '/^Y=/ {print $2; exit}')"
-	GEOM_W="${GEOM_W:-0}"
-	GEOM_H="${GEOM_H:-0}"
-	GEOM_X="${GEOM_X:-0}"
-	GEOM_Y="${GEOM_Y:-0}"
+	if [[ "${dims}" =~ ^([0-9]+)x([0-9]+)$ ]]; then
+		echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"
+	else
+		echo "2560 1600"
+	fi
 }
 
 read -r SCREEN_WIDTH SCREEN_HEIGHT < <(screen_size)
+SCREEN_WIDTH=$(( SCREEN_WIDTH - SCREEN_WIDTH % 2 ))
+SCREEN_HEIGHT=$(( SCREEN_HEIGHT - SCREEN_HEIGHT % 2 ))
+if (( SCREEN_WIDTH < 2 || SCREEN_HEIGHT < 2 )); then
+	echo "Invalid screen size ${SCREEN_WIDTH}x${SCREEN_HEIGHT}" >&2
+	exit 1
+fi
 
-# Force 1x UI scale so AppShell stays close to the race canvas size on Xvfb.
+# Force 1x UI scale so AppShell stays near the race canvas size on Xvfb.
 echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=${LAPS}, screen=${SCREEN_WIDTH}x${SCREEN_HEIGHT})..."
 GDK_SCALE=1 QT_SCALE_FACTOR=1 \
 	java -Dsun.java2d.uiScale=1 -Dsun.java2d.uiScale.enabled=true \
-	-Dawt.useSystemAAFontSettings=on \
 	-cp "${JAR_FILE}" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
 GAME_PID=$!
 
-# Wait until a Super Sprint window is mapped with a real non-zero size.
-# Finding the window too early yields WIDTH=0 HEIGHT=0 on Xvfb/CI.
-WINDOW_ID=""
-WIDTH=0
-HEIGHT=0
-X=0
-Y=0
-for _ in $(seq 1 250); do
+# Wait until the JVM is alive and, if xdotool is present, until a Super Sprint
+# window exists. Recording captures the full framebuffer so oversized / offscreen
+# shells cannot break x11grab the way window-rect grabs can.
+READY=0
+for _ in $(seq 1 150); do
 	if ! kill -0 "${GAME_PID}" 2>/dev/null; then
-		echo "Demo race process exited before a recordable window appeared" >&2
+		echo "Demo race process exited before recording could start" >&2
 		wait "${GAME_PID}" || true
 		exit 1
 	fi
-
-	# Title match first (client window). Fall back to any mapped window for the
-	# JVM pid - openbox reparenting can hide the title on the frame.
-	candidates="$(xdotool search --name 'Super Sprint' 2>/dev/null || true)"
-	if [[ -z "${candidates}" ]]; then
-		candidates="$(xdotool search --pid "${GAME_PID}" 2>/dev/null || true)"
-	fi
-
-	BEST_AREA=0
-	WINDOW_ID=""
-	while read -r candidate; do
-		[[ -z "${candidate}" ]] && continue
-		if ! read_geometry "${candidate}"; then
-			continue
+	if command -v xdotool >/dev/null 2>&1; then
+		if xdotool search --name 'Super Sprint' >/dev/null 2>&1; then
+			WINDOW_ID="$(xdotool search --name 'Super Sprint' 2>/dev/null | head -n 1 || true)"
+			if [[ -n "${WINDOW_ID}" ]]; then
+				xdotool windowmap "${WINDOW_ID}" >/dev/null 2>&1 || true
+				xdotool windowactivate --sync "${WINDOW_ID}" >/dev/null 2>&1 || true
+				xdotool windowmove "${WINDOW_ID}" 0 0 >/dev/null 2>&1 || true
+			fi
+			READY=1
+			break
 		fi
-		if (( GEOM_W < 2 || GEOM_H < 2 )); then
-			continue
-		fi
-		area=$(( GEOM_W * GEOM_H ))
-		if (( area > BEST_AREA )); then
-			BEST_AREA=${area}
-			WINDOW_ID="${candidate}"
-			WIDTH=${GEOM_W}
-			HEIGHT=${GEOM_H}
-			X=${GEOM_X}
-			Y=${GEOM_Y}
-		fi
-	done <<< "${candidates}"
-
-	if [[ -n "${WINDOW_ID}" ]]; then
+	else
+		# No xdotool: give the Swing shell a moment to map, then grab the screen.
+		sleep 1.5
+		READY=1
 		break
 	fi
 	sleep 0.2
 done
-if [[ -z "${WINDOW_ID}" ]]; then
-	echo "Could not find a mapped Super Sprint window with non-zero size" >&2
-	echo "xdotool search --name:" >&2
-	xdotool search --name 'Super Sprint' 2>&1 || true
-	echo "xdotool search --pid ${GAME_PID}:" >&2
-	xdotool search --pid "${GAME_PID}" 2>&1 || true
-	exit 1
+if (( READY != 1 )); then
+	echo "Timed out waiting for the demo window; recording the full framebuffer anyway" >&2
 fi
 
-xdotool windowmap "${WINDOW_ID}" >/dev/null 2>&1 || true
-xdotool windowactivate --sync "${WINDOW_ID}" >/dev/null 2>&1 || true
-xdotool windowmove "${WINDOW_ID}" 0 0 >/dev/null 2>&1 || true
-
-# If Java/openbox still produced a shell larger than the framebuffer, shrink it
-# so x11grab has a legal rectangle. Swing will letterbox the race canvas.
-MAX_W=$(( SCREEN_WIDTH - SCREEN_WIDTH % 2 ))
-MAX_H=$(( SCREEN_HEIGHT - SCREEN_HEIGHT % 2 ))
-if (( WIDTH > MAX_W || HEIGHT > MAX_H )); then
-	TARGET_W=${WIDTH}
-	TARGET_H=${HEIGHT}
-	if (( TARGET_W > MAX_W )); then TARGET_W=${MAX_W}; fi
-	if (( TARGET_H > MAX_H )); then TARGET_H=${MAX_H}; fi
-	echo "Resizing oversized window ${WIDTH}x${HEIGHT} -> ${TARGET_W}x${TARGET_H} to fit screen"
-	xdotool windowsize "${WINDOW_ID}" "${TARGET_W}" "${TARGET_H}" >/dev/null 2>&1 || true
-	sleep 0.2
-fi
-
-sleep 0.3
-read_geometry "${WINDOW_ID}" || true
-WIDTH=${GEOM_W}
-HEIGHT=${GEOM_H}
-X=${GEOM_X}
-Y=${GEOM_Y}
-
-# Clamp the grab rectangle into the framebuffer (x11grab rejects overflow).
-if (( X < 0 )); then X=0; fi
-if (( Y < 0 )); then Y=0; fi
-if (( X >= SCREEN_WIDTH )); then X=0; fi
-if (( Y >= SCREEN_HEIGHT )); then Y=0; fi
-if (( X + WIDTH > SCREEN_WIDTH )); then WIDTH=$(( SCREEN_WIDTH - X )); fi
-if (( Y + HEIGHT > SCREEN_HEIGHT )); then HEIGHT=$(( SCREEN_HEIGHT - Y )); fi
-
-# Keep even dimensions for yuv420p
-WIDTH=$(( WIDTH - WIDTH % 2 ))
-HEIGHT=$(( HEIGHT - HEIGHT % 2 ))
-if (( WIDTH < 2 || HEIGHT < 2 )); then
-	echo "Invalid capture size ${WIDTH}x${HEIGHT} on screen ${SCREEN_WIDTH}x${SCREEN_HEIGHT}" >&2
-	exit 1
-fi
-
-echo "Recording window ${WINDOW_ID} at ${WIDTH}x${HEIGHT}+${X},${Y} (screen ${SCREEN_WIDTH}x${SCREEN_HEIGHT}) -> ${OUTPUT}"
+echo "Recording full framebuffer ${SCREEN_WIDTH}x${SCREEN_HEIGHT} on ${DISPLAY_NUM} -> ${OUTPUT}"
 ffmpeg -y -hide_banner -loglevel error \
-	-f x11grab -video_size "${WIDTH}x${HEIGHT}" -framerate "$FPS" \
+	-f x11grab -video_size "${SCREEN_WIDTH}x${SCREEN_HEIGHT}" -framerate "$FPS" \
 	-draw_mouse 0 \
-	-i "${DISPLAY_NUM}.0+${X},${Y}" \
+	-i "${DISPLAY_NUM}.0+0,0" \
 	-c:v libx264 -pix_fmt yuv420p -preset veryfast -crf 18 \
 	"$RAW_OUTPUT" &
 FFMPEG_PID=$!
+
+# ffmpeg may exit immediately if the display grab fails - surface that early.
+sleep 0.5
+if ! kill -0 "${FFMPEG_PID}" 2>/dev/null; then
+	wait "${FFMPEG_PID}" || true
+	echo "ffmpeg failed to start x11grab on ${DISPLAY_NUM} (${SCREEN_WIDTH}x${SCREEN_HEIGHT})" >&2
+	exit 1
+fi
 
 wait "$GAME_PID"
 GAME_STATUS=$?
