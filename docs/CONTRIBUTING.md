@@ -95,7 +95,7 @@ Each public class belongs in its own file named after the class. The entry point
 
 ### Serialization
 
-- `Result` and `HallOfFame` persist leaderboard data via Java serialization to the user data file resolved by `ResourcePaths.userHallOfFameFile()` (seeded from `src/data/hall_of_fame.dat` on first run). `Result` stores name, total duration, and lap count (`serialVersionUID` `2`); rankings use mean lap time. When changing serializable classes, bump `serialVersionUID` intentionally and document migration needs.
+- `Result` and `HallOfFame` persist leaderboard data via Java serialization to the user data file resolved by `ResourcePaths.userHallOfFameFile()` (seeded from `src/data/hall_of_fame.dat` on first run). `Result` stores name, total duration, lap count, and car model index (`serialVersionUID` `3`); rankings use mean lap time. Older UID `2` files are incompatible and are replaced with defaults on load. When changing serializable classes, bump `serialVersionUID` intentionally and regenerate the seed with `HallOfFameSeedGenerator`.
 
 ### Deprecated APIs
 

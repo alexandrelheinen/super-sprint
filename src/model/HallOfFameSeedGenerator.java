@@ -28,7 +28,8 @@ public final class HallOfFameSeedGenerator {
 					output.writeObject(new Result(
 							defaultNames[rankIndex],
 							DEFAULT_BASE_TIME_MS + (long) DEFAULT_TIME_STEP_MS * rankIndex,
-							defaultLaps));
+							defaultLaps,
+							rankIndex % Car.CAR_MODEL_COUNT));
 				}
 			}
 		}

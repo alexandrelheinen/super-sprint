@@ -239,6 +239,7 @@ public class Game {
 		gameTimer.purge();
 
 		int completedWinnerIndex = winnerIndex;
+		int winnerCarModelIndex = controllers[winnerIndex].getCar().getModelIndex();
 		double raceTimeMs = finalRaceTimeMs;
 
 		SwingUtilities.invokeLater(() -> {
@@ -250,7 +251,8 @@ public class Game {
 					humanPlayerCount,
 					raceTimeMs,
 					lapCount,
-					trackIndex);
+					trackIndex,
+					winnerCarModelIndex);
 		});
 	}
 

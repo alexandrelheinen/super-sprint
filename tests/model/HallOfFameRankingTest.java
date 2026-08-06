@@ -12,9 +12,9 @@ class HallOfFameRankingTest {
 	@Test
 	void insertionIndexPrefersLowerMeanLapTime() {
 		Result[] board = {
-				new Result("A", 30_000.0, 3), // 10 s/lap
-				new Result("B", 33_000.0, 3), // 11 s/lap
-				new Result("C", 36_000.0, 3) // 12 s/lap
+				new Result("A", 30_000.0, 3, 0), // 10 s/lap
+				new Result("B", 33_000.0, 3, 1), // 11 s/lap
+				new Result("C", 36_000.0, 3, 2) // 12 s/lap
 		};
 		assertEquals(0, findInsertionIndex(board, 27_000.0, 3));
 		assertEquals(1, findInsertionIndex(board, 32_000.0, 3));
@@ -24,8 +24,8 @@ class HallOfFameRankingTest {
 	@Test
 	void rankingUsesMeanNotTotalDuration() {
 		Result[] board = {
-				new Result("ThreeLap", 30_000.0, 3), // 10 s/lap
-				new Result("ThreeLapSlow", 36_000.0, 3) // 12 s/lap
+				new Result("ThreeLap", 30_000.0, 3, 0), // 10 s/lap
+				new Result("ThreeLapSlow", 36_000.0, 3, 1) // 12 s/lap
 		};
 		// 1 lap at 9 s total beats a 30 s / 3-lap race on mean
 		assertEquals(0, findInsertionIndex(board, 9_000.0, 1));

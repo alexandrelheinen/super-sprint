@@ -673,7 +673,8 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 			int humanPlayerCount,
 			double durationMs,
 			int lapCount,
-			int trackIndex) {
+			int trackIndex,
+			int winnerCarModelIndex) {
 		clearRaceView();
 		RaceCompletePanel panel = new RaceCompletePanel(
 				this,
@@ -683,6 +684,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 				durationMs,
 				lapCount,
 				trackIndex,
+				winnerCarModelIndex,
 				this::showMainMenu);
 		// Replace any previous completion card so each finish gets fresh state.
 		Component[] components = cardRoot.getComponents();
