@@ -295,8 +295,11 @@ public final class DubinsMpccPlanner {
 					previousIndex);
 			previousIndex = projection.closestIndex();
 
-			double cruise = vehicle.getMaxSpeed() * config.getCruiseSpeedRatio()
-					/ (1.0 + config.getCurvatureGain() * Math.abs(projection.curvature()));
+			// Same cruise / curvature derating as the PD warm-start so MPCC does
+			// not target a higher top speed than clear-road PD (pack vs loner).
+			double cruise = warmStartController.getCruiseSpeed()
+					/ (1.0 + warmStartController.getCurvatureGain()
+							* Math.abs(projection.curvature()));
 			virtualProgress += (cruise / Math.max(sampleSpacing, 1e-3)) * dt;
 
 			double contour = projection.crossTrackError();
