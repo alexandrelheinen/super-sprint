@@ -68,6 +68,7 @@ fi
 echo "Recording window ${WINDOW_ID} at ${WIDTH}x${HEIGHT}+${X},${Y} -> ${OUTPUT}"
 ffmpeg -y -hide_banner -loglevel error \
 	-f x11grab -video_size "${WIDTH}x${HEIGHT}" -framerate "$FPS" \
+	-draw_mouse 0 \
 	-i "${DISPLAY_NUM}.0+${X},${Y}" \
 	-c:v libx264 -pix_fmt yuv420p -preset veryfast -crf 18 \
 	"$RAW_OUTPUT" &
