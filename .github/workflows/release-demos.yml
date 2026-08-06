@@ -36,7 +36,7 @@ jobs:
       - name: Install recording dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb ffmpeg xdotool python3-pil openbox
+          sudo apt-get install -y xvfb ffmpeg xdotool x11-utils python3-pil openbox
 
       - name: Record release demo races
         env:
@@ -51,9 +51,9 @@ jobs:
           # stale window ids that break xdotool on the next recording.
           record_one() {
             local track="$1" cars="$2" output="$3"
-            # 1920x1440 leaves headroom for window chrome; DemoRaceCapture is also
-            # launched with -Dsun.java2d.uiScale=1 so the shell stays in-bounds.
-            xvfb-run -a -s '-screen 0 1920x1440x24' bash -lc "
+            # Large framebuffer + 1x Java UI scale; record script also shrinks
+            # oversized windows and clamps the x11grab rectangle.
+            xvfb-run -a -s '-screen 0 2560x1600x24' bash -lc "
               set -euo pipefail
               openbox &
               sleep 1

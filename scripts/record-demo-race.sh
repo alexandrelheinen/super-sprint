@@ -61,17 +61,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Force 1x UI scale so the shell fits the Xvfb framebuffer. Without this,
-# some CI JVMs report a 2x desktop and AppShell becomes larger than the screen,
-# which makes x11grab reject the capture rectangle.
-echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=${LAPS})..."
-GDK_SCALE=1 QT_SCALE_FACTOR=1 \
-	java -Dsun.java2d.uiScale=1 -Dsun.java2d.uiScale.enabled=true \
-	-cp "${JAR_FILE}" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
-GAME_PID=$!
-
 screen_size() {
-	# Outputs: SCREEN_WIDTH SCREEN_HEIGHT
 	if command -v xdpyinfo >/dev/null 2>&1; then
 		local dims
 		dims="$(xdpyinfo 2>/dev/null | awk '/dimensions:/ {print $2; exit}')"
@@ -80,63 +70,88 @@ screen_size() {
 			return
 		fi
 	fi
-	echo "1280 1024"
+	echo "1920 1440"
 }
 
-# Wait until a Super Sprint window owned by this Java process is mapped with a
-# real non-zero size. Prefer title+pid so we grab the client window rather than
-# a WM frame / helper AWT peer. Finding the window too early yields WIDTH=0.
+read_geometry() {
+	# Sets GEOM_W GEOM_H GEOM_X GEOM_Y for the given window id.
+	local window_id="$1"
+	local geom
+	GEOM_W=0
+	GEOM_H=0
+	GEOM_X=0
+	GEOM_Y=0
+	geom="$(xdotool getwindowgeometry --shell "${window_id}" 2>/dev/null || true)"
+	[[ -z "${geom}" ]] && return 1
+	GEOM_W="$(printf '%s\n' "${geom}" | awk -F= '/^WIDTH=/ {print $2; exit}')"
+	GEOM_H="$(printf '%s\n' "${geom}" | awk -F= '/^HEIGHT=/ {print $2; exit}')"
+	GEOM_X="$(printf '%s\n' "${geom}" | awk -F= '/^X=/ {print $2; exit}')"
+	GEOM_Y="$(printf '%s\n' "${geom}" | awk -F= '/^Y=/ {print $2; exit}')"
+	GEOM_W="${GEOM_W:-0}"
+	GEOM_H="${GEOM_H:-0}"
+	GEOM_X="${GEOM_X:-0}"
+	GEOM_Y="${GEOM_Y:-0}"
+}
+
+read -r SCREEN_WIDTH SCREEN_HEIGHT < <(screen_size)
+
+# Force 1x UI scale so AppShell stays close to the race canvas size on Xvfb.
+echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=${LAPS}, screen=${SCREEN_WIDTH}x${SCREEN_HEIGHT})..."
+GDK_SCALE=1 QT_SCALE_FACTOR=1 \
+	java -Dsun.java2d.uiScale=1 -Dsun.java2d.uiScale.enabled=true \
+	-Dawt.useSystemAAFontSettings=on \
+	-cp "${JAR_FILE}" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
+GAME_PID=$!
+
+# Wait until a Super Sprint window is mapped with a real non-zero size.
+# Finding the window too early yields WIDTH=0 HEIGHT=0 on Xvfb/CI.
 WINDOW_ID=""
 WIDTH=0
 HEIGHT=0
 X=0
 Y=0
-BEST_AREA=0
-read -r SCREEN_WIDTH SCREEN_HEIGHT < <(screen_size)
 for _ in $(seq 1 250); do
 	if ! kill -0 "${GAME_PID}" 2>/dev/null; then
 		echo "Demo race process exited before a recordable window appeared" >&2
 		wait "${GAME_PID}" || true
 		exit 1
 	fi
-	candidates="$(xdotool search --pid "${GAME_PID}" --name 'Super Sprint' 2>/dev/null || true)"
+
+	# Title match first (client window). Fall back to any mapped window for the
+	# JVM pid - openbox reparenting can hide the title on the frame.
+	candidates="$(xdotool search --name 'Super Sprint' 2>/dev/null || true)"
 	if [[ -z "${candidates}" ]]; then
-		candidates="$(xdotool search --name 'Super Sprint' 2>/dev/null || true)"
+		candidates="$(xdotool search --pid "${GAME_PID}" 2>/dev/null || true)"
 	fi
+
 	BEST_AREA=0
 	WINDOW_ID=""
 	while read -r candidate; do
 		[[ -z "${candidate}" ]] && continue
-		local_w=0
-		local_h=0
-		local_x=0
-		local_y=0
-		eval "$(xdotool getwindowgeometry --shell "${candidate}" 2>/dev/null | sed 's/^WIDTH=/local_w=/; s/^HEIGHT=/local_h=/; s/^X=/local_x=/; s/^Y=/local_y=/')"
-		if (( local_w < 2 || local_h < 2 )); then
+		if ! read_geometry "${candidate}"; then
 			continue
 		fi
-		# Prefer the largest window that still fits on the framebuffer.
-		fits=0
-		if (( local_w <= SCREEN_WIDTH && local_h <= SCREEN_HEIGHT )); then
-			fits=1
+		if (( GEOM_W < 2 || GEOM_H < 2 )); then
+			continue
 		fi
-		area=$(( local_w * local_h ))
-		if (( fits == 1 && area > BEST_AREA )); then
+		area=$(( GEOM_W * GEOM_H ))
+		if (( area > BEST_AREA )); then
 			BEST_AREA=${area}
 			WINDOW_ID="${candidate}"
-			WIDTH=${local_w}
-			HEIGHT=${local_h}
-			X=${local_x}
-			Y=${local_y}
+			WIDTH=${GEOM_W}
+			HEIGHT=${GEOM_H}
+			X=${GEOM_X}
+			Y=${GEOM_Y}
 		fi
 	done <<< "${candidates}"
+
 	if [[ -n "${WINDOW_ID}" ]]; then
 		break
 	fi
 	sleep 0.2
 done
 if [[ -z "${WINDOW_ID}" ]]; then
-	echo "Could not find a mapped Super Sprint window that fits the screen ${SCREEN_WIDTH}x${SCREEN_HEIGHT}" >&2
+	echo "Could not find a mapped Super Sprint window with non-zero size" >&2
 	echo "xdotool search --name:" >&2
 	xdotool search --name 'Super Sprint' 2>&1 || true
 	echo "xdotool search --pid ${GAME_PID}:" >&2
@@ -146,14 +161,28 @@ fi
 
 xdotool windowmap "${WINDOW_ID}" >/dev/null 2>&1 || true
 xdotool windowactivate --sync "${WINDOW_ID}" >/dev/null 2>&1 || true
-# Keep the window on-screen; openbox can place oversized frames off the origin.
 xdotool windowmove "${WINDOW_ID}" 0 0 >/dev/null 2>&1 || true
-sleep 0.4
-WIDTH=0
-HEIGHT=0
-X=0
-Y=0
-eval "$(xdotool getwindowgeometry --shell "${WINDOW_ID}")"
+
+# If Java/openbox still produced a shell larger than the framebuffer, shrink it
+# so x11grab has a legal rectangle. Swing will letterbox the race canvas.
+MAX_W=$(( SCREEN_WIDTH - SCREEN_WIDTH % 2 ))
+MAX_H=$(( SCREEN_HEIGHT - SCREEN_HEIGHT % 2 ))
+if (( WIDTH > MAX_W || HEIGHT > MAX_H )); then
+	TARGET_W=${WIDTH}
+	TARGET_H=${HEIGHT}
+	if (( TARGET_W > MAX_W )); then TARGET_W=${MAX_W}; fi
+	if (( TARGET_H > MAX_H )); then TARGET_H=${MAX_H}; fi
+	echo "Resizing oversized window ${WIDTH}x${HEIGHT} -> ${TARGET_W}x${TARGET_H} to fit screen"
+	xdotool windowsize "${WINDOW_ID}" "${TARGET_W}" "${TARGET_H}" >/dev/null 2>&1 || true
+	sleep 0.2
+fi
+
+sleep 0.3
+read_geometry "${WINDOW_ID}" || true
+WIDTH=${GEOM_W}
+HEIGHT=${GEOM_H}
+X=${GEOM_X}
+Y=${GEOM_Y}
 
 # Clamp the grab rectangle into the framebuffer (x11grab rejects overflow).
 if (( X < 0 )); then X=0; fi
@@ -167,7 +196,7 @@ if (( Y + HEIGHT > SCREEN_HEIGHT )); then HEIGHT=$(( SCREEN_HEIGHT - Y )); fi
 WIDTH=$(( WIDTH - WIDTH % 2 ))
 HEIGHT=$(( HEIGHT - HEIGHT % 2 ))
 if (( WIDTH < 2 || HEIGHT < 2 )); then
-	echo "Invalid window size ${WIDTH}x${HEIGHT} on screen ${SCREEN_WIDTH}x${SCREEN_HEIGHT}" >&2
+	echo "Invalid capture size ${WIDTH}x${HEIGHT} on screen ${SCREEN_WIDTH}x${SCREEN_HEIGHT}" >&2
 	exit 1
 fi
 
