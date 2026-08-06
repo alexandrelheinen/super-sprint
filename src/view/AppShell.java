@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
@@ -14,8 +15,6 @@ import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
@@ -35,7 +34,7 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
@@ -82,7 +81,9 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static final int SETUP_COLUMN_GAP = 16;
 	private static final int SETUP_ROW_GAP = 16;
 	private static final int SETUP_COMBO_HEIGHT = 44;
-	private static final int SETUP_PREVIEW_HEIGHT = 110;
+	/** Shared car/track preview well size (same box in every setup column). */
+	private static final int SETUP_PREVIEW_WIDTH = 220;
+	private static final int SETUP_PREVIEW_HEIGHT = 140;
 	private static final int SETUP_STAT_GAP = 4;
 	private static final int VERTICAL_STRUT_MEDIUM = 12;
 	private static final int ACTION_BUTTON_COLUMNS = 2;
@@ -92,12 +93,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static final int MAIN_BUTTON_HEIGHT = 58;
 	private static final int ACTION_BUTTON_WIDTH = 200;
 	private static final int ACTION_BUTTON_HEIGHT = 56;
-	private static final int CAR_PREVIEW_WIDTH = 200;
-	private static final int CAR_PREVIEW_HEIGHT = 110;
-	/** Fallback track preview width before the column has been laid out. */
-	private static final int TRACK_PREVIEW_WIDTH = 200;
-	/** Track preview occupies this fraction of the Track/Laps column content width. */
-	private static final float TRACK_PREVIEW_COLUMN_WIDTH_RATIO = 0.66f;
 	private static final int PREVIEW_WELL_ARC = 12;
 
 	private static final int MNEMONIC_ONE_PLAYER = 0;
@@ -240,14 +235,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 		trackAndLapsPanel = buildTrackAndLapsSetupCard();
 		addSetupCard(setupBody, trackAndLapsPanel, 2);
-		trackAndLapsPanel.addComponentListener(new ComponentAdapter() {
-			@Override
-			public void componentResized(ComponentEvent event) {
-				if (CARD_SETUP.equals(activeCard)) {
-					refreshTrackPreviewLayout();
-				}
-			}
-		});
 
 		JPanel setupHolder = new JPanel(new BorderLayout());
 		setupHolder.setOpaque(false);
@@ -366,7 +353,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		updateSetupCardHeights();
 		if (CARD_SETUP.equals(activeCard)) {
 			refreshRaceSetupPreviews();
-			SwingUtilities.invokeLater(this::refreshTrackPreviewLayout);
 		}
 		startButton.applyScaledSize(this, ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
 		backToMenuButton.applyScaledSize(this, ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
@@ -378,79 +364,43 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 	private void updateSetupCardHeights() {
 		for (JPanel previewPanel : carPreviewPanels) {
-			// Car wells stretch to the column width; sprite stays on a fixed canvas.
-			lockPreviewSlot(
-					previewPanel,
-					UiScale.scale(this, CAR_PREVIEW_WIDTH),
-					UiScale.scale(this, CAR_PREVIEW_HEIGHT),
-					false);
+			lockPreviewSlot(previewPanel);
 		}
-		Dimension trackSize = resolveTrackPreviewSize();
-		lockPreviewSlot(trackPreviewPanel, trackSize.width, trackSize.height, true);
+		lockPreviewSlot(trackPreviewPanel);
 		equalizeVisibleSetupCardHeights();
 	}
 
 	/**
-	 * Track preview is 66% of the Track/Laps column content width, with height
-	 * keeping the same aspect as the baseline 200×110 thumbnail.
+	 * Car and track share one fixed preview well size, centered in the column,
+	 * so sprites stay aligned and stats / laps never jump.
 	 */
-	private Dimension resolveTrackPreviewSize() {
-		int fallbackWidth = UiScale.scale(this, TRACK_PREVIEW_WIDTH);
-		int fallbackHeight = UiScale.scale(this, SETUP_PREVIEW_HEIGHT);
-		int columnWidth = trackColumnContentWidth();
-		if (columnWidth <= 0) {
-			return new Dimension(fallbackWidth, fallbackHeight);
-		}
-		int width = Math.max(1, Math.round(columnWidth * TRACK_PREVIEW_COLUMN_WIDTH_RATIO));
-		// Keep the preview inside the card's padded content area.
-		if (trackAndLapsPanel != null) {
-			Insets insets = trackAndLapsPanel.getInsets();
-			int maxContentWidth = Math.max(
-					1,
-					trackAndLapsPanel.getWidth() - insets.left - insets.right);
-			width = Math.min(width, maxContentWidth);
-		}
-		int height = Math.max(
-				1,
-				Math.round(width * (SETUP_PREVIEW_HEIGHT / (float) TRACK_PREVIEW_WIDTH)));
-		return new Dimension(width, height);
-	}
-
-	/**
-	 * Full Track/Laps column width (the card itself). Preview size is 66% of
-	 * this, clamped so it still fits inside the card's content insets.
-	 */
-	private int trackColumnContentWidth() {
-		if (trackAndLapsPanel != null && trackAndLapsPanel.getWidth() > 0) {
-			return trackAndLapsPanel.getWidth();
-		}
-		if (setupBody != null && setupBody.getWidth() > 0) {
-			int visibleColumns = 1;
-			for (GlassCard card : carPanels) {
-				if (card != null && card.isVisible()) {
-					visibleColumns++;
-				}
-			}
-			int gaps = Math.max(0, visibleColumns - 1) * SETUP_COLUMN_GAP;
-			return Math.max(0, (setupBody.getWidth() - gaps) / Math.max(1, visibleColumns));
-		}
-		return 0;
-	}
-
-	/**
-	 * Preview wells keep a fixed height so stats / laps never jump when the
-	 * selected car or track sprite changes. When {@code centerInColumn} is true
-	 * the slot is exactly {@code width}×{@code height}; otherwise width may grow
-	 * with the column while height stays locked.
-	 */
-	private void lockPreviewSlot(JPanel previewPanel, int width, int height, boolean centerInColumn) {
+	private void lockPreviewSlot(JPanel previewPanel) {
+		int width = UiScale.scale(this, SETUP_PREVIEW_WIDTH);
+		int height = UiScale.scale(this, SETUP_PREVIEW_HEIGHT);
 		Dimension fixed = new Dimension(width, height);
 		previewPanel.setPreferredSize(fixed);
 		previewPanel.setMinimumSize(fixed);
-		previewPanel.setMaximumSize(centerInColumn
-				? fixed
-				: new Dimension(Integer.MAX_VALUE, height));
-		previewPanel.setAlignmentX(centerInColumn ? Component.CENTER_ALIGNMENT : Component.LEFT_ALIGNMENT);
+		previewPanel.setMaximumSize(fixed);
+		previewPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		syncPreviewHolderSize(previewPanel, height);
+	}
+
+	private static void syncPreviewHolderSize(JPanel previewPanel, int height) {
+		java.awt.Container parent = previewPanel.getParent();
+		if (!(parent instanceof JPanel holder)) {
+			return;
+		}
+		// Preferred width must be large so BoxLayout stretches the holder to the
+		// column width; FlowLayout then centers the fixed preview well inside it.
+		holder.setPreferredSize(new Dimension(Short.MAX_VALUE, height));
+		holder.setMinimumSize(new Dimension(0, height));
+		holder.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+	}
+
+	private Dimension previewSlotSize() {
+		return new Dimension(
+				UiScale.scale(this, SETUP_PREVIEW_WIDTH),
+				UiScale.scale(this, SETUP_PREVIEW_HEIGHT));
 	}
 
 	private void equalizeVisibleSetupCardHeights() {
@@ -528,16 +478,11 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		carMenus[playerIndex].addItemListener(this);
 		carMenus[playerIndex].setName(playerIndex == 0 ? COMBO_NAME_CAR1 : COMBO_NAME_CAR2);
 
-		carIcons[playerIndex] = new JLabel("", JLabel.CENTER);
-		carIcons[playerIndex].setOpaque(false);
+		carIcons[playerIndex] = createPreviewIconLabel();
 		JPanel previewPanel = createPreviewWell();
 		previewPanel.add(carIcons[playerIndex], BorderLayout.CENTER);
 		carPreviewPanels[playerIndex] = previewPanel;
-		lockPreviewSlot(
-				previewPanel,
-				UiScale.scale(this, CAR_PREVIEW_WIDTH),
-				UiScale.scale(this, CAR_PREVIEW_HEIGHT),
-				false);
+		lockPreviewSlot(previewPanel);
 
 		JPanel statsPanel = new JPanel();
 		statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
@@ -562,7 +507,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		stretchHorizontally(statsPanel);
 		body.add(carMenus[playerIndex]);
 		body.add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
-		body.add(previewPanel);
+		body.add(wrapCenteredPreview(previewPanel));
 		body.add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
 		body.add(statsPanel);
 		card.add(body, BorderLayout.NORTH);
@@ -577,13 +522,11 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		trackMenu.addItemListener(this);
 		trackMenu.setName(COMBO_NAME_TRACK);
 
-		trackIcon = new JLabel("", JLabel.CENTER);
-		trackIcon.setOpaque(false);
+		trackIcon = createPreviewIconLabel();
 		JPanel previewPanel = createPreviewWell();
 		previewPanel.add(trackIcon, BorderLayout.CENTER);
 		trackPreviewPanel = previewPanel;
-		Dimension trackSize = resolveTrackPreviewSize();
-		lockPreviewSlot(previewPanel, trackSize.width, trackSize.height, true);
+		lockPreviewSlot(previewPanel);
 
 		lapMenu = new JComboBox(GameCatalog.lapCountOptions());
 		lapMenu.addItemListener(this);
@@ -601,13 +544,21 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		stretchHorizontally(lapMenu);
 		body.add(trackMenu);
 		body.add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
-		body.add(previewPanel);
+		body.add(wrapCenteredPreview(previewPanel));
 		body.add(Box.createVerticalStrut(SETUP_ROW_GAP));
 		body.add(lapsLabel);
 		body.add(Box.createVerticalStrut(VERTICAL_STRUT_MEDIUM));
 		body.add(lapMenu);
 		card.add(body, BorderLayout.NORTH);
 		return card;
+	}
+
+	private JLabel createPreviewIconLabel() {
+		JLabel label = new JLabel("", SwingConstants.CENTER);
+		label.setOpaque(false);
+		label.setHorizontalAlignment(SwingConstants.CENTER);
+		label.setVerticalAlignment(SwingConstants.CENTER);
+		return label;
 	}
 
 	private JPanel createPreviewWell() {
@@ -624,6 +575,19 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		};
 		previewPanel.setOpaque(false);
 		return previewPanel;
+	}
+
+	/** Full-width row that keeps the fixed preview well centered in the column. */
+	private JPanel wrapCenteredPreview(JPanel previewPanel) {
+		JPanel holder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		holder.setOpaque(false);
+		holder.setAlignmentX(Component.LEFT_ALIGNMENT);
+		int height = UiScale.scale(this, SETUP_PREVIEW_HEIGHT);
+		holder.setPreferredSize(new Dimension(Short.MAX_VALUE, height));
+		holder.setMinimumSize(new Dimension(0, height));
+		holder.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+		holder.add(previewPanel);
+		return holder;
 	}
 
 	/**
@@ -667,9 +631,6 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		showCard(CARD_SETUP);
 		applyScaledMetrics();
 		refreshRaceSetupPreviews();
-		// Column width is only final after the first layout pass - rebuild the
-		// track preview at 66% of that width once the card has a real size.
-		SwingUtilities.invokeLater(this::refreshTrackPreviewLayout);
 	}
 
 	public void showHallOfFame() {
@@ -795,7 +756,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 	private void updateCarPreview(int playerIndex, int modelIndex) {
 		carIcons[playerIndex].setIcon(
-				UiScale.scaledCarIcon(this, modelIndex, CAR_PREVIEW_WIDTH, CAR_PREVIEW_HEIGHT));
+				UiScale.scaledCarIcon(this, modelIndex, SETUP_PREVIEW_WIDTH, SETUP_PREVIEW_HEIGHT));
 		for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
 			carStatBars[playerIndex][statIndex].setValue(Car.getModelStat(modelIndex, statIndex));
 		}
@@ -804,38 +765,13 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 	private void updateTrackPreview(int trackIndex) {
 		selectedTrack = trackIndex;
-		Dimension size = resolveTrackPreviewSize();
-		lockPreviewSlot(trackPreviewPanel, size.width, size.height, true);
+		Dimension size = previewSlotSize();
+		lockPreviewSlot(trackPreviewPanel);
 		trackIcon.setIcon(new ImageIcon(TrackPreviewRenderer.render(
 				trackIndex,
 				Game.TRACK_MAPS[trackIndex],
 				size.width,
 				size.height)));
-	}
-
-	/** Re-measure the Track column and rebuild the preview after layout settles. */
-	private void refreshTrackPreviewLayout() {
-		if (!CARD_SETUP.equals(activeCard) || trackMenu == null || trackPreviewPanel == null) {
-			return;
-		}
-		int trackIndex = trackMenu.getSelectedIndex();
-		if (trackIndex < 0) {
-			return;
-		}
-		Dimension nextSize = resolveTrackPreviewSize();
-		Dimension currentSize = trackPreviewPanel.getPreferredSize();
-		if (currentSize != null
-				&& currentSize.width == nextSize.width
-				&& currentSize.height == nextSize.height
-				&& trackIcon.getIcon() != null
-				&& trackIcon.getIcon().getIconWidth() == nextSize.width
-				&& trackIcon.getIcon().getIconHeight() == nextSize.height) {
-			return;
-		}
-		updateTrackPreview(trackIndex);
-		equalizeVisibleSetupCardHeights();
-		setupBody.revalidate();
-		setupBody.repaint();
 	}
 
 	@Override
