@@ -124,16 +124,28 @@ public class Game {
 		gameFrame.setRacingInputEnabled(true);
 	}
 
+	/**
+	 * Ends the race when any car has more finish-line crossings than the
+	 * configured lap count. Crossing the start/finish on the way off the grid
+	 * increments the counter once, so a race of N laps ends at counter
+	 * {@code N + 1} (N full circuits after leaving the grid). If several cars
+	 * cross the threshold on the same tick, the highest counter wins.
+	 */
 	public void checkRaceFinished() {
 		if (!running || !racing) {
 			return;
 		}
+		int winnerIndex = -1;
+		int bestLapCount = lapCount;
 		for (int index = 0; index < controllers.length; index++) {
-			if (controllers[index].getCar().getLapCount() <= lapCount) {
-				continue;
+			int carLapCount = controllers[index].getCar().getLapCount();
+			if (carLapCount > bestLapCount) {
+				bestLapCount = carLapCount;
+				winnerIndex = index;
 			}
-			finishGame(index);
-			return;
+		}
+		if (winnerIndex >= 0) {
+			finishGame(winnerIndex);
 		}
 	}
 

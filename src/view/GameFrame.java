@@ -670,6 +670,8 @@ public class GameFrame extends Canvas implements Observer {
 		String label = HUD_AI_PLAYER_NAME.equals(car.getName())
 				? HUD_AI_PLAYER_PREFIX + (slotIndex + ONE_BASED_INDEX_OFFSET)
 				: HUD_HUMAN_PLAYER_PREFIX + car.getName();
+		// lapCount is finish crossings (start line counts once). Display the
+		// lap the car is currently racing, capped at the configured total.
 		int currentLap = Math.min(Math.max(car.getLapCount(), 1), Math.max(totalLaps, 1));
 		return label + HUD_SLOT_SEPARATOR + currentLap + HUD_LAP_SEPARATOR + totalLaps;
 	}

@@ -41,7 +41,6 @@ public class GameTickTask extends TimerTask {
 		}
 
 		circuit.tick();
-		game.checkRaceFinished();
 		for (int index = 0; index < controllers.length; index++) {
 			circuit.enforceTrackBoundaries(controllers[index].getCar());
 			controllers[index].update();
@@ -49,6 +48,10 @@ public class GameTickTask extends TimerTask {
 				controllers[index].getCar().collideWith(controllers[otherIndex].getCar());
 			}
 		}
+		// Evaluate after movement so a car that completes the final lap this
+		// tick ends the race immediately, and same-tick ties use the highest
+		// lap counter rather than controller order from the previous step.
+		game.checkRaceFinished();
 	}
 
 	private void tickCountdown() {
