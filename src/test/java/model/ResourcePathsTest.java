@@ -1,11 +1,11 @@
 package model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.awt.image.BufferedImage;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
@@ -30,28 +30,30 @@ class ResourcePathsTest {
 	}
 
 	@Test
-	void bundledCarAndTrackSpritesExist() {
+	void bundledCarAndTrackSpritesExistOnClasspath() throws Exception {
 		for (int model = 0; model < Car.CAR_MODEL_COUNT; model++) {
-			assertTrue(Files.exists(Path.of(ResourcePaths.bundledSprite(ResourcePaths.carSpriteFileName(model)))));
-			assertTrue(Files.exists(Path.of(ResourcePaths.bundledSprite(ResourcePaths.carMenuSpriteFileName(model)))));
+			BufferedImage race = ResourcePaths.loadCarSprite(model);
+			BufferedImage menu = ResourcePaths.loadCarMenuSprite(model);
+			assertNotNull(race);
+			assertNotNull(menu);
+			assertTrue(race.getWidth() > 0);
+			assertTrue(menu.getWidth() > 0);
 		}
 		for (int tile = Circuit.TILE_STRAIGHT_HORIZONTAL; tile <= Circuit.TILE_OPEN; tile++) {
-			assertTrue(Files.exists(Path.of(ResourcePaths.trackTilePath(tile))));
+			BufferedImage tileImage = ResourcePaths.loadTrackTile(tile);
+			assertNotNull(tileImage);
+			assertTrue(tileImage.getWidth() > 0);
 		}
 	}
 
 	@Test
-	void appHomeResolvesRepositoryRootWithSprites() {
-		Path home = ResourcePaths.appHome();
-		assertTrue(Files.isDirectory(home.resolve("src").resolve("sprites")),
-				"app home should contain src/sprites: " + home);
-		assertTrue(Files.isDirectory(home.resolve("src").resolve("data").resolve("config")),
-				"app home should contain config: " + home);
+	void seedHallOfFameResourceExists() {
+		assertTrue(ResourcePaths.resourceExists(ResourcePaths.seedHallOfFameResource()));
 	}
 
 	@Test
 	void userDataDirectoryIsOsSpecific() {
-		Path userData = ResourcePaths.userDataDirectory();
+		java.nio.file.Path userData = ResourcePaths.userDataDirectory();
 		String osName = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
 		String pathText = userData.toString();
 		assertTrue(pathText.contains("super-sprint-supelec"));

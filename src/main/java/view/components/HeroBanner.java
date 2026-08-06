@@ -10,10 +10,8 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import model.ResourcePaths;
@@ -59,7 +57,7 @@ public class HeroBanner extends JPanel {
 
 	private static BufferedImage loadSplashImage() {
 		try {
-			return ImageIO.read(new File(ResourcePaths.bundledSprite(SPLASH_SPRITE)));
+			return ResourcePaths.loadSprite(SPLASH_SPRITE);
 		} catch (IOException exception) {
 			System.err.println(ERROR_SPLASH + exception.getMessage());
 			return null;

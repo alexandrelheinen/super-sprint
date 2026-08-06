@@ -23,7 +23,7 @@ FPS="${DEMO_FPS:-30}"
 
 mkdir -p "$(dirname "$OUTPUT")"
 cd "$ROOT"
-make compile
+./gradlew --quiet classes processResources
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
 	echo "ffmpeg is required to record the demo" >&2
@@ -49,7 +49,9 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=${LAPS})..."
-java -cp "$BUILD_DIR" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
+./gradlew --quiet classes processResources
+CLASS_PATH="build/classes/java/main:build/resources/main"
+java -cp "$CLASS_PATH" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
 GAME_PID=$!
 
 WINDOW_ID=""

@@ -126,7 +126,7 @@ public final class UiScale {
 			BufferedImage sprite = ResourcePaths.loadCarMenuSprite(modelIndex);
 			return new ImageIcon(scaleImage(sprite, scale(component, width), scale(component, height)));
 		} catch (IOException exception) {
-			return scaledIcon(component, ResourcePaths.carMenuSpritePath(modelIndex), width, height);
+			return new ImageIcon();
 		}
 	}
 
@@ -156,11 +156,14 @@ public final class UiScale {
 		return scaled;
 	}
 
-	public static ImageIcon scaledIcon(Component component, String spritePath, int width, int height) {
-		ImageIcon icon = new ImageIcon(spritePath);
-		int scaledWidth = scale(component, width);
-		int scaledHeight = scale(component, height);
-		Image image = icon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-		return new ImageIcon(image);
+	public static ImageIcon scaledIcon(Component component, String spriteFileName, int width, int height) {
+		try {
+			BufferedImage sprite = ResourcePaths.loadSprite(spriteFileName);
+			Image image = scaleImage(sprite, scale(component, width), scale(component, height))
+					.getScaledInstance(scale(component, width), scale(component, height), Image.SCALE_SMOOTH);
+			return new ImageIcon(image);
+		} catch (IOException exception) {
+			return new ImageIcon();
+		}
 	}
 }

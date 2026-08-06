@@ -1,7 +1,7 @@
 /build/
+/.gradle/
 /bin/
 *.class
-/src/*/*.class
 Thumbs.db
 .DS_Store
 *.Identifier

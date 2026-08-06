@@ -19,12 +19,9 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
-
-import javax.imageio.ImageIO;
 
 import model.Car;
 import model.Circuit;
@@ -696,7 +693,7 @@ public class GameFrame extends Canvas implements Observer {
 		for (int column = 0; column < mapDimensions[1]; column++) {
 			for (int row = 0; row < mapDimensions[0]; row++) {
 				try {
-					tiles[row][column] = ImageIO.read(new File(ResourcePaths.trackTilePath(map[row][column])));
+					tiles[row][column] = ResourcePaths.loadTrackTile(map[row][column]);
 				} catch (Exception exception) {
 					System.err.println(ERROR_TRACK_TILES + exception.getMessage());
 				}

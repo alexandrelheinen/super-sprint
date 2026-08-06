@@ -1,112 +1,47 @@
-JAVA_SOURCES := $(shell find src -name '*.java')
-TEST_SOURCES := $(shell find tests -name '*.java')
-BUILD_DIR := build
-MAIN_CLASS := controller.Main
-SMOKE_TIMEOUT_SEC := 5
-SPRITE_SCRIPT := scripts/prepare-car-sprites.sh
-KENNEY_SCRIPT := scripts/prepare-kenney-sprites.sh
-TRACK_PREVIEW_SCRIPT := scripts/generate-track-previews.sh
-CAR_SHEET := src/sprites/cars.png
-KENNEY_ZIP := third_party/kenney-top-down-tanks-redux/kenney_topdownTanksRedux.zip
-KENNEY_LICENSE := third_party/kenney-top-down-tanks-redux/License.txt
-CONFIG_FILES := $(wildcard src/data/config/*.properties)
-JUNIT_VERSION := 1.10.2
-JUNIT_JAR := $(BUILD_DIR)/lib/junit-platform-console-standalone-$(JUNIT_VERSION).jar
-JUNIT_URL := https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(JUNIT_VERSION)/junit-platform-console-standalone-$(JUNIT_VERSION).jar
+# Thin convenience wrappers around the Gradle build.
+# Prefer ./gradlew directly; these targets exist for muscle memory.
 
-.PHONY: all compile run test smoke-test demo-race record-demo package package-appimage clean help prepare-sprites prepare-kenney-sprites
+.PHONY: all compile run test smoke-test demo-race record-demo package package-appimage clean help
+
+GRADLEW := ./gradlew
+APP_VERSION ?= 0.0.0-dev
 
 all: compile
 
 help:
-	@echo "Super Sprint Supelec — make targets:"
-	@echo "  make compile           Compile Java sources into $(BUILD_DIR)/"
-	@echo "  make run               Compile (if needed) and launch the game"
-	@echo "  make test              Run the JUnit test suite in tests/"
-	@echo "  make smoke-test        Headless launch test for CI"
-	@echo "  make demo-race         All-AI exhibition race (requires TRACK and CARS)"
-	@echo "                         Example: make demo-race TRACK=3 CARS=0,0,0,0"
-	@echo "                         CARS: 0,1,2,3 | identical | identical:N | \"0 0 0 0\""
-	@echo "                         Optional: LAPS=3"
+	@echo "Super Sprint Supelec — Make wrappers around Gradle:"
+	@echo "  make compile           ./gradlew classes"
+	@echo "  make run               ./gradlew run"
+	@echo "  make test              ./gradlew test"
+	@echo "  make smoke-test        ./gradlew smokeTest"
+	@echo "  make demo-race         ./gradlew demoRace -PTRACK=... -PCARS=..."
 	@echo "  make record-demo       Record demo race MP4 (needs DISPLAY/ffmpeg)"
-	@echo "                         Requires TRACK and CARS; optional LAPS / DEMO_MP4"
-	@echo "  make package           Build portable zip (needs JDK 17+ to run)"
-	@echo "  make package-appimage  Build jpackage app-image with bundled JRE"
-	@echo "  make clean             Remove build artifacts"
+	@echo "  make package           Portable zip (needs JDK 17+ to run)"
+	@echo "  make package-appimage  Portable zip + jpackage app-image"
+	@echo "  make clean             ./gradlew clean"
 	@echo "  make help              Show this message"
+	@echo ""
+	@echo "Primary interface: ./gradlew <task>  (see README / docs/BUILD.md)"
 
-$(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(CAR_SHEET)
-	@bash $(SPRITE_SCRIPT) $(BUILD_DIR)
+compile:
+	$(GRADLEW) classes
 
-prepare-sprites: $(BUILD_DIR)/sprites/.sprites-stamp
+run:
+	$(GRADLEW) run
 
-$(BUILD_DIR)/sprites/.kenney-stamp: $(KENNEY_SCRIPT) $(KENNEY_ZIP) $(KENNEY_LICENSE)
-	@bash $(KENNEY_SCRIPT) $(BUILD_DIR)
+test:
+	$(GRADLEW) test
 
-prepare-kenney-sprites: $(BUILD_DIR)/sprites/.kenney-stamp
+smoke-test:
+	$(GRADLEW) smokeTest
 
-$(BUILD_DIR)/sprites/.track-previews-stamp: $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)/.stamp
-	@bash $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)
-	@touch $(BUILD_DIR)/sprites/.track-previews-stamp
-
-prepare-track-previews: $(BUILD_DIR)/sprites/.track-previews-stamp
-
-$(BUILD_DIR)/config/.stamp: $(CONFIG_FILES)
-	@mkdir -p $(BUILD_DIR)/config
-	@cp src/data/config/*.properties $(BUILD_DIR)/config/
-	@touch $(BUILD_DIR)/config/.stamp
-
-$(BUILD_DIR)/.stamp: $(JAVA_SOURCES) $(CONFIG_FILES) $(BUILD_DIR)/sprites/.sprites-stamp $(BUILD_DIR)/sprites/.kenney-stamp $(BUILD_DIR)/config/.stamp
-	@mkdir -p $(BUILD_DIR)
-	@find src -name '*.java' > $(BUILD_DIR)/sources.txt
-	javac -d $(BUILD_DIR) -sourcepath src @$(BUILD_DIR)/sources.txt
-	@bash $(TRACK_PREVIEW_SCRIPT) $(BUILD_DIR)
-	@touch $(BUILD_DIR)/.stamp
-
-compile: $(BUILD_DIR)/.stamp
-
-run: compile
-	java -cp $(BUILD_DIR) $(MAIN_CLASS)
-
-$(JUNIT_JAR):
-	@mkdir -p $(BUILD_DIR)/lib
-	curl -fsSL -o $(JUNIT_JAR) $(JUNIT_URL)
-
-$(BUILD_DIR)/tests/.stamp: $(BUILD_DIR)/.stamp $(TEST_SOURCES) $(JUNIT_JAR)
-	@mkdir -p $(BUILD_DIR)/tests
-	javac -d $(BUILD_DIR)/tests -cp $(BUILD_DIR):$(JUNIT_JAR) $(TEST_SOURCES)
-	@touch $(BUILD_DIR)/tests/.stamp
-
-test: $(BUILD_DIR)/tests/.stamp
-	java -jar $(JUNIT_JAR) execute \
-		--class-path $(BUILD_DIR):$(BUILD_DIR)/tests \
-		--scan-class-path \
-		--fail-if-no-tests \
-		--disable-banner
-
-smoke-test: compile
-	@command -v xvfb-run >/dev/null 2>&1 || { echo "xvfb-run is required for smoke-test"; exit 1; }
-	@xvfb-run -a timeout $(SMOKE_TIMEOUT_SEC)s java -cp $(BUILD_DIR) $(MAIN_CLASS) || test $$? -eq 124
-	@echo "Smoke test passed (process started successfully)"
-
-# All-AI exhibition race (no recording).
-# Required: TRACK=<id> CARS=<ids>
-# Optional: LAPS=3
-#   make demo-race TRACK=3 CARS=0,0,0,0
-#   make demo-race TRACK=1 CARS=identical:2 LAPS=1
-#   make demo-race TRACK=0 CARS="0 1 2 3"
-demo-race: compile
+demo-race:
 	@if [ -z "$(TRACK)" ] || [ -z "$(CARS)" ]; then \
 		echo "Usage: make demo-race TRACK=<trackId> CARS=<carIds> [LAPS=3]"; \
-		echo "  TRACK  zero-based track index"; \
-		echo "  CARS   comma list (0,0,0,0), quoted spaces (\"0 0 0 0\"),"; \
-		echo "         identical, or identical:N"; \
 		exit 1; \
 	fi
-	java -cp $(BUILD_DIR) view.DemoRaceCapture $(TRACK) "$(CARS)" $(or $(LAPS),3)
+	$(GRADLEW) demoRace -PTRACK=$(TRACK) -PCARS="$(CARS)" -PLAPS=$(or $(LAPS),3)
 
-# Record the exhibition race to artifacts/demo/ (requires DISPLAY + ffmpeg + xdotool)
-# Required: TRACK and CARS. Optional: LAPS, DEMO_MP4
 record-demo: compile
 	@if [ -z "$(TRACK)" ] || [ -z "$(CARS)" ]; then \
 		echo "Usage: make record-demo TRACK=<trackId> CARS=<carIds> [LAPS=3] [DEMO_MP4=...]"; \
@@ -118,16 +53,12 @@ record-demo: compile
 		"$(CARS)" \
 		$(or $(LAPS),3)
 
-# Portable zip that still needs a JDK 17+ on PATH.
-# Optional: VERSION=1.2.3
-package: compile
-	@bash scripts/package-release.sh --version $(or $(VERSION),0.0.0-dev)
+package:
+	$(GRADLEW) packageRelease -PappVersion=$(APP_VERSION)
 
-# Native app-image with a bundled Java runtime (download, unpack, run).
-# Optional: VERSION=1.2.3
-package-appimage: compile
-	@bash scripts/package-release.sh --app-image --version $(or $(VERSION),0.0.0-dev)
+package-appimage:
+	$(GRADLEW) packageRelease -PappVersion=$(APP_VERSION) -PappImage=true
 
 clean:
-	rm -rf $(BUILD_DIR) bin
+	$(GRADLEW) clean
 	rm -rf artifacts/release

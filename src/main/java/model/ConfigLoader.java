@@ -2,28 +2,37 @@ package model;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 
 /**
- * Loads and merges all {@code *.properties} files from the config directory.
- * Files are merged in alphabetical order; later files override duplicate keys.
+ * Loads and merges bundled {@code /data/config/*.properties} classpath resources.
+ * Files are merged in the declared order; later files override duplicate keys.
  */
 public final class ConfigLoader {
 
-	private static final Path CONFIG_DIR = ResourcePaths.appHome().resolve(Path.of("src", "data", "config"));
-	private static final Path BUILD_CONFIG_DIR = ResourcePaths.appHome().resolve(Path.of("build", "config"));
-	private static final String PROPERTIES_SUFFIX = ".properties";
+	private static final String CONFIG_ROOT = "/data/config/";
 	private static final String NEWLINE_ESCAPE = "\\n";
 	private static final String LIST_SEPARATOR = ",";
 	private static final String RGB_SEPARATOR = ",";
+
+	/**
+	 * Ordered config payloads on the classpath. Keep alphabetical so merge order
+	 * stays stable and matches the historical directory listing behaviour.
+	 */
+	private static final String[] CONFIG_FILES = {
+			"cars.properties",
+			"catalog.properties",
+			"game.properties",
+			"messages.properties",
+			"theme.properties",
+			"tracks.properties",
+			"ui.properties",
+			"world.properties"
+	};
 
 	private static final Properties PROPERTIES = loadAll();
 
@@ -124,44 +133,25 @@ public final class ConfigLoader {
 
 	private static Properties loadAll() {
 		Properties merged = new Properties();
-		for (Path configFile : discoverConfigFiles()) {
-			loadInto(merged, configFile);
+		for (String fileName : CONFIG_FILES) {
+			loadInto(merged, CONFIG_ROOT + fileName);
 		}
 		return merged;
 	}
 
-	private static List<Path> discoverConfigFiles() {
-		List<Path> configFiles = new ArrayList<>();
-		collectConfigFiles(CONFIG_DIR, configFiles);
-		if (configFiles.isEmpty()) {
-			collectConfigFiles(BUILD_CONFIG_DIR, configFiles);
-		}
-		Collections.sort(configFiles);
-		return configFiles;
-	}
-
-	private static void collectConfigFiles(Path directory, List<Path> configFiles) {
-		if (!Files.isDirectory(directory)) {
-			return;
-		}
-		try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*" + PROPERTIES_SUFFIX)) {
-			for (Path configFile : stream) {
-				if (Files.isRegularFile(configFile)) {
-					configFiles.add(configFile);
-				}
+	private static void loadInto(Properties target, String absoluteClasspathPath) {
+		try (InputStream stream = ConfigLoader.class.getResourceAsStream(absoluteClasspathPath)) {
+			if (stream == null) {
+				System.err.println("Missing config resource: " + absoluteClasspathPath);
+				return;
+			}
+			try (Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+				Properties fileProperties = new Properties();
+				fileProperties.load(reader);
+				target.putAll(fileProperties);
 			}
 		} catch (IOException exception) {
-			System.err.println("Could not list config directory " + directory + ": " + exception.getMessage());
-		}
-	}
-
-	private static void loadInto(Properties target, Path configFile) {
-		try (Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
-			Properties fileProperties = new Properties();
-			fileProperties.load(reader);
-			target.putAll(fileProperties);
-		} catch (IOException exception) {
-			System.err.println("Could not load config file " + configFile + ": " + exception.getMessage());
+			System.err.println("Could not load config resource " + absoluteClasspathPath + ": " + exception.getMessage());
 		}
 	}
 }

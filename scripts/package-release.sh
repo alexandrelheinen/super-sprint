@@ -2,8 +2,10 @@
 # Build downloadable release artifacts for Super Sprint Supelec.
 #
 # Produces:
-#   - A portable zip that needs a JDK 17+ on PATH (small)
-#   - Optionally a jpackage app-image with a bundled runtime (download & run)
+#   - A portable zip with a runnable jar (needs JDK/JRE 17+ on PATH)
+#   - Optionally a jpackage app-image with a bundled runtime
+#
+# Assets live inside the jar on the classpath; no sidecar sprite folders.
 #
 # Usage:
 #   scripts/package-release.sh [--app-image] [--version VERSION] [--dest DIR]
@@ -14,11 +16,11 @@ cd "${ROOT_DIR}"
 
 APP_NAME="SuperSprintSupelec"
 MAIN_CLASS="controller.Main"
-MAIN_JAR="${APP_NAME}.jar"
+MAIN_JAR_NAME="${APP_NAME}.jar"
 BUILD_APP_IMAGE=0
 VERSION="0.0.0-dev"
 DEST_DIR="${ROOT_DIR}/artifacts/release"
-ICON_PNG="${ROOT_DIR}/src/sprites/icon.png"
+ICON_PNG="${ROOT_DIR}/src/main/resources/sprites/icon.png"
 
 usage() {
 	cat <<EOF
@@ -58,7 +60,6 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-# Strip a leading v from tags like v2.1.0 for jpackage --app-version.
 APP_VERSION="${VERSION#v}"
 if [[ -z "${APP_VERSION}" ]]; then
 	APP_VERSION="0.0.0"
@@ -77,19 +78,13 @@ detect_platform() {
 
 PLATFORM="$(detect_platform)"
 
-echo "==> Compiling game"
-if command -v make >/dev/null 2>&1; then
-	make compile
-else
-	echo "make not found; falling back to manual compile" >&2
-	mkdir -p build
-	bash scripts/prepare-car-sprites.sh build
-	bash scripts/prepare-kenney-sprites.sh build
-	mkdir -p build/config
-	cp src/data/config/*.properties build/config/
-	find src -name '*.java' > build/sources.txt
-	javac -d build -sourcepath src @build/sources.txt
-	bash scripts/generate-track-previews.sh build
+echo "==> Building jar with Gradle"
+./gradlew --no-daemon jar -PappVersion="${APP_VERSION}"
+
+GRADLE_JAR="$(ls -1 build/libs/*.jar | head -n 1)"
+if [[ ! -f "${GRADLE_JAR}" ]]; then
+	echo "Gradle jar not found under build/libs" >&2
+	exit 1
 fi
 
 STAGE_DIR="${DEST_DIR}/staging/${APP_NAME}-${APP_VERSION}"
@@ -97,34 +92,14 @@ INPUT_DIR="${DEST_DIR}/jpackage-input"
 rm -rf "${STAGE_DIR}" "${INPUT_DIR}"
 mkdir -p "${STAGE_DIR}" "${INPUT_DIR}" "${DEST_DIR}"
 
-echo "==> Building ${MAIN_JAR}"
-(
-	cd build
-	jar --create --file "${INPUT_DIR}/${MAIN_JAR}" controller model view
-)
-
-# Assets must sit next to the jar so ResourcePaths.appHome() resolves them.
-copy_runtime_assets() {
-	local target="$1"
-	mkdir -p "${target}/src/sprites" "${target}/src/data" "${target}/build"
-	# Bundled sprites (exclude the large source sheet if prepared sprites exist).
-	cp -a src/sprites/. "${target}/src/sprites/"
-	cp -a src/data/hall_of_fame.dat "${target}/src/data/"
-	mkdir -p "${target}/src/data/config"
-	cp -a src/data/config/*.properties "${target}/src/data/config/"
-	cp -a build/sprites "${target}/build/"
-	cp -a build/config "${target}/build/"
-}
-
-copy_runtime_assets "${INPUT_DIR}"
-cp "${INPUT_DIR}/${MAIN_JAR}" "${STAGE_DIR}/${MAIN_JAR}"
-copy_runtime_assets "${STAGE_DIR}"
+cp "${GRADLE_JAR}" "${INPUT_DIR}/${MAIN_JAR_NAME}"
+cp "${GRADLE_JAR}" "${STAGE_DIR}/${MAIN_JAR_NAME}"
 
 cat > "${STAGE_DIR}/run.sh" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 HERE="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-exec java -Dsuper.sprint.home="\${HERE}" -cp "\${HERE}/${MAIN_JAR}" ${MAIN_CLASS} "\$@"
+exec java -jar "\${HERE}/${MAIN_JAR_NAME}" "\$@"
 EOF
 chmod +x "${STAGE_DIR}/run.sh"
 
@@ -132,7 +107,7 @@ cat > "${STAGE_DIR}/run.bat" <<EOF
 @echo off
 setlocal
 set "HERE=%~dp0"
-java -Dsuper.sprint.home="%HERE%" -cp "%HERE%${MAIN_JAR}" ${MAIN_CLASS} %*
+java -jar "%HERE%${MAIN_JAR_NAME}" %*
 EOF
 
 cat > "${STAGE_DIR}/README.txt" <<EOF
@@ -140,6 +115,7 @@ Super Sprint Supelec ${APP_VERSION}
 =================================
 
 This portable package needs a JDK or JRE 17+ on your PATH.
+Sprites and config are embedded in the jar.
 
 Linux / macOS:
   ./run.sh
@@ -186,10 +162,9 @@ if [[ "${BUILD_APP_IMAGE}" -eq 1 ]]; then
 		--description "Super Sprint Supelec arcade racing game"
 		--vendor "Super Sprint Supelec"
 		--input "${INPUT_DIR}"
-		--main-jar "${MAIN_JAR}"
+		--main-jar "${MAIN_JAR_NAME}"
 		--main-class "${MAIN_CLASS}"
 		--dest "${APPIMAGE_OUT}"
-		--java-options "-Dsuper.sprint.home=\$APPDIR"
 	)
 
 	if [[ -f "${ICON_PNG}" ]]; then
@@ -203,7 +178,6 @@ if [[ "${BUILD_APP_IMAGE}" -eq 1 ]]; then
 	echo "==> Building jpackage app-image for ${PLATFORM}"
 	jpackage "${JPACKAGE_ARGS[@]}"
 
-	# jpackage copies --input into lib/app; \$APPDIR expands to that directory.
 	ARCHIVE="${DEST_DIR}/${APP_NAME}-${APP_VERSION}-${PLATFORM}"
 	rm -f "${ARCHIVE}.zip" "${ARCHIVE}.tar.gz"
 	if [[ "${PLATFORM}" == windows-x64 ]]; then
@@ -228,7 +202,6 @@ PY
 fi
 
 echo "==> Release artifacts in ${DEST_DIR}:"
-# Portable listing that works on Linux and Git Bash / macOS.
 python3 - <<PY
 import pathlib
 dest = pathlib.Path(${DEST_DIR@Q})

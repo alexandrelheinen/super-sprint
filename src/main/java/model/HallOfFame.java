@@ -66,9 +66,8 @@ public class HallOfFame extends Observable {
 			Files.createDirectories(userDirectory);
 			Path userFile = ResourcePaths.userHallOfFameFile();
 			if (!Files.exists(userFile)) {
-				Path seedFile = ResourcePaths.seedHallOfFameFile();
-				if (Files.exists(seedFile)) {
-					Files.copy(seedFile, userFile, StandardCopyOption.REPLACE_EXISTING);
+				try (InputStream seed = ResourcePaths.openSeedHallOfFame()) {
+					Files.copy(seed, userFile, StandardCopyOption.REPLACE_EXISTING);
 				}
 			}
 			if (!Files.exists(userFile)) {

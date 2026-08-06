@@ -19,7 +19,7 @@ public final class TrackPreviewGenerator {
 	}
 
 	public static void main(String[] args) throws IOException {
-		Path outputDirectory = Paths.get(args.length > 0 ? args[0] : "build/sprites");
+		Path outputDirectory = Paths.get(args.length > 0 ? args[0] : "build/generated/resources/main/sprites");
 		Files.createDirectories(outputDirectory);
 
 		for (int trackIndex = 0; trackIndex < Game.TRACK_MAPS.length; trackIndex++) {

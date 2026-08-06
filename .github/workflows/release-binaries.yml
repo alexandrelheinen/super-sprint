@@ -56,9 +56,10 @@ jobs:
       - name: Install Windows packaging dependencies
         if: runner.os == 'Windows'
         shell: bash
-        run: |
-          python -m pip install --upgrade pip Pillow
-          choco install make -y --no-progress
+        run: python -m pip install --upgrade pip Pillow
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Resolve version
         id: version
@@ -76,10 +77,9 @@ jobs:
       - name: Build portable package and app-image
         shell: bash
         run: |
-          bash scripts/package-release.sh \
-            --app-image \
-            --version "${{ steps.version.outputs.app }}" \
-            --dest artifacts/release
+          ./gradlew --no-daemon packageRelease \
+            -PappVersion="${{ steps.version.outputs.app }}" \
+            -PappImage=true
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4

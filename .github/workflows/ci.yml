@@ -23,11 +23,14 @@ jobs:
       - name: Install headless display dependencies
         run: sudo apt-get update && sudo apt-get install -y xvfb python3-pil
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Compile
-        run: make compile
+        run: ./gradlew classes --no-daemon
 
       - name: Run unit tests
-        run: make test
+        run: ./gradlew test --no-daemon
 
       - name: Smoke test application launch
-        run: make smoke-test
+        run: ./gradlew smokeTest --no-daemon
