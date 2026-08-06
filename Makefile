@@ -24,10 +24,12 @@ help:
 	@echo "  make run         Compile (if needed) and launch the game"
 	@echo "  make test        Run the JUnit test suite in tests/"
 	@echo "  make smoke-test  Headless launch test for CI"
-	@echo "  make demo-race   All-AI Dune Horseshoe exhibition race"
-	@echo "                   Optional: LAPS=3 DEMO_CARS=identical:0"
+	@echo "  make demo-race   All-AI exhibition race (requires TRACK and CARS)"
+	@echo "                   Example: make demo-race TRACK=3 CARS=0,0,0,0"
+	@echo "                   CARS: 0,1,2,3 | identical | identical:N | \"0 0 0 0\""
+	@echo "                   Optional: LAPS=3"
 	@echo "  make record-demo Record demo race MP4 (needs DISPLAY/ffmpeg)"
-	@echo "                   Optional: DEMO_CARS=0,0,0,0 DEMO_MP4=..."
+	@echo "                   Requires TRACK and CARS; optional LAPS / DEMO_MP4"
 	@echo "  make clean       Remove build artifacts"
 	@echo "  make help        Show this message"
 
@@ -85,20 +87,34 @@ smoke-test: compile
 	@xvfb-run -a timeout $(SMOKE_TIMEOUT_SEC)s java -cp $(BUILD_DIR) $(MAIN_CLASS) || test $$? -eq 124
 	@echo "Smoke test passed (process started successfully)"
 
-# All-AI Dune Horseshoe exhibition (no recording).
-# Optional: LAPS=1 DEMO_CARS=identical:0 make demo-race
-# DEMO_CARS accepts 0,1,2,3 | identical | identical:N
+# All-AI exhibition race (no recording).
+# Required: TRACK=<id> CARS=<ids>
+# Optional: LAPS=3
+#   make demo-race TRACK=3 CARS=0,0,0,0
+#   make demo-race TRACK=1 CARS=identical:2 LAPS=1
+#   make demo-race TRACK=0 CARS="0 1 2 3"
 demo-race: compile
-	@if [ -n "$(DEMO_CARS)" ]; then \
-		java -cp $(BUILD_DIR) view.DemoRaceCapture $(or $(LAPS),3) "$(DEMO_CARS)"; \
-	else \
-		java -cp $(BUILD_DIR) view.DemoRaceCapture $(or $(LAPS),3); \
+	@if [ -z "$(TRACK)" ] || [ -z "$(CARS)" ]; then \
+		echo "Usage: make demo-race TRACK=<trackId> CARS=<carIds> [LAPS=3]"; \
+		echo "  TRACK  zero-based track index"; \
+		echo "  CARS   comma list (0,0,0,0), quoted spaces (\"0 0 0 0\"),"; \
+		echo "         identical, or identical:N"; \
+		exit 1; \
 	fi
+	java -cp $(BUILD_DIR) view.DemoRaceCapture $(TRACK) "$(CARS)" $(or $(LAPS),3)
 
 # Record the exhibition race to artifacts/demo/ (requires DISPLAY + ffmpeg + xdotool)
-# Optional: DEMO_CARS=identical:0 LAPS=3 make record-demo
+# Required: TRACK and CARS. Optional: LAPS, DEMO_MP4
 record-demo: compile
-	@bash scripts/record-demo-race.sh $(or $(DEMO_MP4),artifacts/demo/dune-horseshoe-ai-demo.mp4) $(or $(LAPS),3)
+	@if [ -z "$(TRACK)" ] || [ -z "$(CARS)" ]; then \
+		echo "Usage: make record-demo TRACK=<trackId> CARS=<carIds> [LAPS=3] [DEMO_MP4=...]"; \
+		exit 1; \
+	fi
+	@bash scripts/record-demo-race.sh \
+		$(or $(DEMO_MP4),artifacts/demo/ai-demo-track$(TRACK).mp4) \
+		$(TRACK) \
+		"$(CARS)" \
+		$(or $(LAPS),3)
 
 clean:
 	rm -rf $(BUILD_DIR) bin

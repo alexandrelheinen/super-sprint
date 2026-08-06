@@ -47,11 +47,13 @@ make clean        # remove build artifacts
 make help         # list targets
 ```
 
-Demo car models are configurable with `DEMO_CARS` (comma-separated indexes, `identical`, or `identical:N`):
+`make demo-race` requires a track id and car ids (comma-separated is simplest for Make; spaces work if quoted). Optional `LAPS` defaults to 3:
 
 ```bash
-DEMO_CARS=identical:0 LAPS=3 make demo-race
-DEMO_CARS=0,0,0,0 make record-demo
+make demo-race TRACK=3 CARS=0,0,0,0
+make demo-race TRACK=3 CARS=identical:0 LAPS=3
+make demo-race TRACK=1 CARS="0 1 2 3"
+make record-demo TRACK=3 CARS=0,0,0,0
 ```
 
 See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and troubleshooting.

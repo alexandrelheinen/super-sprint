@@ -149,7 +149,7 @@ AI opponents follow a geometric **reference path** (`TrackGeometry` / `Reference
 
 This keeps arcade AI opponents on the racing line while still reacting to traffic.
 
-All-AI exhibition demos (`view.DemoRaceCapture`) accept configurable car models via CLI/`DEMO_CARS` (`0,1,2,3`, `identical`, or `identical:N`).
+All-AI exhibition demos (`view.DemoRaceCapture` / `make demo-race`) take a track id and car ids (`TRACK=3 CARS=0,0,0,0`, or `identical` / `identical:N`; spaces also work if quoted).
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
