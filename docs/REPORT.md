@@ -17,6 +17,10 @@ This project was carried out as part of the Supélec engineering curriculum (*Pr
 
 The chosen theme is a simplified clone of the arcade game **Super Sprint**: a top-down car race on modular tracks, with lap counting, collisions, and a persistent leaderboard.
 
+<video src="https://github.com/alexandrelheinen/super-sprint/releases/download/v2.0/dune-horseshoe-ai-demo.mp4" controls width="720"></video>
+
+[Demo: four AI cars on Dune Horseshoe](https://github.com/alexandrelheinen/super-sprint/releases/download/v2.0/dune-horseshoe-ai-demo.mp4)
+
 ### 1.2 Objectives
 
 The project aimed to:
