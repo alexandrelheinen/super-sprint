@@ -78,12 +78,17 @@ detect_platform() {
 
 PLATFORM="$(detect_platform)"
 
-echo "==> Building jar with Gradle"
-./gradlew --no-daemon jar -PappVersion="${APP_VERSION}"
-
-GRADLE_JAR="$(ls -1 build/libs/*.jar | head -n 1)"
+echo "==> Resolving game jar"
+if [[ -n "${PACKAGE_JAR:-}" && -f "${PACKAGE_JAR}" ]]; then
+	GRADLE_JAR="${PACKAGE_JAR}"
+	echo "Using prebuilt jar from Gradle task: ${GRADLE_JAR}"
+else
+	echo "==> Building jar with Gradle"
+	./gradlew --no-daemon jar -PappVersion="${APP_VERSION}"
+	GRADLE_JAR="$(ls -1 build/libs/super-sprint-supelec-*.jar | head -n 1)"
+fi
 if [[ ! -f "${GRADLE_JAR}" ]]; then
-	echo "Gradle jar not found under build/libs" >&2
+	echo "Gradle jar not found (PACKAGE_JAR=${PACKAGE_JAR:-unset})" >&2
 	exit 1
 fi
 

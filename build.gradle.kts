@@ -112,12 +112,37 @@ tasks.register<Exec>("packageRelease") {
 	dependsOn(tasks.jar)
 	val appVersion = project.version.toString()
 	val doAppImage = providers.gradleProperty("appImage").orElse("false")
+	environment("PACKAGE_JAR", tasks.jar.get().archiveFile.get().asFile.absolutePath)
 	commandLine(
 		"bash",
 		"scripts/package-release.sh",
 		"--version", appVersion,
 		*(if (doAppImage.get() == "true") arrayOf("--app-image") else emptyArray())
 	)
+}
+
+tasks.register<Exec>("recordDemo") {
+	group = "distribution"
+	description = "Record a demo race MP4. Pass -PTRACK= -PCARS= [-PLAPS=] [-PDEMO_MP4=]"
+	dependsOn(tasks.jar)
+	val track = providers.gradleProperty("TRACK")
+	val cars = providers.gradleProperty("CARS")
+	val laps = providers.gradleProperty("LAPS").orElse("3")
+	val output = providers.gradleProperty("DEMO_MP4")
+	environment("RECORD_JAR", tasks.jar.flatMap { it.archiveFile }.get().asFile.absolutePath)
+	// Placeholder replaced in doFirst once -PTRACK/-PCARS are available.
+	commandLine("bash", "-c", "echo 'recordDemo misconfigured'; exit 1")
+	doFirst {
+		if (!track.isPresent || !cars.isPresent) {
+			throw GradleException("Missing -PTRACK=<trackId> and/or -PCARS=<carIds>")
+		}
+		val args = mutableListOf("bash", "scripts/record-demo-race.sh")
+		if (output.isPresent) {
+			args += output.get()
+		}
+		args += listOf(track.get(), cars.get(), laps.get())
+		commandLine(args)
+	}
 }
 
 tasks.register<JavaExec>("demoRace") {

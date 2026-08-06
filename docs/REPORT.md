@@ -141,7 +141,7 @@ Leaving the corridor reverses part of the speed and nudges the car back toward t
 
 AI opponents plan with a geometric **reference path** (`TrackGeometry` / `ReferencePath`) using PD and sparse short-horizon **MPCC**, then map the resulting speed / turn desires onto the **same arcade controls** humans use (accelerate, brake, steer left/right). The shared `Car.applyPhysics` plant enforces identical saturations and blocks steering while stopped.
 
-All-AI exhibition demos (`view.DemoRaceCapture` / `make demo-race`) take a track id and car ids (`TRACK=3 CARS=0,0,0,0`, or `identical` / `identical:N`; spaces also work if quoted).
+All-AI exhibition demos (`view.DemoRaceCapture` / `./gradlew demoRace -PTRACK=… -PCARS=…`) take a track id and car ids (`-PTRACK=3 -PCARS=0,0,0,0`, or `identical` / `identical:N`; spaces also work if quoted).
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
@@ -166,8 +166,8 @@ All user-visible strings were translated to English during the 2026 refactor; th
 - **Language:** Java (originally Java 7/8 era; currently validated on **JDK 17+**).
 - **UI:** Swing (`JFrame`, `JComboBox`, `JTable`, …).
 - **Build (2015):** manual `javac` invocation.
-- **Build (current):** GNU Make (`Makefile`), see [BUILD.md](BUILD.md).
-- **CI (current):** GitHub Actions workflow compiling and smoke-launching the app headlessly with Xvfb.
+- **Build (current):** **Gradle** (wrapper `./gradlew`) with the standard `src/main` / `src/test` layout; see [BUILD.md](BUILD.md). A thin Makefile only wraps Gradle tasks.
+- **CI (current):** GitHub Actions runs `./gradlew classes`, `test`, and `smokeTest`; release tags publish demo videos and platform binaries.
 
 ### 5.2 Asset pipeline
 
@@ -221,7 +221,7 @@ Issues present in the original submission and still relevant:
 | Serialization | User Hall of Fame file breaks if `Result` fields change without migration. |
 | Headless CI | Smoke test confirms startup only, not gameplay correctness. |
 
-Possible extensions: unit tests for physics and lap detection, replays, additional tracks, sound, modern build tool (Gradle), and replacing serialization with JSON.
+Possible extensions: broader automated gameplay tests, replays, additional tracks, sound, and replacing Java serialization with JSON.
 
 ---
 
@@ -229,7 +229,7 @@ Possible extensions: unit tests for physics and lap detection, replays, addition
 
 The Super Sprint Supélec project successfully met its academic goals: a playable arcade racer with menus, AI opponents, persistence, and documented object-oriented structure. The MVC split made it possible to evolve rendering and control logic independently of core physics.
 
-The 2026 maintenance work added contributor standards, a reproducible Makefile build, CI smoke testing, English naming throughout the source tree, and this translated report so the project remains approachable without the original French PDF.
+The 2026 maintenance work added contributor standards, a Gradle-based reproducible build with classpath resources, CI smoke testing and release packaging, English naming throughout the source tree, and this translated report so the project remains approachable without the original French PDF.
 
 ---
 

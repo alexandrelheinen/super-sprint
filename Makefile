@@ -15,9 +15,9 @@ help:
 	@echo "  make test              ./gradlew test"
 	@echo "  make smoke-test        ./gradlew smokeTest"
 	@echo "  make demo-race         ./gradlew demoRace -PTRACK=... -PCARS=..."
-	@echo "  make record-demo       Record demo race MP4 (needs DISPLAY/ffmpeg)"
-	@echo "  make package           Portable zip (needs JDK 17+ to run)"
-	@echo "  make package-appimage  Portable zip + jpackage app-image"
+	@echo "  make record-demo       ./gradlew recordDemo (needs DISPLAY/ffmpeg)"
+	@echo "  make package           ./gradlew packageRelease"
+	@echo "  make package-appimage  ./gradlew packageRelease -PappImage=true"
 	@echo "  make clean             ./gradlew clean"
 	@echo "  make help              Show this message"
 	@echo ""
@@ -42,16 +42,16 @@ demo-race:
 	fi
 	$(GRADLEW) demoRace -PTRACK=$(TRACK) -PCARS="$(CARS)" -PLAPS=$(or $(LAPS),3)
 
-record-demo: compile
+record-demo:
 	@if [ -z "$(TRACK)" ] || [ -z "$(CARS)" ]; then \
 		echo "Usage: make record-demo TRACK=<trackId> CARS=<carIds> [LAPS=3] [DEMO_MP4=...]"; \
 		exit 1; \
 	fi
-	@bash scripts/record-demo-race.sh \
-		$(or $(DEMO_MP4),artifacts/demo/ai-demo-track$(TRACK).mp4) \
-		$(TRACK) \
-		"$(CARS)" \
-		$(or $(LAPS),3)
+	$(GRADLEW) recordDemo \
+		-PTRACK=$(TRACK) \
+		-PCARS="$(CARS)" \
+		-PLAPS=$(or $(LAPS),3) \
+		$(if $(DEMO_MP4),-PDEMO_MP4=$(DEMO_MP4),)
 
 package:
 	$(GRADLEW) packageRelease -PappVersion=$(APP_VERSION)

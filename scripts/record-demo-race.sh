@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Record an all-AI exhibition race to MP4 for release assets.
+# Builds the runnable jar via Gradle, then launches view.DemoRaceCapture.
 # Usage: record-demo-race.sh [output.mp4] <trackId> <carIds> [laps]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD_DIR="${ROOT}/build"
 
 if [[ "${1:-}" == *.mp4 || "${1:-}" == */* ]]; then
 	OUTPUT="$1"
@@ -23,7 +23,20 @@ FPS="${DEMO_FPS:-30}"
 
 mkdir -p "$(dirname "$OUTPUT")"
 cd "$ROOT"
-./gradlew --quiet classes processResources
+
+echo "Resolving game jar..."
+if [[ -n "${RECORD_JAR:-}" && -f "${RECORD_JAR}" ]]; then
+	JAR_FILE="${RECORD_JAR}"
+	echo "Using prebuilt jar from Gradle: ${JAR_FILE}"
+else
+	echo "Building game jar with Gradle..."
+	./gradlew --quiet jar
+	JAR_FILE="$(ls -1 build/libs/super-sprint-supelec-*.jar 2>/dev/null | head -n 1 || true)"
+fi
+if [[ -z "${JAR_FILE}" || ! -f "${JAR_FILE}" ]]; then
+	echo "Gradle jar not found under build/libs (RECORD_JAR=${RECORD_JAR:-unset})" >&2
+	exit 1
+fi
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
 	echo "ffmpeg is required to record the demo" >&2
@@ -49,9 +62,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Starting demo race on ${DISPLAY_NUM} (track=${TRACK}, cars=${CARS}, laps=${LAPS})..."
-./gradlew --quiet classes processResources
-CLASS_PATH="build/classes/java/main:build/resources/main"
-java -cp "$CLASS_PATH" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
+java -cp "${JAR_FILE}" view.DemoRaceCapture "$TRACK" "$CARS" "$LAPS" &
 GAME_PID=$!
 
 WINDOW_ID=""
