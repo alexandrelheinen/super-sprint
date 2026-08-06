@@ -18,7 +18,7 @@ The chosen theme is a simplified clone of the arcade game [Super Sprint](http://
 - One- or two-player local multiplayer (remaining slots filled by AI opponents)
 - Configurable lap counts with race timer
 - Hall of Fame leaderboard in an OS-specific user data directory
-- Path-following PD controller for AI drivers, with sparse short-horizon MPCC local avoidance when opponents or walls are nearby (walls are near no-go; car contact is a soft, risk-tolerant preference)
+- Path-following PD controller for AI drivers, with sparse short-horizon MPCC local avoidance when opponents or walls are nearby (walls are near no-go; car contact is a soft, risk-tolerant preference). See [docs/REPORT.md](docs/REPORT.md) §4.3 for the PD / MPCC math.
 
 ## Requirements
 
