@@ -91,6 +91,19 @@ public class CarArcadeControlsTest {
 				EPSILON);
 	}
 
+	@Test
+	public void turnRateIsHumanDrivableAtTickCadence() {
+		// At 100 Hz, a mid-handling car should yaw roughly 1–2.5° per tick — arcade
+		// snappy, but not the previous ~5°/tick that made corners undrivable.
+		Car car = carAtRest();
+		double degreesPerTick = Math.toDegrees(car.getMaxTurnRate() * DELTA_SECONDS);
+		assertTrue(degreesPerTick > 0.8, "Too sluggish: " + degreesPerTick);
+		assertTrue(degreesPerTick < 2.8, "Too twitchy for humans: " + degreesPerTick);
+		assertTrue(
+				Car.TURN_RATE_PER_HANDLING < 0.12,
+				"TURN_RATE_PER_HANDLING should stay well below the old 0.2 scale");
+	}
+
 	private static Car carAtRest() {
 		int trackIndex = 0;
 		int[][] trackMap = GameCatalog.trackMap(trackIndex);

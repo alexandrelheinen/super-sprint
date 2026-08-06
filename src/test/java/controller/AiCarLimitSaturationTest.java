@@ -123,7 +123,7 @@ public class AiCarLimitSaturationTest {
 		TrackingLoop loop = AiController.createHybridTrackingLoop(
 				maxSpeed,
 				maxAcceleration,
-				maxTurnRate / 0.2,
+				maxTurnRate / Car.TURN_RATE_PER_HANDLING,
 				0.0,
 				0.0,
 				0.0);

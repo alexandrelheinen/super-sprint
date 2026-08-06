@@ -55,21 +55,22 @@ public final class DubinsMpccPlanner {
 		double[] candidateTurns = bestTurns.clone();
 
 		// Pass-oriented seeds: commit early to a lateral offset, then settle.
-		// Turn biases are absolute rad/s additives sized for ~1 s look-ahead so
-		// a parked opponent can be cleared sideways inside the lane.
+		// Turn biases are fractions of the car's max turn rate so MPCC adapts
+		// when arcade TURN_RATE_PER_HANDLING is retuned.
+		double maxTurnRate = vehicle.getMaxTurnRate();
 		double[][] passProfiles = {
 				{0.00, 0.00},
-				{0.04, -1.8},
-				{0.04, 1.8},
-				{0.08, -2.8},
-				{0.08, 2.8},
-				{0.10, -3.6},
-				{0.10, 3.6},
-				{0.02, -1.2},
-				{0.02, 1.2},
+				{0.04, -0.55},
+				{0.04, 0.55},
+				{0.08, -0.80},
+				{0.08, 0.80},
+				{0.10, -1.00},
+				{0.10, 1.00},
+				{0.02, -0.35},
+				{0.02, 0.35},
 				{-0.10, 0.00},
-				{-0.18, -1.6},
-				{-0.18, 1.6}
+				{-0.18, -0.50},
+				{-0.18, 0.50}
 		};
 		for (double[] profile : passProfiles) {
 			applyPassProfile(
@@ -78,9 +79,9 @@ public final class DubinsMpccPlanner {
 					candidateSpeeds,
 					candidateTurns,
 					profile[0],
-					profile[1],
+					profile[1] * maxTurnRate,
 					vehicle.getMaxSpeed(),
-					vehicle.getMaxTurnRate());
+					maxTurnRate);
 			refine(vehicle, path, obstacles, candidateSpeeds, candidateTurns);
 			smoothCommands(candidateSpeeds, candidateTurns);
 			double cost = evaluate(vehicle, path, obstacles, candidateSpeeds, candidateTurns);
