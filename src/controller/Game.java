@@ -20,6 +20,9 @@ public class Game {
 	public static final int TIMER_START_DELAY_TICKS = 5;
 	public static final int MS_PER_SECOND = 1000;
 	public static final int ONE_BASED_INDEX_OFFSET = 1;
+	/** Extra hold after the winner has fully stopped before showing results. */
+	public static final int POST_FINISH_HOLD_MS = 2000;
+	private static final double MS_PER_SECOND_D = 1000.0;
 
 	/** Track tile maps loaded from {@code tracks.properties}. */
 	public static final int[][][] TRACK_MAPS = GameConfig.TRACK_MAPS;
@@ -36,6 +39,11 @@ public class Game {
 	private final int trackIndex;
 	private boolean running;
 	private boolean racing;
+	private boolean finishing;
+	private int winnerIndex;
+	private double finalRaceTimeMs;
+	private boolean winnerStopped;
+	private int postStopHoldMs;
 	private RaceCountdown countdown;
 
 	public Game(
@@ -87,6 +95,11 @@ public class Game {
 		gameFrame.renderCompositeFrame(circuit);
 		gameFrame.setRacingInputEnabled(false);
 		racing = false;
+		finishing = false;
+		winnerIndex = -1;
+		finalRaceTimeMs = 0.0;
+		winnerStopped = false;
+		postStopHoldMs = 0;
 
 		gameTimer = new Timer(true);
 		gameTimer.scheduleAtFixedRate(
@@ -103,6 +116,14 @@ public class Game {
 	/** {@code true} once the countdown has finished and cars may move. */
 	public boolean isRacing() {
 		return racing;
+	}
+
+	/**
+	 * {@code true} after a winner is decided while cars coast to a stop before
+	 * the results screen.
+	 */
+	public boolean isFinishing() {
+		return finishing;
 	}
 
 	public RaceCountdown getCountdown() {
@@ -125,46 +146,107 @@ public class Game {
 	}
 
 	/**
-	 * Ends the race when any car has more finish-line crossings than the
-	 * configured lap count. Crossing the start/finish on the way off the grid
-	 * increments the counter once, so a race of N laps ends at counter
+	 * Starts the finish coast-down when any car has more finish-line crossings
+	 * than the configured lap count. Crossing the start/finish on the way off
+	 * the grid increments the counter once, so a race of N laps ends at counter
 	 * {@code N + 1} (N full circuits after leaving the grid). If several cars
 	 * cross the threshold on the same tick, the highest counter wins.
 	 */
 	public void checkRaceFinished() {
-		if (!running || !racing) {
+		if (!running || !racing || finishing) {
 			return;
 		}
-		int winnerIndex = -1;
+		int detectedWinner = -1;
 		int bestLapCount = lapCount;
 		for (int index = 0; index < controllers.length; index++) {
 			int carLapCount = controllers[index].getCar().getLapCount();
 			if (carLapCount > bestLapCount) {
 				bestLapCount = carLapCount;
-				winnerIndex = index;
+				detectedWinner = index;
 			}
 		}
-		if (winnerIndex >= 0) {
-			finishGame(winnerIndex);
+		if (detectedWinner >= 0) {
+			beginFinishSequence(detectedWinner);
 		}
 	}
 
-	private void finishGame(int winnerIndex) {
+	/**
+	 * Freezes the official race clock, ignores further driving input, and clears
+	 * throttle/brake so every car coasts. Results appear after the winner stops
+	 * and {@link #POST_FINISH_HOLD_MS} elapses.
+	 */
+	private void beginFinishSequence(int detectedWinner) {
+		finishing = true;
+		racing = false;
+		winnerIndex = detectedWinner;
+		finalRaceTimeMs = circuit.getRaceTimeMs();
+		winnerStopped = false;
+		postStopHoldMs = 0;
+		gameFrame.setRacingInputEnabled(false);
+		for (Controller controller : controllers) {
+			controller.getCar().releaseAcceleration();
+		}
+	}
+
+	/**
+	 * Coasts all cars with physics only (no AI path tracking or player input),
+	 * without advancing race time. Completes the race once the winner is stopped
+	 * for {@link #POST_FINISH_HOLD_MS}.
+	 */
+	void tickFinishSequence() {
+		if (!running || !finishing) {
+			return;
+		}
+
+		boolean shouldRender = circuit.shouldRenderAfterVisualTick();
+		double deltaSeconds = TICK_INTERVAL_MS / MS_PER_SECOND_D;
+		for (int index = 0; index < controllers.length; index++) {
+			Car car = controllers[index].getCar();
+			car.releaseAcceleration();
+			circuit.enforceTrackBoundaries(car);
+			car.applyPhysics(deltaSeconds);
+			for (int otherIndex = 0; otherIndex < index; otherIndex++) {
+				car.collideWith(controllers[otherIndex].getCar());
+			}
+		}
+
+		Car winner = controllers[winnerIndex].getCar();
+		if (!winnerStopped) {
+			if (winner.getSpeed() == 0f) {
+				winnerStopped = true;
+			}
+		} else {
+			winner.setSpeed(0f);
+			postStopHoldMs += TICK_INTERVAL_MS;
+			if (postStopHoldMs >= POST_FINISH_HOLD_MS) {
+				finishGame();
+				return;
+			}
+		}
+
+		if (shouldRender) {
+			gameFrame.renderCompositeFrame(circuit);
+		}
+	}
+
+	private void finishGame() {
 		if (!running) {
 			return;
 		}
 		running = false;
+		finishing = false;
 		gameTimer.cancel();
 		gameTimer.purge();
 
-		double raceTimeMs = circuit.getRaceTimeMs();
+		int completedWinnerIndex = winnerIndex;
+		double raceTimeMs = finalRaceTimeMs;
 
 		SwingUtilities.invokeLater(() -> {
 			detachRenderObservers();
 			gameFrame.shutdown();
 			appShell.showRaceComplete(
 					hallOfFame,
-					winnerIndex,
+					completedWinnerIndex,
 					humanPlayerCount,
 					raceTimeMs,
 					lapCount,
