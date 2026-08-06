@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Regenerates {@code src/data/hall_of_fame.dat} using the current {@link Result} class.
+ * Regenerates {@code src/main/resources/data/hall_of_fame.dat} using the current {@link Result} class.
  */
 public final class HallOfFameSeedGenerator {
 
@@ -17,7 +17,7 @@ public final class HallOfFameSeedGenerator {
 	}
 
 	public static void main(String[] args) throws Exception {
-		Path outputFile = Path.of(args.length > 0 ? args[0] : "src/data/hall_of_fame.dat");
+		Path outputFile = Path.of(args.length > 0 ? args[0] : "src/main/resources/data/hall_of_fame.dat");
 		Files.createDirectories(outputFile.getParent());
 
 		int defaultLaps = GameConfig.DEFAULT_LAP_COUNT;

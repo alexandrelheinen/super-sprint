@@ -12,26 +12,27 @@ Super Sprint Supélec is a desktop Java Swing game inspired by [Super Sprint](ht
 | `view`      | Swing UI (single AppShell window)         |
 | `controller`| Game loop, input handling, AI logic       |
 
-Assets live under `src/sprites/` and `src/data/`. Documentation lives under `docs/`. Runtime Hall of Fame data is stored in the Linux user data directory (see `model.ResourcePaths`).
+Sources live under `src/main/java/`; classpath resources under `src/main/resources/`; tests under `src/test/java/`. Documentation lives under `docs/`. Runtime Hall of Fame data is stored in an OS-specific user data directory (see `model.ResourcePaths`).
 
 ## General principles
 
 1. **English everywhere in source code** - identifiers, comments, user-facing strings, and commit messages must be written in English. Historical French names are legacy debt; do not introduce new French identifiers.
 2. **Minimal, focused changes** - match the style of surrounding code and avoid unrelated refactors in the same pull request.
-3. **Keep the build green** - run `make compile` and `make smoke-test` locally before opening a pull request. CI must pass.
+3. **Keep the build green** - run `./gradlew test` and `./gradlew smokeTest` locally before opening a pull request. CI must pass.
 4. **Preserve game behaviour** - refactors should not change gameplay unless explicitly requested.
 
 ## Java standards
 
 ### Version and build
 
-- Target **Java 17** or newer (CI uses Temurin 17).
-- Compile with `make compile`; run with `make run` from the repository root so asset paths resolve correctly.
-- Class files are emitted to `build/` (never commit `.class` files).
+- Target **Java 17** bytecode (CI uses Temurin 17; newer JDKs are fine for local builds).
+- Build with the **Gradle Wrapper**: `./gradlew classes`, `./gradlew run`, `./gradlew test`.
+- Do not commit `build/` or `.gradle/` outputs.
+- A thin `Makefile` may wrap Gradle tasks; Gradle remains the source of truth.
 
 ### Naming conventions
 
-Follow standard Java conventions ([Oracle Code Conventions](https://www.oracle.com/java/technologies/javase/codeconventions-namingconventions.html)):
+Follow standard Java conventions ([Oracle Code Conventions](https://www.oracle.com/technetwork/java/codeconvtoc-136057.html)):
 
 | Element            | Style              | Examples                                      |
 |--------------------|--------------------|-----------------------------------------------|
@@ -50,16 +51,23 @@ Follow standard Java conventions ([Oracle Code Conventions](https://www.oracle.c
 ### Package layout
 
 ```
-src/
+src/main/java/
   controller/   # Main, Game, Controller hierarchy, game tick task
   model/        # Car, Circuit, HallOfFame, Result, ResourcePaths
   view/         # AppShell, GameFrame (race canvas), screen panels
-  sprites/      # Bundled PNG assets
-  data/         # Seed Hall of Fame serialization file
+src/main/resources/
+  sprites/      # Bundled PNG assets (classpath /sprites/…)
+  data/         # Seed Hall of Fame + config properties (classpath /data/…)
+src/test/java/  # JUnit 5 tests mirroring main packages
 docs/           # Markdown documentation
 ```
 
 Each public class belongs in its own file named after the class. The entry point is `controller.Main`.
+
+### Resources
+
+- Load assets and config via the classpath (`ResourcePaths`, `ConfigLoader`), never via working-directory-relative `src/…` paths.
+- Build-generated sprites land in `build/generated/resources/main/` and are merged onto the runtime classpath / jar.
 
 ### Code organization
 
@@ -86,7 +94,7 @@ Each public class belongs in its own file named after the class. The entry point
 
 - Do not swallow exceptions silently. Log to `System.err` or show a `JOptionPane` for user-facing failures.
 - Prefer specific exception types over bare `catch (Exception)` in new code.
-- Resource streams (`FileInputStream`, `ObjectInputStream`) must be closed; use try-with-resources in new code.
+- Resource streams must be closed; use try-with-resources in new code.
 
 ### Swing and threading
 
@@ -95,7 +103,7 @@ Each public class belongs in its own file named after the class. The entry point
 
 ### Serialization
 
-- `Result` and `HallOfFame` persist leaderboard data via Java serialization to the user data file resolved by `ResourcePaths.userHallOfFameFile()` (seeded from `src/data/hall_of_fame.dat` on first run). `Result` stores name, total duration, lap count, and car model index (`serialVersionUID` `3`); rankings use mean lap time. Older UID `2` files are incompatible and are replaced with defaults on load. When changing serializable classes, bump `serialVersionUID` intentionally and regenerate the seed with `HallOfFameSeedGenerator`.
+- `Result` and `HallOfFame` persist leaderboard data via Java serialization to the user data file resolved by `ResourcePaths.userHallOfFameFile()` (seeded from classpath `/data/hall_of_fame.dat` on first run). `Result` stores name, total duration, lap count, and car model index (`serialVersionUID` `3`); rankings use mean lap time. Older UID `2` files are incompatible and are replaced with defaults on load. When changing serializable classes, bump `serialVersionUID` intentionally and regenerate the seed with `HallOfFameSeedGenerator`.
 
 ### Deprecated APIs
 
@@ -113,23 +121,23 @@ The project uses `java.util.Observable` / `Observer` (deprecated since Java 9). 
 Validation is:
 
 ```bash
-make compile      # must succeed with no errors
-make test         # runs the JUnit 5 suite in tests/
-make smoke-test   # launches the app headlessly and exits cleanly
+./gradlew classes      # must succeed with no errors
+./gradlew test         # JUnit 5 suite under src/test/java
+./gradlew smokeTest    # launches the app headlessly and exits cleanly
 ```
 
-Unit tests live under `tests/`, mirroring the main package structure (`tests/model/`, `tests/controller/`). They use JUnit 5; `make test` downloads the JUnit console launcher into `build/lib/` on first run. Tests must stay headless (no Swing windows) so they can run in CI.
+Unit tests mirror the main package structure (`model`, `controller`, `view`). They use JUnit 5 from Maven Central via Gradle. Tests must stay headless (no Swing windows) so they can run in CI.
 
 ## Asset and documentation files
 
-| Path                        | Purpose                                      |
-|-----------------------------|----------------------------------------------|
-| `src/sprites/`              | PNG sprites and track tiles                  |
-| `third_party/kenney-…/`     | Kenney zip + license (extracted at build)    |
-| `src/data/hall_of_fame.dat` | Seed leaderboard copied on first run         |
-| `docs/REPORT.md`            | English project report                       |
-| `README.md` (repo root)     | User-facing quick start                      |
-| `docs/BUILD.md`             | Build and run instructions                   |
+| Path | Purpose |
+|------|---------|
+| `src/main/resources/sprites/` | PNG sprites and track tiles (classpath) |
+| `third_party/kenney-…/` | Kenney zip + license (extracted at build) |
+| `src/main/resources/data/hall_of_fame.dat` | Seed leaderboard copied on first run |
+| `docs/REPORT.md` | English project report |
+| `README.md` (repo root) | User-facing quick start |
+| `docs/BUILD.md` | Build and run instructions |
 
 Do not commit OS junk (`Thumbs.db`, `.DS_Store`). Binary assets should stay unchanged unless replacing art.
 
@@ -146,9 +154,9 @@ Use GitHub-flavored Markdown, English prose, and fenced code blocks with languag
 Automated coding agents (Cursor, Claude Code, Copilot Workspace, etc.) **must read this file before editing source code** and follow every rule above. Agents should:
 
 1. Read `CONTRIBUTING.md` (this file) and `AGENTS.md`.
-2. Run `make compile` after Java changes.
+2. Run `./gradlew classes` / `./gradlew test` after Java changes.
 3. Prefer English renames over adding bilingual comments.
-4. Never commit secrets, tokens, or generated `build/` output.
+4. Never commit secrets, tokens, or generated `build/` / `.gradle/` output.
 5. Ask before destructive operations (deleting leaderboard data, rewriting history).
 
 See [`AGENTS.md`](AGENTS.md) for the short agent checklist.

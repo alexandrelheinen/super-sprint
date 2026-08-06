@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Generates track preview PNGs from track maps loaded via GameConfig / tracks.properties.
-set -eu
+# Generates track preview PNGs via the Gradle JavaExec task.
+# Prefer: ./gradlew generateTrackPreviews
+set -euo pipefail
 
-BUILD_DIR="${1:-build}"
-OUT_DIR="${BUILD_DIR}/sprites"
-
-mkdir -p "${OUT_DIR}"
-java -cp "${BUILD_DIR}" view.TrackPreviewGenerator "${OUT_DIR}"
-touch "${OUT_DIR}/.track-previews-stamp"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${ROOT_DIR}"
+./gradlew generateTrackPreviews

@@ -5,7 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Typed accessors for game and catalog settings loaded from {@code src/data/config/}.
+ * Typed accessors for game and catalog settings loaded from classpath
+ * {@code /data/config/} properties.
  */
 public final class GameConfig {
 

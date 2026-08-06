@@ -1,6 +1,6 @@
 # Super Sprint Supélec
 
-<img src="src/sprites/icon.png" alt="Super Sprint" width="120" align="left" style="margin-right: 15px; margin-bottom: 15px;">
+<img src="src/main/resources/sprites/icon.png" alt="Super Sprint" width="120" align="left" style="margin-right: 15px; margin-bottom: 15px;">
 
 This project was carried out as part of the Supélec engineering curriculum (*Projet Logiciel*, Sequence 6) between November 2014 and February 2015.
 
@@ -17,63 +17,38 @@ The chosen theme is a simplified clone of the arcade game [Super Sprint](http://
 - Top-down arcade racing with nine car liveries and four track layouts
 - One- or two-player local multiplayer (remaining slots filled by AI opponents)
 - Configurable lap counts with race timer
-- Hall of Fame leaderboard stored in the Linux user data directory
+- Hall of Fame leaderboard in an OS-specific user data directory
 - Path-following PD controller for AI drivers, with sparse short-horizon MPCC local avoidance when opponents or walls are nearby (walls are near no-go; car contact is a soft, risk-tolerant preference)
 
 ## Requirements
 
 - JDK 17 or newer
-- GNU Make
-- Python 3 with Pillow (slices `src/sprites/cars.png` at build time)
+- Python 3 with Pillow (slices `cars.png` at build time)
 - A graphical environment to play (X11 on Linux, native display on macOS/Windows)
+
+The [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) (`./gradlew`) downloads Gradle automatically.
 
 ## Quick start
 
-From the repository root:
-
 ```bash
-make run
+./gradlew run
 ```
-
-This compiles sources into `build/` and launches `controller.Main`.
 
 Other useful commands:
 
 ```bash
-make compile      # compile only
-make smoke-test   # headless startup check (Linux CI)
-make demo-race    # all-AI Dune Horseshoe exhibition
-make clean        # remove build artifacts
-make help         # list targets
+./gradlew classes      # compile + prepare resources
+./gradlew test         # JUnit 5 suite
+./gradlew smokeTest    # headless startup check (Linux CI)
+./gradlew demoRace -PTRACK=3 -PCARS=0,0,0,0
+./gradlew clean
 ```
 
-`make demo-race` requires a track id and car ids (comma-separated is simplest for Make; spaces work if quoted). Optional `LAPS` defaults to 3:
+A thin `Makefile` wraps the same tasks (`make run`, `make test`, …) if you prefer.
 
-```bash
-make demo-race TRACK=3 CARS=0,0,0,0
-make demo-race TRACK=3 CARS=identical:0 LAPS=3
-make demo-race TRACK=1 CARS="0 1 2 3"
-make record-demo TRACK=3 CARS=0,0,0,0
-```
-
-Pushing a `v*` tag runs `.github/workflows/release-demos.yml`, which calls `make record-demo` twice under Xvfb and attaches the MP4s to the GitHub Release:
-
-1. **Four fastest cars** (`2,1,7,4`) on Dune Horseshoe, ascending `maxSpeed` grid order.
-2. **Four slowest cars** (`5,6,3,0`) on Desert Elbow, same ascending grid order.
-
-The same tag also runs `.github/workflows/release-binaries.yml`, which attaches playable downloads:
-
-| Asset | Notes |
-|-------|-------|
-| Linux `*-linux-x64.tar.gz` | Bundled JRE — unpack and run the binary under `bin/` |
-| Windows `*-windows-x64.zip` | Bundled JRE — unpack and run `SuperSprintSupelec.exe` |
-| Portable `*-portable.zip` | Needs JDK/JRE 17+; use `run.sh` / `run.bat` |
-
-Prefer the Linux/Windows app-image packages when you just want to play without installing Java. Local builds: `make package` / `make package-appimage`.
+Pushing a `v*` tag records demo MP4s and publishes Linux/Windows downloadable binaries (bundled JRE) plus a portable jar zip. Prefer the platform app-image packages when you just want to play. See [docs/BUILD.md](docs/BUILD.md).
 
 Mobile builds are not available (desktop Swing app).
-
-See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and troubleshooting.
 
 ## Controls
 
@@ -87,18 +62,24 @@ Choose the lap count in Race Setup (default **3**). The first car to finish wins
 ## Project layout
 
 ```
-src/
+src/main/java/
   controller/   Game loop, input, AI (Main entry point)
   model/        Car physics, track logic, Hall of Fame persistence
   view/         Swing menus and race rendering
-  sprites/      Bundled PNG assets (cars + menu cars, tracks, UI)
-  third_party/  Vendored Kenney Top-down Tanks Redux zip (build extracts scenery)
-  data/         Seed Hall of Fame file copied on first run
+src/main/resources/
+  sprites/      Bundled PNG assets (sheet, tracks, UI); derived cars generated at build
+  data/         Seed Hall of Fame + config properties (classpath)
+src/test/java/  JUnit 5 tests mirroring main packages
 docs/           Markdown documentation
-build/          Compiled classes and prepared car sprites (generated)
 ```
 
-On Linux, runtime Hall of Fame data is stored at `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default: `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), initialized from `src/data/hall_of_fame.dat` when missing. Windows uses `%APPDATA%\super-sprint-supelec\`; macOS uses `~/Library/Application Support/super-sprint-supelec/`.
+Hall of Fame user data:
+
+| Platform | Location |
+|----------|----------|
+| Linux | `$XDG_DATA_HOME/super-sprint-supelec/` (default `~/.local/share/…`) |
+| Windows | `%APPDATA%\super-sprint-supelec\` |
+| macOS | `~/Library/Application Support/super-sprint-supelec/` |
 
 ## Architecture
 
@@ -136,9 +117,7 @@ See [docs/REPORT.md](docs/REPORT.md) for the full design document (English trans
 
 ## Continuous integration
 
-GitHub Actions (`.github/workflows/ci.yml`) compiles the project, runs unit tests, and performs a headless launch smoke test on every push and pull request to `master`.
-
-Tagged releases (`v*`) additionally record demo videos and publish Linux/Windows downloadable binaries (see [docs/BUILD.md](docs/BUILD.md)).
+GitHub Actions (`.github/workflows/ci.yml`) runs `./gradlew classes`, `test`, and `smokeTest` on every push and pull request to `master`. Tagged releases (`v*`) additionally record demo videos and publish Linux/Windows binaries.
 
 ## License
 

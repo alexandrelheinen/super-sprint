@@ -6,15 +6,12 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import javax.imageio.ImageIO;
 
 import model.Circuit;
 import model.ResourcePaths;
@@ -23,7 +20,7 @@ import model.Terrain;
 /**
  * Terrain-aware scenery for the race view and track menu previews.
  * Ground tiles and flora come from Kenney Top-down Tanks Redux (CC0),
- * extracted at build time into {@code build/sprites/kenney/}.
+ * extracted at build time onto the classpath under {@code /sprites/kenney/}.
  */
 public final class RaceSceneryPainter {
 
@@ -252,8 +249,7 @@ public final class RaceSceneryPainter {
 		List<BufferedImage> loaded = new ArrayList<>();
 		for (String fileName : fileNames) {
 			try {
-				File file = new File(ResourcePaths.kenneySprite(fileName));
-				BufferedImage image = ImageIO.read(file);
+				BufferedImage image = ResourcePaths.loadKenneySprite(fileName);
 				if (image != null) {
 					loaded.add(image);
 				}

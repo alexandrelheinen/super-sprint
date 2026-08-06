@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Extract only the Kenney scenery sprites we use into build/sprites/kenney/.
+# Extract Kenney scenery sprites onto the generated resources classpath root.
+# Usage: scripts/prepare-kenney-sprites.sh [OUTPUT_RESOURCE_ROOT]
+# Default OUTPUT_RESOURCE_ROOT: build/generated/resources/main
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BUILD_DIR="${1:-${ROOT_DIR}/build}"
+OUTPUT_ROOT="${1:-${ROOT_DIR}/build/generated/resources/main}"
 ZIP_PATH="${ROOT_DIR}/third_party/kenney-top-down-tanks-redux/kenney_topdownTanksRedux.zip"
 LICENSE_SRC="${ROOT_DIR}/third_party/kenney-top-down-tanks-redux/License.txt"
-OUT_DIR="${BUILD_DIR}/sprites/kenney"
-STAMP="${BUILD_DIR}/sprites/.kenney-stamp"
+OUT_DIR="${OUTPUT_ROOT}/sprites/kenney"
+STAMP="${OUTPUT_ROOT}/sprites/.kenney-stamp"
 
 # Ground tiles + green/brown trees/twigs/leaves used by RaceSceneryPainter.
 REQUIRED=(

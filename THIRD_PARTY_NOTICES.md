@@ -1,6 +1,6 @@
 # Third-party notices
 
-## Flaticon - Race icon (`src/sprites/icon.png`)
+## Flaticon - Race icon (`src/main/resources/sprites/icon.png`)
 
 - Source: [Race icon](https://www.flaticon.com/free-icon/race_4552572) (512×512 PNG)
 - Author: [Magnific](https://www.flaticon.com/authors/magnific)
@@ -17,7 +17,7 @@ Used as the application window / README icon.
 - License: [Creative Commons Zero (CC0 1.0)](https://creativecommons.org/publicdomain/zero/1.0/)
 - Credit (optional): Kenney.nl
 
-Build extracts only the scenery sprites we use into `build/sprites/kenney/`
+Build extracts only the scenery sprites we use onto the classpath under `/sprites/kenney/`
 via `scripts/prepare-kenney-sprites.sh` (not the full tanks/roads pack):
 
 - Ground fill tiles: `tileGrass1/2.png`, `tileSand1/2.png`

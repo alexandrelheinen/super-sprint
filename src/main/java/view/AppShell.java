@@ -18,14 +18,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import javax.imageio.ImageIO;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -290,11 +287,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static List<Image> loadWindowIcons() {
 		List<Image> icons = new ArrayList<>();
 		try {
-			BufferedImage master = ImageIO.read(new File(ResourcePaths.bundledSprite(SPRITE_ICON)));
-			if (master == null) {
-				icons.add(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
-				return icons;
-			}
+			BufferedImage master = ResourcePaths.loadSprite(SPRITE_ICON);
 			for (int size : WINDOW_ICON_SIZES) {
 				BufferedImage scaled = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 				Graphics2D graphics = scaled.createGraphics();
@@ -309,7 +302,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 				icons.add(scaled);
 			}
 		} catch (IOException exception) {
-			icons.add(new ImageIcon(ResourcePaths.bundledSprite(SPRITE_ICON)).getImage());
+			icons.add(new ImageIcon(ResourcePaths.spriteUrl(SPRITE_ICON)).getImage());
 		}
 		return icons;
 	}

@@ -78,7 +78,7 @@ Higher handling increases turn rate; top speed is enforced each physics step.
 
 ### 2.4 Tracks
 
-Each track is a grid of **tile types** (values 0-6) mapped to PNG assets under `src/sprites/` (`track_XX.png`). Types represent straights, corners, and open cells. Layouts, names, and terrains are defined per track in `src/data/config/tracks.properties` and loaded into `GameConfig.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
+Each track is a grid of **tile types** (values 0-6) mapped to PNG assets on the classpath under `/sprites/` (`track_XX.png`). Types represent straights, corners, and open cells. Layouts, names, and terrains are defined per track in `/data/config/tracks.properties` and loaded into `GameConfig.TRACK_MAPS`. Start positions are defined per track in `Circuit.START_POSITIONS`.
 
 The finish line is a geometric segment near the first grid slot; crossing direction determines valid lap increments.
 
@@ -145,7 +145,7 @@ All-AI exhibition demos (`view.DemoRaceCapture` / `make demo-race`) take a track
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
-Each track keeps ten best results ranked by **mean lap time** (total duration ÷ lap count), so races with different lap counts stay comparable. `Result` stores player name, total duration in milliseconds, lap count, car model index, and timestamp. On Linux, data is serialized to `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat` (default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from `src/data/hall_of_fame.dat` on first run. On first run failure (or corrupt / incompatible file - `Result` `serialVersionUID` is `3`), default placeholder entries are created.
+Each track keeps ten best results ranked by **mean lap time** (total duration ÷ lap count), so races with different lap counts stay comparable. `Result` stores player name, total duration in milliseconds, lap count, car model index, and timestamp. Data is serialized to an OS-specific user directory (Linux: `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat`, default `~/.local/share/super-sprint-supelec/hall_of_fame.dat`), seeded from classpath `/data/hall_of_fame.dat` on first run. On first run failure (or corrupt / incompatible file - `Result` `serialVersionUID` is `3`), default placeholder entries are created.
 
 When a race ends, `Game` asks `AppShell` to show the race-complete screen. Human winners who place may save via `HallOfFame.addResult`; computer wins are shown but never written to the board.
 
@@ -171,11 +171,11 @@ All user-visible strings were translated to English during the 2026 refactor; th
 
 ### 5.2 Asset pipeline
 
-Graphics are static PNG files under `src/sprites/`:
+Graphics are static PNG files on the classpath under `/sprites/`:
 
 - Car sprites: `cars.png` (3×3 sheet) sliced at build into race `car_00.png` … `car_08.png` and larger menu `car_00_menu.png` … `car_08_menu.png` (soft cyan matte)
 - Track tiles: `track_00.png` … `track_06.png` (same naming; wide Super Sprint lane geometry; Kenney-inspired asphalt from `scripts/generate-track-tiles.py`)
-- Terrain scenery: Kenney Top-down Tanks Redux grass/sand tiles + green/brown trees (CC0; zip vendored under `third_party/`, extracted to `build/sprites/kenney/` at build)
+- Terrain scenery: Kenney Top-down Tanks Redux grass/sand tiles + green/brown trees (CC0; zip vendored under `third_party/`, extracted to `/sprites/kenney/` at build)
 - UI: `icon.png`, splash, generated `track_preview_XX.png`
 
 Tile size in pixels is `GameFrame.TILE_SIZE` (219 px). Physics radii (`INNER_RADIUS` / `OUTER_RADIUS`) stay tied to these wide tiles; narrower third-party road packs are not drop-in replacements. A future art pass could unify background, track, and cars under one sprite set or original designs.
@@ -183,8 +183,8 @@ Tile size in pixels is `GameFrame.TILE_SIZE` (219 px). Physics radii (`INNER_RAD
 ### 5.3 Entry point
 
 ```bash
-make run
-# equivalent: java -cp build controller.Main
+./gradlew run
+# equivalent after installDist: build/install/super-sprint-supelec/bin/super-sprint-supelec
 ```
 
 `Main` constructs `AppShell`, which bootstraps the Hall of Fame and menu UI in one window.
@@ -204,7 +204,7 @@ The CI pipeline verifies:
 1. **Compilation** - all sources under `src/` compile without errors.
 2. **Launch smoke test** - the JVM starts, Swing initializes under a virtual framebuffer, and the process remains alive for several seconds without crashing.
 
-Contributors should run `make compile` and `make smoke-test` before opening pull requests (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+Contributors should run `./gradlew test` and `./gradlew smokeTest` before opening pull requests (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ---
 
