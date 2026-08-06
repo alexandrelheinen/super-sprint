@@ -51,7 +51,9 @@ jobs:
           # stale window ids that break xdotool on the next recording.
           record_one() {
             local track="$1" cars="$2" output="$3"
-            xvfb-run -a -s '-screen 0 1280x1024x24' bash -lc "
+            # 1920x1440 leaves headroom for window chrome; DemoRaceCapture is also
+            # launched with -Dsun.java2d.uiScale=1 so the shell stays in-bounds.
+            xvfb-run -a -s '-screen 0 1920x1440x24' bash -lc "
               set -euo pipefail
               openbox &
               sleep 1
