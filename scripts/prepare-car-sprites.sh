@@ -9,6 +9,10 @@
 # Default OUTPUT_RESOURCE_ROOT: build/generated/resources/main
 set -euo pipefail
 
+# Windows CI (cp1252 consoles) must not crash on UTF-8 log text from Pillow/Python.
+export PYTHONIOENCODING="${PYTHONIOENCODING:-utf-8}"
+export PYTHONUTF8="${PYTHONUTF8:-1}"
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_ROOT="${1:-${ROOT_DIR}/build/generated/resources/main}"
 OUT_DIR="${OUTPUT_ROOT}/sprites"
@@ -420,7 +424,7 @@ sheet_w, sheet_h = sheet.size
 key = dominant_background(sheet)
 print(
 	f"Using cyan key color RGB{key} "
-	f"(hard≤{chroma_hard}, fringe={chroma_fringe}px, race={race_length}px, "
+	f"(hard<={chroma_hard}, fringe={chroma_fringe}px, race={race_length}px, "
 	f"menu={menu_length}px on {menu_canvas_width}x{menu_canvas_height})"
 )
 
