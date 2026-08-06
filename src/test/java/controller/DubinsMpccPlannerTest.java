@@ -111,11 +111,10 @@ public class DubinsMpccPlannerTest {
 	@Test
 	public void wallSoftConstraintCostsMoreThanComparableCarSoftConstraint() {
 		ReferencePath path = TestPaths.straightEast(240, 0.5);
-		// Place the ego car near the wall margin so wallCost is active.
+		// Press into the wall safety band (still on asphalt) so wallCost is hot.
 		double nearWallY = MpccConfig.DEFAULT.getLaneHalfWidthMeters()
 				- MpccConfig.DEFAULT.getEgoRadiusMeters()
-				- MpccConfig.DEFAULT.getWallSafeMarginMeters()
-				+ 1.0;
+				- 0.4;
 		DubinsVehicle nearWall = vehicleAt(5.0, nearWallY, 0.0, 14.0);
 		DubinsVehicle onCenter = vehicleAt(5.0, 0.0, 0.0, 14.0);
 		DubinsMpccPlanner planner = planner(25.0);
@@ -123,8 +122,12 @@ public class DubinsMpccPlannerTest {
 		double[] turns = fill(planner.getConfig().getHorizonStepCount(), 0.0);
 
 		double wallCost = planner.evaluate(nearWall, path, List.of(), speeds, turns);
+		// Mild soft proximity (margin violation only, no hull overlap).
+		double proximityDistance = MpccConfig.DEFAULT.getEgoRadiusMeters()
+				+ MpccConfig.DEFAULT.getEgoRadiusMeters()
+				+ MpccConfig.DEFAULT.getObstacleSafeMarginMeters() * 0.55;
 		DynamicObstacle blocker = new DynamicObstacle(
-				5.0 + 1.0,
+				5.0 + proximityDistance,
 				0.0,
 				0.0,
 				0.0,
@@ -207,20 +210,60 @@ public class DubinsMpccPlannerTest {
 		ReferencePath path = TestPaths.straightEast(240, 0.5);
 		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 18.0);
 		DubinsMpccPlanner planner = planner(25.0);
-		DynamicObstacle blocker = new DynamicObstacle(11.0, 0.0, 0.0, 8.0, 1.6);
+		DynamicObstacle blocker = new DynamicObstacle(11.0, 0.0, 0.0, 8.0, 1.4);
+		DubinsMpccPlanner.Plan plan = planner.plan(vehicle, path, List.of(blocker));
+
+		boolean steered = false;
+		double averageSpeed = 0.0;
+		for (DubinsMpccPlanner.Command command : plan.commands()) {
+			averageSpeed += command.speedCommand();
+			if (Math.abs(command.turnRateCommand()) > 0.35) {
+				steered = true;
+			}
+		}
+		averageSpeed /= plan.commands().length;
+		assertTrue(steered, "Expected a lateral pass attempt around moving traffic");
+		assertTrue(
+				averageSpeed > 10.0,
+				"Pass attempt should keep rolling rather than draft at crawl speed, got "
+						+ averageSpeed);
+	}
+
+	@Test
+	public void ploughingThroughTrafficCostsMoreThanClearingBypass() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 16.0);
+		DubinsMpccPlanner planner = planner(25.0);
+		DynamicObstacle parked = new DynamicObstacle(14.0, 0.0, 0.0, 0.0, 1.5);
 		int horizon = planner.getConfig().getHorizonStepCount();
 
-		double[] followSpeeds = fill(horizon, 8.0);
-		double[] followTurns = fill(horizon, 0.0);
-		double[] passSpeeds = fill(horizon, 20.0);
-		double[] passTurns = fill(horizon, -0.55);
+		double[] crashSpeeds = fill(horizon, 16.0);
+		double[] crashTurns = fill(horizon, 0.0);
+		double crashCost = planner.evaluate(vehicle, path, List.of(parked), crashSpeeds, crashTurns);
 
-		double followCost = planner.evaluate(vehicle, path, List.of(blocker), followSpeeds, followTurns);
-		double passCost = planner.evaluate(vehicle, path, List.of(blocker), passSpeeds, passTurns);
+		DubinsMpccPlanner.Plan plan = planner.plan(vehicle, path, List.of(parked));
 		assertTrue(
-				passCost < followCost,
-				"High-speed lateral pass should beat drafting behind traffic: pass="
-						+ passCost + " follow=" + followCost);
+				plan.cost() < crashCost,
+				"Planned bypass must beat driving straight through a parked car: plan="
+						+ plan.cost() + " crash=" + crashCost);
+
+		DubinsVehicle rollout = vehicle.copy();
+		double minClearance = Double.POSITIVE_INFINITY;
+		double timeSeconds = 0.0;
+		double dt = planner.getConfig().getDtSeconds();
+		for (DubinsMpccPlanner.Command command : plan.commands()) {
+			rollout.step(command.speedCommand(), command.turnRateCommand(), dt);
+			timeSeconds += dt;
+			double clearance = Math.hypot(
+					rollout.getX() - parked.predictedX(timeSeconds),
+					rollout.getY() - parked.predictedY(timeSeconds))
+					- planner.getConfig().getEgoRadiusMeters()
+					- parked.getRadiusMeters();
+			minClearance = Math.min(minClearance, clearance);
+		}
+		assertTrue(
+				minClearance > -0.35,
+				"Planned bypass should nearly clear the parked hull, minClearance=" + minClearance);
 	}
 
 	@Test

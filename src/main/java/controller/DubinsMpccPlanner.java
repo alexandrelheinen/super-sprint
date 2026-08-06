@@ -54,17 +54,22 @@ public final class DubinsMpccPlanner {
 		double[] candidateSpeeds = bestSpeeds.clone();
 		double[] candidateTurns = bestTurns.clone();
 
-		// Pass-oriented seeds: keep speed high and commit to a lateral offset,
-		// then settle. Milder than bang-bang so closed-loop does not chatter.
+		// Pass-oriented seeds: commit early to a lateral offset, then settle.
+		// Turn biases are absolute rad/s additives sized for ~1 s look-ahead so
+		// a parked opponent can be cleared sideways inside the lane.
 		double[][] passProfiles = {
 				{0.00, 0.00},
-				{0.06, -0.45},
-				{0.06, 0.45},
-				{0.10, -0.70},
-				{0.10, 0.70},
-				{0.04, -0.30},
-				{0.04, 0.30},
-				{-0.04, 0.00}
+				{0.04, -1.8},
+				{0.04, 1.8},
+				{0.08, -2.8},
+				{0.08, 2.8},
+				{0.10, -3.6},
+				{0.10, 3.6},
+				{0.02, -1.2},
+				{0.02, 1.2},
+				{-0.10, 0.00},
+				{-0.18, -1.6},
+				{-0.18, 1.6}
 		};
 		for (double[] profile : passProfiles) {
 			applyPassProfile(
@@ -405,8 +410,9 @@ public final class DubinsMpccPlanner {
 	}
 
 	/**
-	 * Mild, saturating preference against other cars — avoid if cheap, never a
-	 * hard barrier so progress / speed can still force a bypass.
+	 * Soft preference against other cars — avoid when a cheap lateral pass
+	 * exists. Mild proximity saturates; actual overlaps add a non-saturating
+	 * quadratic so ploughing through traffic is never the cheapest plan.
 	 */
 	private double obstacleCost(
 			double x,
@@ -425,6 +431,13 @@ public final class DubinsMpccPlanner {
 			double violation = config.getObstacleSafeMarginMeters() - clearance;
 			if (violation > 0.0) {
 				total += config.getWeightObstacle() * saturatingViolation(violation);
+			}
+			// Predicted hull overlap: non-saturating so ploughing through traffic
+			// cannot be masked by progress / speed rewards over the horizon.
+			if (clearance < 0.0) {
+				double overlap = -clearance;
+				total += config.getWeightObstacle()
+						* (20.0 * overlap * overlap + 12.0 * overlap * overlap * overlap);
 			}
 		}
 		return total;

@@ -21,30 +21,37 @@ public final class MpccConfig {
 	public static final double DEFAULT_LANE_HALF_WIDTH_METERS = WorldUnits.pxToM(
 			(Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS) / 2.0);
 
+	/**
+	 * Retuned for earlier, longer-horizon traffic avoidance: ~1.2 s look-ahead,
+	 * stronger soft car proximity, and a wider trigger so MPCC engages before
+	 * contact. Ego radius tracks car half-width more than the bounding circle so
+	 * side-by-side passes stay geometrically feasible in-lane. Walls remain
+	 * strictly heavier than soft opponent proximity.
+	 */
 	public static final MpccConfig DEFAULT = new MpccConfig(
-			12,
+			20,
 			0.06,
-			48,
-			0.7,
+			40,
+			0.55,
 			0.8,
-			3.0,
-			12.0,
-			2.8,
-			3.0,
+			2.5,
+			9.0,
+			2.2,
+			2.5,
 			14.0,
 			14.0,
 			12.0,
-			3.5,
-			1.2,
-			2.0,
-			4.5,
+			18.0,
+			1.8,
+			1.55,
+			7.5,
 			900.0,
 			DEFAULT_LANE_HALF_WIDTH_METERS,
 			2.4,
 			2.2,
-			2.5,
-			1.2,
-			2);
+			3.0,
+			1.35,
+			3);
 
 	private final int horizonStepCount;
 	private final double dtSeconds;
