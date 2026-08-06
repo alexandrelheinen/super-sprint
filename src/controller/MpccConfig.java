@@ -1,23 +1,38 @@
 package controller;
 
+import model.Circuit;
+import model.WorldUnits;
+
 /**
  * Tunable horizon and weights for the hand-rolled Dubins MPCC planner.
+ *
+ * <p>Wall / track-boundary soft constraints are intentionally weighted much
+ * higher than opponent soft constraints: leaving the asphalt is more critical
+ * than brushing another car.
  */
 public final class MpccConfig {
+
+	/** Half-width of the painted lane corridor, matching {@link Circuit} radii. */
+	public static final double DEFAULT_LANE_HALF_WIDTH_METERS = WorldUnits.pxToM(
+			(Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS) / 2.0);
 
 	public static final MpccConfig DEFAULT = new MpccConfig(
 			10,
 			0.05,
 			20,
-			4.0,
+			6.0,
 			3.0,
 			8.0,
 			1.2,
 			0.15,
-			120.0,
+			40.0,
 			2.5,
 			2.0,
 			2.5,
+			500.0,
+			DEFAULT_LANE_HALF_WIDTH_METERS,
+			2.0,
+			3.0,
 			3.0,
 			4,
 			0.8,
@@ -35,6 +50,10 @@ public final class MpccConfig {
 	private final double obstacleSafeMarginMeters;
 	private final double egoRadiusMeters;
 	private final double triggerDistanceMeters;
+	private final double weightWall;
+	private final double laneHalfWidthMeters;
+	private final double wallSafeMarginMeters;
+	private final double wallTriggerMarginMeters;
 	private final double refineStepScale;
 	private final int refinePassCount;
 	private final double cruiseSpeedRatio;
@@ -53,10 +72,18 @@ public final class MpccConfig {
 			double obstacleSafeMarginMeters,
 			double egoRadiusMeters,
 			double triggerDistanceMeters,
+			double weightWall,
+			double laneHalfWidthMeters,
+			double wallSafeMarginMeters,
+			double wallTriggerMarginMeters,
 			double refineStepScale,
 			int refinePassCount,
 			double cruiseSpeedRatio,
 			double curvatureGain) {
+		if (weightWall <= weightObstacle) {
+			throw new IllegalArgumentException(
+					"weightWall must exceed weightObstacle (walls are more critical than cars)");
+		}
 		this.horizonStepCount = horizonStepCount;
 		this.dtSeconds = dtSeconds;
 		this.replanIntervalTicks = replanIntervalTicks;
@@ -69,6 +96,10 @@ public final class MpccConfig {
 		this.obstacleSafeMarginMeters = obstacleSafeMarginMeters;
 		this.egoRadiusMeters = egoRadiusMeters;
 		this.triggerDistanceMeters = triggerDistanceMeters;
+		this.weightWall = weightWall;
+		this.laneHalfWidthMeters = laneHalfWidthMeters;
+		this.wallSafeMarginMeters = wallSafeMarginMeters;
+		this.wallTriggerMarginMeters = wallTriggerMarginMeters;
 		this.refineStepScale = refineStepScale;
 		this.refinePassCount = refinePassCount;
 		this.cruiseSpeedRatio = cruiseSpeedRatio;
@@ -121,6 +152,22 @@ public final class MpccConfig {
 
 	public double getTriggerDistanceMeters() {
 		return triggerDistanceMeters;
+	}
+
+	public double getWeightWall() {
+		return weightWall;
+	}
+
+	public double getLaneHalfWidthMeters() {
+		return laneHalfWidthMeters;
+	}
+
+	public double getWallSafeMarginMeters() {
+		return wallSafeMarginMeters;
+	}
+
+	public double getWallTriggerMarginMeters() {
+		return wallTriggerMarginMeters;
 	}
 
 	public double getRefineStepScale() {

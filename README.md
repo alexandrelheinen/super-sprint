@@ -18,7 +18,7 @@ The chosen theme is a simplified clone of the arcade game [Super Sprint](http://
 - One- or two-player local multiplayer (remaining slots filled by AI opponents)
 - Configurable lap counts with race timer
 - Hall of Fame leaderboard stored in the Linux user data directory
-- Path-following PD controller for AI drivers, with sparse short-horizon MPCC local avoidance when opponents are nearby
+- Path-following PD controller for AI drivers, with sparse short-horizon MPCC local avoidance when opponents or walls are nearby (wall costs outweigh car-to-car soft penalties)
 
 ## Requirements
 
@@ -42,8 +42,16 @@ Other useful commands:
 ```bash
 make compile      # compile only
 make smoke-test   # headless startup check (Linux CI)
+make demo-race    # all-AI Dune Horseshoe exhibition
 make clean        # remove build artifacts
 make help         # list targets
+```
+
+Demo car models are configurable with `DEMO_CARS` (comma-separated indexes, `identical`, or `identical:N`):
+
+```bash
+DEMO_CARS=identical:0 LAPS=3 make demo-race
+DEMO_CARS=0,0,0,0 make record-demo
 ```
 
 See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and troubleshooting.

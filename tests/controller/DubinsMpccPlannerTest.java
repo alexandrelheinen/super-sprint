@@ -84,6 +84,67 @@ public class DubinsMpccPlannerTest {
 		assertTrue(averageSpeed > 15.0, "Clear-road plan should stay near cruise, got " + averageSpeed);
 	}
 
+	@Test
+	public void wallWeightStrictlyExceedsOpponentWeight() {
+		assertTrue(
+				MpccConfig.DEFAULT.getWeightWall() > MpccConfig.DEFAULT.getWeightObstacle(),
+				"Wall collisions must be treated as more critical than car collisions");
+	}
+
+	@Test
+	public void wallSoftConstraintCostsMoreThanComparableCarSoftConstraint() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		// Place the ego car near the wall margin so wallCost is active.
+		double nearWallY = MpccConfig.DEFAULT.getLaneHalfWidthMeters()
+				- MpccConfig.DEFAULT.getEgoRadiusMeters()
+				- MpccConfig.DEFAULT.getWallSafeMarginMeters()
+				+ 1.0;
+		DubinsVehicle nearWall = vehicleAt(5.0, nearWallY, 0.0, 14.0);
+		DubinsVehicle onCenter = vehicleAt(5.0, 0.0, 0.0, 14.0);
+		DubinsMpccPlanner planner = planner(25.0);
+		double[] speeds = fill(planner.getConfig().getHorizonStepCount(), 14.0);
+		double[] turns = fill(planner.getConfig().getHorizonStepCount(), 0.0);
+
+		double wallCost = planner.evaluate(nearWall, path, List.of(), speeds, turns);
+		DynamicObstacle blocker = new DynamicObstacle(
+				5.0 + 1.0,
+				0.0,
+				0.0,
+				0.0,
+				MpccConfig.DEFAULT.getEgoRadiusMeters());
+		double carCost = planner.evaluate(onCenter, path, List.of(blocker), speeds, turns);
+		assertTrue(
+				wallCost > carCost,
+				"Near-wall cost " + wallCost + " should exceed comparable car proximity cost " + carCost);
+	}
+
+	@Test
+	public void avoidanceKeepsPredictedTrajectoryInsideLane() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 16.0);
+		DubinsMpccPlanner planner = planner(25.0);
+		DynamicObstacle blocker = new DynamicObstacle(14.0, 0.0, 0.0, 0.0, 1.8);
+		DubinsMpccPlanner.Plan plan = planner.plan(vehicle, path, List.of(blocker));
+
+		DubinsVehicle rollout = vehicle.copy();
+		double maxAbsCrossTrack = 0.0;
+		int hint = ReferencePath.NO_HINT;
+		for (DubinsMpccPlanner.Command command : plan.commands()) {
+			rollout.step(command.speedCommand(), command.turnRateCommand(), DELTA_SECONDS);
+			ReferencePath.Projection projection = path.project(
+					rollout.getX(),
+					rollout.getY(),
+					hint);
+			hint = projection.closestIndex();
+			maxAbsCrossTrack = Math.max(maxAbsCrossTrack, Math.abs(projection.crossTrackError()));
+		}
+		double maxAllowed = MpccConfig.DEFAULT.getLaneHalfWidthMeters()
+				- MpccConfig.DEFAULT.getEgoRadiusMeters();
+		assertTrue(
+				maxAbsCrossTrack < maxAllowed,
+				"Avoidance left the lane: |cte|=" + maxAbsCrossTrack + " limit=" + maxAllowed);
+	}
+
 	private static DubinsMpccPlanner planner(double cruiseSpeed) {
 		PdPathFollowController pd = new PdPathFollowController(4.0, 1.0, 2.5, 2.4, 0.8, cruiseSpeed, 0.45);
 		return new DubinsMpccPlanner(MpccConfig.DEFAULT, pd);

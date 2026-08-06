@@ -60,6 +60,22 @@ public class HybridMpccPathFollowControllerTest {
 		assertFalse(hybrid.wasLastCommandFromMpcc());
 	}
 
+	@Test
+	public void switchesToMpccWhenNearWallEvenWithoutOpponents() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		double nearWallY = MpccConfig.DEFAULT.getLaneHalfWidthMeters()
+				- MpccConfig.DEFAULT.getEgoRadiusMeters()
+				- 0.5;
+		DubinsVehicle vehicle = vehicleAt(8.0, nearWallY, 0.0, 14.0);
+		HybridMpccPathFollowController hybrid = hybrid(vehicle);
+		hybrid.setObstacles(List.of());
+
+		hybrid.track(8.0, nearWallY, 0.0, 14.0, path, DELTA_SECONDS);
+		assertTrue(
+				hybrid.wasLastCommandFromMpcc(),
+				"Proximity to a wall should trigger MPCC even without opponents");
+	}
+
 	private static HybridMpccPathFollowController hybrid(DubinsVehicle vehicle) {
 		PdPathFollowController pd = new PdPathFollowController(4.0, 1.0, 2.5, 2.4, 0.8, 25.0, 0.45);
 		return new HybridMpccPathFollowController(pd, vehicle, MpccConfig.DEFAULT);

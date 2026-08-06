@@ -11,8 +11,10 @@ import model.ReferencePath;
  * <p>Formulates a single-shooting NLP over speed and turn-rate commands,
  * warm-started from a PD path follower and refined with coordinate descent.
  * Costs penalize contouring (cross-track) error, lag behind a virtual path
- * progress variable, control roughness, and soft distance violations against
- * predicted opponents. Progress along the reference is rewarded.
+ * progress variable, control roughness, soft track-wall violations, and soft
+ * distance violations against predicted opponents. Wall / lane-boundary costs
+ * dominate opponent costs so avoidance does not drive cars off the asphalt.
+ * Progress along the reference is rewarded.
  */
 public final class DubinsMpccPlanner {
 
@@ -260,9 +262,30 @@ public final class DubinsMpccPlanner {
 			previousSpeedCommand = speeds[index];
 			previousTurnCommand = turns[index];
 
+			cost += wallCost(contour);
 			cost += obstacleCost(rollout.getX(), rollout.getY(), time, obstacles);
 		}
 		return cost;
+	}
+
+	/**
+	 * Soft barrier against the track walls. Uses cross-track error versus the
+	 * lane half-width so leaving the asphalt is penalized far more heavily than
+	 * a comparable car-to-car clearance violation.
+	 */
+	private double wallCost(double crossTrackError) {
+		double absCrossTrack = Math.abs(crossTrackError);
+		double wallClearance = config.getLaneHalfWidthMeters()
+				- config.getEgoRadiusMeters()
+				- absCrossTrack;
+		double violation = config.getWallSafeMarginMeters() - wallClearance;
+		if (violation <= 0.0) {
+			return 0.0;
+		}
+		// Quadratic near the wall, with an extra cubic kick once the body would
+		// intersect the boundary so off-track plans are almost never chosen.
+		double outside = Math.max(0.0, -wallClearance);
+		return config.getWeightWall() * (violation * violation + 8.0 * outside * outside * outside);
 	}
 
 	private double obstacleCost(
