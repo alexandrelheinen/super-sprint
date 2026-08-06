@@ -18,7 +18,7 @@ The chosen theme is a simplified clone of the arcade game [Super Sprint](http://
 - One- or two-player local multiplayer (remaining slots filled by AI opponents)
 - Configurable lap counts with race timer
 - Hall of Fame leaderboard stored in the Linux user data directory
-- Path-following PD controller for AI drivers
+- Path-following PD controller for AI drivers, with sparse short-horizon MPCC local avoidance when opponents are nearby
 
 ## Requirements
 
@@ -93,7 +93,7 @@ flowchart LR
 
 - **Model** - `Car`, `Circuit`, `HallOfFame`, `Result`, `ResourcePaths`
 - **View** - `AppShell` (single window), `GameFrame` (race canvas), screen panels
-- **Controller** - `Game`, `Controller`, `HumanController`, `AiController`, `GameTickTask`
+- **Controller** - `Game`, `Controller`, `HumanController`, `AiController` (PD + sparse Dubins MPCC avoidance), `GameTickTask`
 
 See [docs/REPORT.md](docs/REPORT.md) for the full design document (English translation of the original French project report).
 

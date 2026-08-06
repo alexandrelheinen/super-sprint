@@ -13,7 +13,7 @@ import model.ReferencePath;
  * curvature-modulated cruise reference using a second PD loop. Commands are
  * saturated by {@link DubinsVehicle#step(double, double, double)}.
  */
-public class PdPathFollowController {
+public class PdPathFollowController implements PathFollowController {
 
 	private static final double MIN_CROSS_TRACK_SPEED = 1.0;
 
@@ -57,6 +57,34 @@ public class PdPathFollowController {
 		return curvature;
 	}
 
+	public double getKpHeading() {
+		return kpHeading;
+	}
+
+	public double getKdHeading() {
+		return kdHeading;
+	}
+
+	public double getKpCrossTrack() {
+		return kpCrossTrack;
+	}
+
+	public double getKpSpeed() {
+		return kpSpeed;
+	}
+
+	public double getKdSpeed() {
+		return kdSpeed;
+	}
+
+	public double getCruiseSpeed() {
+		return cruiseSpeed;
+	}
+
+	public double getCurvatureGain() {
+		return curvatureGain;
+	}
+
 	private double crossTrackError;
 	private double headingError;
 	private double curvature;
@@ -65,6 +93,7 @@ public class PdPathFollowController {
 	/**
 	 * @return {@code [speedCommand, turnRateCommand]}
 	 */
+	@Override
 	public double[] track(
 			double x,
 			double y,

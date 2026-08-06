@@ -58,11 +58,63 @@ public class DubinsVehicle {
 		return speed;
 	}
 
+	public double getTurnRate() {
+		return turnRate;
+	}
+
+	public double getMaxSpeed() {
+		return maxSpeed;
+	}
+
+	public double getMinSpeed() {
+		return minSpeed;
+	}
+
+	public double getMaxTurnRate() {
+		return maxTurnRate;
+	}
+
+	public double getMaxAcceleration() {
+		return maxAcceleration;
+	}
+
+	public double getMaxTurnRateDot() {
+		return maxTurnRateDot;
+	}
+
 	public void syncPose(double x, double y, double heading, double speed) {
 		this.x = x;
 		this.y = y;
 		this.heading = heading;
 		this.speed = speed;
+	}
+
+	/**
+	 * Copies pose and filtered actuator state for planner rollouts.
+	 */
+	public void syncFullState(
+			double x,
+			double y,
+			double heading,
+			double speed,
+			double turnRate) {
+		syncPose(x, y, heading, speed);
+		this.turnRate = turnRate;
+	}
+
+	/** Deep copy of kinematics and actuator filter state. */
+	public DubinsVehicle copy() {
+		DubinsVehicle copy = new DubinsVehicle(
+				x,
+				y,
+				heading,
+				maxSpeed,
+				minSpeed,
+				maxTurnRate,
+				maxAcceleration,
+				maxTurnRateDot);
+		copy.syncFullState(x, y, heading, speed, turnRate);
+		return copy;
 	}
 
 	/**
