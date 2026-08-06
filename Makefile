@@ -14,24 +14,26 @@ JUNIT_VERSION := 1.10.2
 JUNIT_JAR := $(BUILD_DIR)/lib/junit-platform-console-standalone-$(JUNIT_VERSION).jar
 JUNIT_URL := https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(JUNIT_VERSION)/junit-platform-console-standalone-$(JUNIT_VERSION).jar
 
-.PHONY: all compile run test smoke-test demo-race record-demo clean help prepare-sprites prepare-kenney-sprites
+.PHONY: all compile run test smoke-test demo-race record-demo package package-appimage clean help prepare-sprites prepare-kenney-sprites
 
 all: compile
 
 help:
 	@echo "Super Sprint Supelec — make targets:"
-	@echo "  make compile     Compile Java sources into $(BUILD_DIR)/"
-	@echo "  make run         Compile (if needed) and launch the game"
-	@echo "  make test        Run the JUnit test suite in tests/"
-	@echo "  make smoke-test  Headless launch test for CI"
-	@echo "  make demo-race   All-AI exhibition race (requires TRACK and CARS)"
-	@echo "                   Example: make demo-race TRACK=3 CARS=0,0,0,0"
-	@echo "                   CARS: 0,1,2,3 | identical | identical:N | \"0 0 0 0\""
-	@echo "                   Optional: LAPS=3"
-	@echo "  make record-demo Record demo race MP4 (needs DISPLAY/ffmpeg)"
-	@echo "                   Requires TRACK and CARS; optional LAPS / DEMO_MP4"
-	@echo "  make clean       Remove build artifacts"
-	@echo "  make help        Show this message"
+	@echo "  make compile           Compile Java sources into $(BUILD_DIR)/"
+	@echo "  make run               Compile (if needed) and launch the game"
+	@echo "  make test              Run the JUnit test suite in tests/"
+	@echo "  make smoke-test        Headless launch test for CI"
+	@echo "  make demo-race         All-AI exhibition race (requires TRACK and CARS)"
+	@echo "                         Example: make demo-race TRACK=3 CARS=0,0,0,0"
+	@echo "                         CARS: 0,1,2,3 | identical | identical:N | \"0 0 0 0\""
+	@echo "                         Optional: LAPS=3"
+	@echo "  make record-demo       Record demo race MP4 (needs DISPLAY/ffmpeg)"
+	@echo "                         Requires TRACK and CARS; optional LAPS / DEMO_MP4"
+	@echo "  make package           Build portable zip (needs JDK 17+ to run)"
+	@echo "  make package-appimage  Build jpackage app-image with bundled JRE"
+	@echo "  make clean             Remove build artifacts"
+	@echo "  make help              Show this message"
 
 $(BUILD_DIR)/sprites/.sprites-stamp: $(SPRITE_SCRIPT) $(CAR_SHEET)
 	@bash $(SPRITE_SCRIPT) $(BUILD_DIR)
@@ -116,5 +118,16 @@ record-demo: compile
 		"$(CARS)" \
 		$(or $(LAPS),3)
 
+# Portable zip that still needs a JDK 17+ on PATH.
+# Optional: VERSION=1.2.3
+package: compile
+	@bash scripts/package-release.sh --version $(or $(VERSION),0.0.0-dev)
+
+# Native app-image with a bundled Java runtime (download, unpack, run).
+# Optional: VERSION=1.2.3
+package-appimage: compile
+	@bash scripts/package-release.sh --app-image --version $(or $(VERSION),0.0.0-dev)
+
 clean:
 	rm -rf $(BUILD_DIR) bin
+	rm -rf artifacts/release

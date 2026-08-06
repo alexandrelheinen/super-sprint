@@ -19,13 +19,15 @@ make --version
 
 ## Quick reference
 
-| Command            | Description                                      |
-|--------------------|--------------------------------------------------|
-| `make compile`     | Compile all sources into `build/`                |
-| `make run`         | Compile (if needed) and launch the game          |
-| `make smoke-test`  | Headless launch test (exits after a few seconds) |
-| `make clean`       | Remove compiled classes and prepared sprites     |
-| `make help`        | List available targets                           |
+| Command                 | Description                                      |
+|-------------------------|--------------------------------------------------|
+| `make compile`          | Compile all sources into `build/`                |
+| `make run`              | Compile (if needed) and launch the game          |
+| `make smoke-test`       | Headless launch test (exits after a few seconds) |
+| `make package`          | Build portable zip (requires JDK 17+ to run)     |
+| `make package-appimage` | Build OS app-image with bundled Java runtime     |
+| `make clean`            | Remove compiled classes and prepared sprites     |
+| `make help`             | List available targets                           |
 
 ## Compile
 
@@ -79,6 +81,27 @@ Pushing a `v*` tag triggers `.github/workflows/release-demos.yml`. The job runs 
 
 Car lists are ascending `maxSpeed` (slowest in front, fastest last): fastest pack `2,1,7,4`, slowest pack `5,6,3,0`.
 
+## Release binaries
+
+Pushing a `v*` tag also triggers `.github/workflows/release-binaries.yml`, which builds downloadable packages and attaches them to the same GitHub Release:
+
+| Asset | What it is |
+|-------|------------|
+| `SuperSprintSupelec-VERSION-linux-x64.tar.gz` | Linux app-image with a bundled JRE — unpack and run `SuperSprintSupelec/bin/SuperSprintSupelec` |
+| `SuperSprintSupelec-VERSION-windows-x64.zip` | Windows app-image with a bundled JRE — unpack and run `SuperSprintSupelec.exe` |
+| `SuperSprintSupelec-VERSION-portable.zip` | Cross-platform jar + assets — still needs JDK/JRE 17+; use `run.sh` / `run.bat` |
+
+Build the same artifacts locally:
+
+```bash
+make package VERSION=2.1.0            # portable zip only
+make package-appimage VERSION=2.1.0   # portable zip + current-OS app-image
+```
+
+Artifacts are written under `artifacts/release/`. Packaged launches resolve sprites and config relative to the application home (directory next to the jar, or `-Dsuper.sprint.home=...`).
+
+**Mobile:** not supported. This is a Java Swing desktop game; phone/tablet builds would need a different UI toolkit (for example LibGDX or a native port).
+
 ## Clean
 
 ```bash
@@ -87,12 +110,15 @@ make clean
 
 Removes `build/` and generated source lists. Does **not** delete the user Hall of Fame file under `~/.local/share/super-sprint-supelec/`.
 
-## User data (Linux)
+## User data
 
-On first launch, the game copies `src/data/hall_of_fame.dat` to:
+On first launch, the game copies `src/data/hall_of_fame.dat` into an OS-specific user data directory:
 
-- `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat`, or
-- `~/.local/share/super-sprint-supelec/hall_of_fame.dat` when `XDG_DATA_HOME` is unset.
+| Platform | Location |
+|----------|----------|
+| Linux | `$XDG_DATA_HOME/super-sprint-supelec/hall_of_fame.dat`, or `~/.local/share/super-sprint-supelec/` when `XDG_DATA_HOME` is unset |
+| Windows | `%APPDATA%\super-sprint-supelec\hall_of_fame.dat` |
+| macOS | `~/Library/Application Support/super-sprint-supelec/hall_of_fame.dat` |
 
 Subsequent runs read and write leaderboard data from that user file only.
 
