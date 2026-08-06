@@ -21,8 +21,6 @@ public class Game {
 	public static final int MS_PER_SECOND = 1000;
 	public static final int ONE_BASED_INDEX_OFFSET = 1;
 
-	private static final String GAME_TITLE_PREFIX = GameConfig.GAME_TITLE + " — ";
-
 	/** Track tile maps loaded from {@code tracks.properties}. */
 	public static final int[][][] TRACK_MAPS = GameConfig.TRACK_MAPS;
 
@@ -79,7 +77,7 @@ public class Game {
 		}
 		gameFrame.attachRaceStatus(cars, laps);
 
-		appShell.showRace(gameFrame, GAME_TITLE_PREFIX + GameCatalog.trackName(trackNumber));
+		appShell.showRace(gameFrame);
 
 		// Build scenery/sprites and present a full frame before the countdown
 		// so 3-2-1-GO never plays over an empty or half-drawn canvas.

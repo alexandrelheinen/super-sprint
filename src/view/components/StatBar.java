@@ -79,7 +79,7 @@ public class StatBar extends JComponent {
 
 	@Override
 	public Dimension getPreferredSize() {
-		// Fixed size — do not call super.getPreferredSize()/getMinimumSize() here.
+		// Fixed size - do not call super.getPreferredSize()/getMinimumSize() here.
 		// Those can recurse through BoxLayout when preferred size is unset.
 		return new Dimension(MIN_WIDTH, contentHeight());
 	}

@@ -71,7 +71,7 @@ On Linux, runtime Hall of Fame data is stored at `$XDG_DATA_HOME/super-sprint-su
 
 ## Architecture
 
-The codebase follows **Model–View–Controller**:
+The codebase follows **Model-View-Controller**:
 
 ```mermaid
 flowchart LR
@@ -87,9 +87,9 @@ flowchart LR
   AppShell --> HallOfFame
 ```
 
-- **Model** — `Car`, `Circuit`, `HallOfFame`, `Result`, `ResourcePaths`
-- **View** — `AppShell` (single window), `GameFrame` (race canvas), screen panels
-- **Controller** — `Game`, `Controller`, `HumanController`, `AiController`, `GameTickTask`
+- **Model** - `Car`, `Circuit`, `HallOfFame`, `Result`, `ResourcePaths`
+- **View** - `AppShell` (single window), `GameFrame` (race canvas), screen panels
+- **Controller** - `Game`, `Controller`, `HumanController`, `AiController`, `GameTickTask`
 
 See [docs/REPORT.md](docs/REPORT.md) for the full design document (English translation of the original French project report).
 

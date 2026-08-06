@@ -7,7 +7,7 @@ import model.ReferencePath;
  * PD path-following controller for a Dubins unicycle.
  *
  * <p>The turn-rate command combines a curvature feedforward term
- * ({@code speed * referenceCurvature}) with proportional–derivative action on
+ * ({@code speed * referenceCurvature}) with proportional-derivative action on
  * heading error and a proportional cross-track correction that steers back
  * towards the reference line. Speed tracking ramps toward a
  * curvature-modulated cruise reference using a second PD loop. Commands are

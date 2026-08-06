@@ -4,7 +4,7 @@ Thank you for improving this project. This document defines the code standards f
 
 ## Project overview
 
-Super Sprint Supélec is a desktop Java Swing game inspired by [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/). The codebase follows a **Model–View–Controller (MVC)** layout:
+Super Sprint Supélec is a desktop Java Swing game inspired by [Super Sprint](http://www.giantbomb.com/super-sprint/3030-2776/). The codebase follows a **Model-View-Controller (MVC)** layout:
 
 | Package     | Role                                      |
 |-------------|-------------------------------------------|
@@ -16,10 +16,10 @@ Assets live under `src/sprites/` and `src/data/`. Documentation lives under `doc
 
 ## General principles
 
-1. **English everywhere in source code** — identifiers, comments, user-facing strings, and commit messages must be written in English. Historical French names are legacy debt; do not introduce new French identifiers.
-2. **Minimal, focused changes** — match the style of surrounding code and avoid unrelated refactors in the same pull request.
-3. **Keep the build green** — run `make compile` and `make smoke-test` locally before opening a pull request. CI must pass.
-4. **Preserve game behaviour** — refactors should not change gameplay unless explicitly requested.
+1. **English everywhere in source code** - identifiers, comments, user-facing strings, and commit messages must be written in English. Historical French names are legacy debt; do not introduce new French identifiers.
+2. **Minimal, focused changes** - match the style of surrounding code and avoid unrelated refactors in the same pull request.
+3. **Keep the build green** - run `make compile` and `make smoke-test` locally before opening a pull request. CI must pass.
+4. **Preserve game behaviour** - refactors should not change gameplay unless explicitly requested.
 
 ## Java standards
 
@@ -72,7 +72,7 @@ Each public class belongs in its own file named after the class. The entry point
 
 - Indent with **tabs** (existing project style) or match the file you edit.
 - Opening brace on the same line for methods and control structures.
-- One statement per line; avoid deeply nested logic — extract private methods when clarity improves.
+- One statement per line; avoid deeply nested logic - extract private methods when clarity improves.
 - Limit line length to ~120 characters where practical.
 
 ### Comments and documentation
@@ -135,9 +135,9 @@ Do not commit OS junk (`Thumbs.db`, `.DS_Store`). Binary assets should stay unch
 
 ## Markdown documentation
 
-- User docs (`README.md` at repo root) — concise quick start, build/run commands, controls.
-- Technical report (`REPORT.md`) — architecture, design choices, references the original French submission when applicable.
-- This file (`CONTRIBUTING.md`) — contributor and code standards.
+- User docs (`README.md` at repo root) - concise quick start, build/run commands, controls.
+- Technical report (`REPORT.md`) - architecture, design choices, references the original French submission when applicable.
+- This file (`CONTRIBUTING.md`) - contributor and code standards.
 
 Use GitHub-flavored Markdown, English prose, and fenced code blocks with language tags for commands.
 

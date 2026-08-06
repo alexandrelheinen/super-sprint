@@ -39,7 +39,7 @@ public class ArcadeButton extends JButton {
 	}
 
 	public void applyScaledSize(java.awt.Component context, int width, int height) {
-		// Always scale from the base button font — never from getFont() — so
+		// Always scale from the base button font - never from getFont() - so
 		// repeated applyScaledSize calls (e.g. menu switches) do not compound.
 		setFont(GameTheme.scaled(GameTheme.FONT_BUTTON, context));
 		setPreferredSize(new Dimension(
