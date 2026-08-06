@@ -8,7 +8,8 @@ import model.WorldUnits;
  *
  * <p>Wall / track-boundary soft constraints are intentionally weighted much
  * higher than opponent soft constraints: leaving the asphalt is more critical
- * than brushing another car.
+ * than brushing another car. Opponent costs are only a mild preference — the
+ * planner should still take risks to bypass traffic when progress pays for it.
  */
 public final class MpccConfig {
 
@@ -23,10 +24,10 @@ public final class MpccConfig {
 			6.0,
 			3.0,
 			8.0,
-			1.2,
+			2.4,
 			0.15,
-			40.0,
-			2.5,
+			12.0,
+			1.8,
 			2.0,
 			2.5,
 			500.0,

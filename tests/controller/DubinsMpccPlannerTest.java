@@ -43,7 +43,7 @@ public class DubinsMpccPlannerTest {
 	}
 
 	@Test
-	public void plannerSteersAwayFromBlockingOpponent() {
+	public void plannerAttemptsBypassAroundBlockingOpponent() {
 		ReferencePath path = TestPaths.straightEast(240, 0.5);
 		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 16.0);
 		DubinsMpccPlanner planner = planner(25.0);
@@ -52,22 +52,39 @@ public class DubinsMpccPlannerTest {
 
 		DubinsMpccPlanner.Plan plan = planner.plan(vehicle, path, List.of(blocker));
 		boolean steered = false;
+		double averageSpeed = 0.0;
 		for (DubinsMpccPlanner.Command command : plan.commands()) {
+			averageSpeed += command.speedCommand();
 			if (Math.abs(command.turnRateCommand()) > 0.15) {
 				steered = true;
-				break;
 			}
 		}
-		assertTrue(steered, "Expected a non-trivial avoidance steer in the MPCC plan");
-
-		// Roll out the plan and ensure the closest approach beats a straight PD hold.
-		double plannedClearance = closestApproach(vehicle, plan, blocker);
-		DubinsMpccPlanner.Plan straight = straightPlan(vehicle.getSpeed(), planner.getConfig().getHorizonStepCount());
-		double straightClearance = closestApproach(vehicle, straight, blocker);
+		averageSpeed /= plan.commands().length;
+		assertTrue(steered, "Expected a lateral bypass attempt in the MPCC plan");
 		assertTrue(
-				plannedClearance > straightClearance + 0.15,
-				"MPCC clearance " + plannedClearance
-						+ " should beat straight drive clearance " + straightClearance);
+				averageSpeed > 8.0,
+				"Bypass should keep rolling; opponent cost is not a hard no-go (avg speed "
+						+ averageSpeed + ")");
+
+		// Opponent proximity may get closer than a timid straight hold — that is
+		// intentional risk for overtaking — but the plan must stay in-lane.
+		DubinsVehicle rollout = vehicle.copy();
+		double maxAbsCrossTrack = 0.0;
+		int hint = ReferencePath.NO_HINT;
+		for (DubinsMpccPlanner.Command command : plan.commands()) {
+			rollout.step(command.speedCommand(), command.turnRateCommand(), DELTA_SECONDS);
+			ReferencePath.Projection projection = path.project(
+					rollout.getX(),
+					rollout.getY(),
+					hint);
+			hint = projection.closestIndex();
+			maxAbsCrossTrack = Math.max(maxAbsCrossTrack, Math.abs(projection.crossTrackError()));
+		}
+		double maxAllowed = MpccConfig.DEFAULT.getLaneHalfWidthMeters()
+				- MpccConfig.DEFAULT.getEgoRadiusMeters();
+		assertTrue(
+				maxAbsCrossTrack < maxAllowed,
+				"Bypass left the lane: |cte|=" + maxAbsCrossTrack + " limit=" + maxAllowed);
 	}
 
 	@Test
@@ -143,6 +160,46 @@ public class DubinsMpccPlannerTest {
 		assertTrue(
 				maxAbsCrossTrack < maxAllowed,
 				"Avoidance left the lane: |cte|=" + maxAbsCrossTrack + " limit=" + maxAllowed);
+	}
+
+	@Test
+	public void keepsMovingToAttemptPassInsteadOfFullStop() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 16.0);
+		DubinsMpccPlanner planner = planner(25.0);
+		DynamicObstacle blocker = new DynamicObstacle(14.0, 0.0, 0.0, 0.0, 1.8);
+		DubinsMpccPlanner.Plan plan = planner.plan(vehicle, path, List.of(blocker));
+
+		double averageSpeed = 0.0;
+		for (DubinsMpccPlanner.Command command : plan.commands()) {
+			averageSpeed += command.speedCommand();
+		}
+		averageSpeed /= plan.commands().length;
+		assertTrue(
+				averageSpeed > 8.0,
+				"Opponent cost must stay soft enough to keep moving for a pass, got avg speed "
+						+ averageSpeed);
+	}
+
+	@Test
+	public void progressPastTrafficBeatsFullStopEvenWithCloserApproach() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 16.0);
+		DubinsMpccPlanner planner = planner(25.0);
+		DynamicObstacle blocker = new DynamicObstacle(12.0, 0.0, 0.0, 0.0, 1.5);
+		int horizon = planner.getConfig().getHorizonStepCount();
+
+		double[] cruiseSpeeds = fill(horizon, 16.0);
+		double[] passTurns = fill(horizon, -0.45);
+		double[] stopSpeeds = fill(horizon, 0.0);
+		double[] stopTurns = fill(horizon, 0.0);
+
+		double passCost = planner.evaluate(vehicle, path, List.of(blocker), cruiseSpeeds, passTurns);
+		double stopCost = planner.evaluate(vehicle, path, List.of(blocker), stopSpeeds, stopTurns);
+		assertTrue(
+				passCost < stopCost,
+				"Risk-tolerant progress should beat full-stop avoidance: pass="
+						+ passCost + " stop=" + stopCost);
 	}
 
 	private static DubinsMpccPlanner planner(double cruiseSpeed) {

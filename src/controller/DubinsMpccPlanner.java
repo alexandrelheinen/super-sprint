@@ -11,10 +11,11 @@ import model.ReferencePath;
  * <p>Formulates a single-shooting NLP over speed and turn-rate commands,
  * warm-started from a PD path follower and refined with coordinate descent.
  * Costs penalize contouring (cross-track) error, lag behind a virtual path
- * progress variable, control roughness, soft track-wall violations, and soft
- * distance violations against predicted opponents. Wall / lane-boundary costs
- * dominate opponent costs so avoidance does not drive cars off the asphalt.
- * Progress along the reference is rewarded.
+ * progress variable, control roughness, soft track-wall violations, and a mild
+ * preference against predicted opponents. Wall / lane-boundary costs dominate
+ * so avoidance does not drive cars off the asphalt. Opponent proximity is
+ * avoid-if-possible, not a hard no-go — progress rewards still encourage risky
+ * overtakes when a bypass is available.
  */
 public final class DubinsMpccPlanner {
 
@@ -288,6 +289,12 @@ public final class DubinsMpccPlanner {
 		return config.getWeightWall() * (violation * violation + 8.0 * outside * outside * outside);
 	}
 
+	/**
+	 * Mild, saturating preference against other cars. Close traffic is
+	 * discouraged, but the cost stays finite under overlap so the planner can
+	 * accept a brush when progress / bypass is worth the risk. Walls remain the
+	 * real no-go via {@link #wallCost(double)}.
+	 */
 	private double obstacleCost(
 			double x,
 			double y,
@@ -304,7 +311,9 @@ public final class DubinsMpccPlanner {
 			double clearance = distance - config.getEgoRadiusMeters() - obstacle.getRadiusMeters();
 			double violation = config.getObstacleSafeMarginMeters() - clearance;
 			if (violation > 0.0) {
-				total += config.getWeightObstacle() * violation * violation;
+				// Saturate so deep overlap does not explode into a hard barrier.
+				double saturated = violation / (1.0 + 0.45 * violation);
+				total += config.getWeightObstacle() * saturated * saturated;
 			}
 		}
 		return total;
