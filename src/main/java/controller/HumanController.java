@@ -55,7 +55,6 @@ public class HumanController extends Controller implements KeyListener {
 		} else {
 			car.clearControls();
 		}
-		super.update();
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import model.Car;
 import model.Circuit;
 import model.GameCatalog;
+import model.PhysicsSimulator;
 import model.ReferencePath;
 import model.TrackGeometry;
 import view.GameFrame;
@@ -23,7 +24,8 @@ public class AiArcadeControlBridgeTest {
 
 	@Test
 	public void stoppedAiCannotChangeHeading() {
-		AiController ai = aiOnTrack(0, 0, 0);
+		TrackFixture fixture = aiOnTrack(0, 0, 0);
+		AiController ai = fixture.ai;
 		Car car = ai.getCar();
 		float heading = car.getAngle();
 		assertEquals(0f, car.getSpeed(), EPSILON);
@@ -37,7 +39,8 @@ public class AiArcadeControlBridgeTest {
 
 	@Test
 	public void speedCommandMapsToAccelerateOrBrake() {
-		AiController ai = aiOnTrack(0, 0, 0);
+		TrackFixture fixture = aiOnTrack(0, 0, 0);
+		AiController ai = fixture.ai;
 		Car car = ai.getCar();
 		car.applyKinematicState(
 				car.getPositionXMeters(),
@@ -60,29 +63,34 @@ public class AiArcadeControlBridgeTest {
 
 	@Test
 	public void updateUsesSharedPhysicsPlantNotKinematicTeleport() {
-		AiController ai = aiOnTrack(0, 0, 0);
+		TrackFixture fixture = aiOnTrack(0, 0, 0);
+		AiController ai = fixture.ai;
 		Car car = ai.getCar();
 		double startX = car.getPositionXMeters();
 		double startY = car.getPositionYMeters();
 		float startHeading = car.getAngle();
 
-		// One AI tick from rest: may accelerate, but must not pivot in place.
+		// Controls then shared physics: may accelerate, but must not pivot in place.
 		ai.update();
+		PhysicsSimulator.simulateStep(new Car[] {car}, fixture.circuit, DELTA_SECONDS);
 		assertEquals(startHeading, car.getAngle(), EPSILON);
 		assertTrue(car.getSpeed() >= 0f);
-		// Pose may move only after speed builds; from a single tick at rest heading stays.
 		if (car.getSpeed() == 0f) {
 			assertEquals(startX, car.getPositionXMeters(), EPSILON);
 			assertEquals(startY, car.getPositionYMeters(), EPSILON);
 		}
 	}
 
-	private static AiController aiOnTrack(int trackIndex, int slotIndex, int modelIndex) {
+	private static TrackFixture aiOnTrack(int trackIndex, int slotIndex, int modelIndex) {
 		int[][] trackMap = GameCatalog.trackMap(trackIndex);
 		GameFrame frame = new GameFrame(new int[] {modelIndex}, trackMap, trackIndex);
 		Circuit circuit = new Circuit(frame, trackMap);
 		circuit.initializeFinishLine(trackIndex);
 		ReferencePath path = TrackGeometry.buildReferencePath(trackMap);
-		return new AiController(modelIndex, slotIndex + 1, frame, circuit, path);
+		AiController ai = new AiController(modelIndex, slotIndex + 1, frame, circuit, path);
+		return new TrackFixture(ai, circuit);
+	}
+
+	private record TrackFixture(AiController ai, Circuit circuit) {
 	}
 }

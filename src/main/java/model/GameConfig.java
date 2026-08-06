@@ -20,6 +20,9 @@ public final class GameConfig {
 	private static final String KEY_HALL_DEFAULT_NAMES = "catalog.hall.default.names";
 	private static final String KEY_PIXELS_PER_METER = "world.pixelsPerMeter";
 	private static final String KEY_METERS_PER_TILE = "world.metersPerTile";
+	private static final String KEY_REFERENCE_MASS_KG = "cars.referenceMassKg";
+	private static final String KEY_REFERENCE_MODEL_INDEX = "cars.referenceModelIndex";
+	private static final String KEY_KG_PER_OPAQUE_PIXEL = "cars.kilogramsPerOpaquePixel";
 
 	private static final String DEFAULT_GAME_TITLE = "Super Sprint Supelec";
 	private static final String DEFAULT_CAR_MODEL_NAMES =
@@ -34,6 +37,14 @@ public final class GameConfig {
 	private static final int DEFAULT_MAX_HUMAN_PLAYERS = 2;
 	private static final double DEFAULT_PIXELS_PER_METER = 10.0;
 	private static final double DEFAULT_METERS_PER_TILE = 21.9;
+	/** Green / purple vintage racers are calibrated to this curb weight. */
+	private static final double DEFAULT_REFERENCE_MASS_KG = 500.0;
+	private static final int DEFAULT_REFERENCE_MODEL_INDEX = 1;
+	private static final int DEFAULT_OPAQUE_PIXELS = 650;
+	/** Fallback opaque-pixel counts when cars.properties omits them. */
+	private static final int[] DEFAULT_CAR_OPAQUE_PIXELS = {
+			765, 627, 725, 748, 724, 786, 748, 608, 820
+	};
 	private static final String DEFAULT_HALL_NAMES =
 			"Paul,Alexandre,Chloe,Nathan,Raphael,Louise,Arthur,Emma,Jules,Amelie";
 	private static final int[] DEFAULT_CAR_NUMBERS = {12, 8, 21, 45, 77, 56, 3, 9, 6};
@@ -91,6 +102,7 @@ public final class GameConfig {
 	public static final int[] CAR_MODEL_NUMBERS = loadCarModelNumbers(CAR_MODEL_NAMES.length);
 	public static final Color[] CAR_MODEL_COLORS = loadCarModelColors(CAR_MODEL_NAMES.length);
 	public static final int[][] CAR_MODEL_SPRITE_DIMENSIONS = loadCarSpriteDimensions(CAR_MODEL_NAMES.length);
+	public static final int[] CAR_MODEL_OPAQUE_PIXELS = loadCarOpaquePixels(CAR_MODEL_NAMES.length);
 	public static final double[][] CAR_MODEL_STATS = loadCarModelStats(CAR_MODEL_NAMES.length);
 	public static final String[] TRACK_NAMES = loadTrackNames();
 	public static final Terrain[] TRACK_TERRAINS = loadTrackTerrains(TRACK_NAMES.length);
@@ -105,6 +117,16 @@ public final class GameConfig {
 			ConfigLoader.getDouble(KEY_PIXELS_PER_METER, DEFAULT_PIXELS_PER_METER);
 	public static final double METERS_PER_TILE =
 			ConfigLoader.getDouble(KEY_METERS_PER_TILE, DEFAULT_METERS_PER_TILE);
+	public static final double REFERENCE_MASS_KG =
+			ConfigLoader.getDouble(KEY_REFERENCE_MASS_KG, DEFAULT_REFERENCE_MASS_KG);
+	public static final int REFERENCE_MODEL_INDEX =
+			ConfigLoader.getInt(KEY_REFERENCE_MODEL_INDEX, DEFAULT_REFERENCE_MODEL_INDEX);
+	/**
+	 * Mass scale for UI / collision: {@code 500 kg / green_car_opaque_pixels}.
+	 * Relative mass matters for impulses; absolute kg is display-oriented.
+	 */
+	public static final double KILOGRAMS_PER_OPAQUE_PIXEL = loadKilogramsPerOpaquePixel();
+	public static final double[] CAR_MODEL_MASS_KG = loadCarModelMassKg(CAR_MODEL_NAMES.length);
 
 	private GameConfig() {
 	}
@@ -147,6 +169,38 @@ public final class GameConfig {
 			dimensions[index][1] = ConfigLoader.getInt("car." + index + ".height", DEFAULT_SPRITE_HEIGHT);
 		}
 		return dimensions;
+	}
+
+	private static int[] loadCarOpaquePixels(int count) {
+		int[] opaquePixels = new int[count];
+		for (int index = 0; index < count; index++) {
+			int fallback = index < DEFAULT_CAR_OPAQUE_PIXELS.length
+					? DEFAULT_CAR_OPAQUE_PIXELS[index]
+					: DEFAULT_OPAQUE_PIXELS;
+			opaquePixels[index] = ConfigLoader.getInt("car." + index + ".opaquePixels", fallback);
+		}
+		return opaquePixels;
+	}
+
+	private static double loadKilogramsPerOpaquePixel() {
+		double configured = ConfigLoader.getDouble(KEY_KG_PER_OPAQUE_PIXEL, Double.NaN);
+		if (!Double.isNaN(configured) && configured > 0.0) {
+			return configured;
+		}
+		int referenceIndex = Math.max(0, Math.min(REFERENCE_MODEL_INDEX, CAR_MODEL_OPAQUE_PIXELS.length - 1));
+		int referencePixels = CAR_MODEL_OPAQUE_PIXELS[referenceIndex];
+		if (referencePixels <= 0) {
+			referencePixels = DEFAULT_OPAQUE_PIXELS;
+		}
+		return REFERENCE_MASS_KG / referencePixels;
+	}
+
+	private static double[] loadCarModelMassKg(int count) {
+		double[] masses = new double[count];
+		for (int index = 0; index < count; index++) {
+			masses[index] = CAR_MODEL_OPAQUE_PIXELS[index] * KILOGRAMS_PER_OPAQUE_PIXEL;
+		}
+		return masses;
 	}
 
 	private static double[][] loadCarModelStats(int count) {

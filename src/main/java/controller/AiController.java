@@ -183,7 +183,7 @@ public class AiController extends Controller {
 				referencePath,
 				deltaSeconds);
 		applyArcadeControls(commands[0], commands[1]);
-		car.applyPhysics(deltaSeconds);
+		// Integration + collisions run in PhysicsSimulator.simulateStep.
 	}
 
 	/**

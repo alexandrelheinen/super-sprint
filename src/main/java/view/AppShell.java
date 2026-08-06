@@ -65,6 +65,9 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static final int MAX_HUMAN_PLAYERS = GameConfig.MAX_HUMAN_PLAYERS;
 	private static final int MAX_CARS = GameConfig.MAX_CARS;
 	private static final int STAT_COUNT = Car.STAT_COUNT;
+	/** Driving stats plus curb weight shown in the race-setup car card. */
+	private static final int MENU_STAT_COUNT = STAT_COUNT + 1;
+	private static final int MENU_STAT_WEIGHT_INDEX = STAT_COUNT;
 	private static final int DEFAULT_SELECTED_INDEX = 0;
 	private static final int DEFAULT_SELECTED_TRACK = 0;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
@@ -126,14 +129,16 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private static final String[] STAT_LABELS = {
 			ConfigLoader.getString("messages.menu.stat.acceleration", "Acceleration (m/s²)"),
 			ConfigLoader.getString("messages.menu.stat.top.speed", "Top Speed (m/s)"),
-			ConfigLoader.getString("messages.menu.stat.handling", "Handling")
+			ConfigLoader.getString("messages.menu.stat.handling", "Handling"),
+			ConfigLoader.getString("messages.menu.stat.weight", "Weight")
 	};
 	private static final double[][] STAT_BAR_LIMITS = {
 			{8.0, 25.0},
 			{20.0, 40.0},
-			{30.0, 60.0}
+			{30.0, 60.0},
+			{400.0, 700.0}
 	};
-	private static final String[] STAT_VALUE_SUFFIXES = {" m/s²", " m/s", ""};
+	private static final String[] STAT_VALUE_SUFFIXES = {" m/s²", " m/s", "", " kg"};
 	private static final String SPRITE_ICON = "icon.png";
 	/** Window / taskbar icon sizes derived from the bundled 512×512 PNG. */
 	private static final int[] WINDOW_ICON_SIZES = {16, 32, 48, 64, 128, 256, 512};
@@ -223,7 +228,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 		carPanels = new GlassCard[MAX_HUMAN_PLAYERS];
 		carMenus = new JComboBox[MAX_HUMAN_PLAYERS];
-		carStatBars = new StatBar[MAX_HUMAN_PLAYERS][STAT_COUNT];
+		carStatBars = new StatBar[MAX_HUMAN_PLAYERS][MENU_STAT_COUNT];
 		carIcons = new JLabel[MAX_HUMAN_PLAYERS];
 		carPreviewPanels = new JPanel[MAX_HUMAN_PLAYERS];
 
@@ -483,7 +488,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		JPanel statsPanel = new JPanel();
 		statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
 		statsPanel.setOpaque(false);
-		for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
+		for (int statIndex = 0; statIndex < MENU_STAT_COUNT; statIndex++) {
 			carStatBars[playerIndex][statIndex] = new StatBar(this);
 			carStatBars[playerIndex][statIndex].configure(
 					STAT_LABELS[statIndex],
@@ -491,7 +496,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 					STAT_BAR_LIMITS[statIndex][1],
 					STAT_VALUE_SUFFIXES[statIndex]);
 			statsPanel.add(carStatBars[playerIndex][statIndex]);
-			if (statIndex < STAT_COUNT - 1) {
+			if (statIndex < MENU_STAT_COUNT - 1) {
 				statsPanel.add(Box.createVerticalStrut(SETUP_STAT_GAP));
 			}
 		}
@@ -783,6 +788,7 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		for (int statIndex = 0; statIndex < STAT_COUNT; statIndex++) {
 			carStatBars[playerIndex][statIndex].setValue(Car.getModelStat(modelIndex, statIndex));
 		}
+		carStatBars[playerIndex][MENU_STAT_WEIGHT_INDEX].setValue(Car.getModelMassKg(modelIndex));
 		selectedCarModels[playerIndex] = modelIndex;
 	}
 
