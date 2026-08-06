@@ -14,7 +14,7 @@ JUNIT_VERSION := 1.10.2
 JUNIT_JAR := $(BUILD_DIR)/lib/junit-platform-console-standalone-$(JUNIT_VERSION).jar
 JUNIT_URL := https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(JUNIT_VERSION)/junit-platform-console-standalone-$(JUNIT_VERSION).jar
 
-.PHONY: all compile run test smoke-test clean help prepare-sprites prepare-kenney-sprites
+.PHONY: all compile run test smoke-test demo-race record-demo clean help prepare-sprites prepare-kenney-sprites
 
 all: compile
 
@@ -24,6 +24,8 @@ help:
 	@echo "  make run         Compile (if needed) and launch the game"
 	@echo "  make test        Run the JUnit test suite in tests/"
 	@echo "  make smoke-test  Headless launch test for CI"
+	@echo "  make demo-race   All-AI Dune Horseshoe exhibition race"
+	@echo "  make record-demo Record demo race MP4 (needs DISPLAY/ffmpeg)"
 	@echo "  make clean       Remove build artifacts"
 	@echo "  make help        Show this message"
 
@@ -80,6 +82,14 @@ smoke-test: compile
 	@command -v xvfb-run >/dev/null 2>&1 || { echo "xvfb-run is required for smoke-test"; exit 1; }
 	@xvfb-run -a timeout $(SMOKE_TIMEOUT_SEC)s java -cp $(BUILD_DIR) $(MAIN_CLASS) || test $$? -eq 124
 	@echo "Smoke test passed (process started successfully)"
+
+# All-AI Dune Horseshoe exhibition (no recording). Optional: LAPS=1 make demo-race
+demo-race: compile
+	java -cp $(BUILD_DIR) view.DemoRaceCapture $(or $(LAPS),3)
+
+# Record the exhibition race to artifacts/demo/ (requires DISPLAY + ffmpeg + xdotool)
+record-demo: compile
+	@bash scripts/record-demo-race.sh $(or $(DEMO_MP4),artifacts/demo/dune-horseshoe-ai-demo.mp4) $(or $(LAPS),3)
 
 clean:
 	rm -rf $(BUILD_DIR) bin

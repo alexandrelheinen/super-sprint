@@ -35,6 +35,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
@@ -177,6 +178,8 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 	private int humanPlayerCount;
 	private String activeCard = CARD_MAIN;
 	private GameFrame activeRaceView;
+	/** Optional callback fired once after an AI exhibition race shows Race Complete. */
+	private Runnable demoOnRaceComplete;
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public AppShell() throws FileNotFoundException {
@@ -696,6 +699,11 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 		showCard(CARD_RACE_COMPLETE);
 		panel.applyScaledMetrics(this);
 		applyScaledMetrics();
+		if (demoOnRaceComplete != null) {
+			Runnable callback = demoOnRaceComplete;
+			demoOnRaceComplete = null;
+			SwingUtilities.invokeLater(callback);
+		}
 	}
 
 	private void clearRaceView() {
@@ -715,6 +723,26 @@ public class AppShell extends JFrame implements ActionListener, ItemListener {
 
 	void openHallOfFameForScreenshot() {
 		showHallOfFame();
+	}
+
+	/**
+	 * Starts an all-AI exhibition race (used by {@link DemoRaceCapture} for release demos).
+	 *
+	 * @param carModels one model index per car slot (length {@link #MAX_CARS})
+	 * @param trackIndex track catalog index
+	 * @param lapCount laps to finish
+	 * @param onRaceCompleteShown invoked on the EDT after the Race Complete screen is shown
+	 */
+	void startAiExhibitionRace(
+			int[] carModels,
+			int trackIndex,
+			int lapCount,
+			Runnable onRaceCompleteShown) {
+		if (carModels == null || carModels.length != MAX_CARS) {
+			throw new IllegalArgumentException("Expected " + MAX_CARS + " car models");
+		}
+		demoOnRaceComplete = onRaceCompleteShown;
+		new Game(carModels, trackIndex, 0, lapCount, hallOfFame, this);
 	}
 
 	@Override
