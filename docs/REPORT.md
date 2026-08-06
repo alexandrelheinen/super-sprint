@@ -139,15 +139,7 @@ Leaving the corridor reverses part of the speed and nudges the car back toward t
 
 ### 4.3 AI controller (`AiController`)
 
-AI opponents follow a geometric **reference path** (`TrackGeometry` / `ReferencePath`) with a **PD path-following controller** (`PdPathFollowController`) on a Dubins vehicle model:
-
-- Cross-track and heading errors produce steering commands.
-- Speed, acceleration, and turn-rate limits come from the car model stats. `DubinsVehicle` still hard-saturates them when integrating, and the MPCC cost treats the same limits as soft saturating penalties so the planner prefers feasible unsaturated commands. PD and MPCC share the same cruise target (`maxSpeed`, curvature-derated) so traffic-triggered MPCC cannot permanently outrun a clear-road PD loner.
-- When another car is nearby or the car drifts toward a wall, a sparse short-horizon **MPCC** (`DubinsMpccPlanner` / `HybridMpccPathFollowController`) replans speed and turn-rate commands with soft distance penalties so AI cars can locally avoid collisions without a CasADi dependency.
-- Wall / lane-boundary soft costs are weighted much higher than opponent soft costs: leaving the asphalt is treated as more critical than brushing another car. Opponent proximity is only a mild, saturating preference so the AI can still take risks to overtake. Progress and speed are rewarded strongly; racing-line contouring is weak inside a free band so cars leave the line to pass. Open-loop MPCC plans are held to completion to reduce steering chatter.
-- The resulting pose is applied back to the game `Car` each tick.
-
-This keeps arcade AI opponents on the racing line while still reacting to traffic.
+AI opponents plan with a geometric **reference path** (`TrackGeometry` / `ReferencePath`) using PD and sparse short-horizon **MPCC**, then map the resulting speed / turn desires onto the **same arcade controls** humans use (accelerate, brake, steer left/right). The shared `Car.applyPhysics` plant enforces identical saturations and blocks steering while stopped.
 
 All-AI exhibition demos (`view.DemoRaceCapture` / `make demo-race`) take a track id and car ids (`TRACK=3 CARS=0,0,0,0`, or `identical` / `identical:N`; spaces also work if quoted).
 

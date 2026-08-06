@@ -131,6 +131,7 @@ public class DubinsVehicle {
 
 	/**
 	 * Integrate one step with command saturation and filtering.
+	 * Heading only changes while moving, matching {@link Car#applyPhysics(double)}.
 	 */
 	public void step(double speedCommand, double turnRateCommand, double deltaSeconds) {
 		double maxDeltaSpeed = maxAcceleration * deltaSeconds;
@@ -141,7 +142,9 @@ public class DubinsVehicle {
 
 		x += speed * Math.cos(heading) * deltaSeconds;
 		y += speed * Math.sin(heading) * deltaSeconds;
-		heading = wrapAngle(heading + turnRate * deltaSeconds);
+		if (speed != 0.0) {
+			heading = wrapAngle(heading + turnRate * deltaSeconds);
+		}
 	}
 
 	public static double wrapAngle(double angle) {

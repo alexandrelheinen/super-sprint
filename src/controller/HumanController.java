@@ -6,6 +6,10 @@ import java.awt.event.KeyListener;
 import model.Circuit;
 import view.GameFrame;
 
+/**
+ * Human driver: held arcade keys map to the same {@link model.Car} controls the
+ * AI uses (accelerate / brake / steer left / steer right).
+ */
 public class HumanController extends Controller implements KeyListener {
 
 	private static final int PLAYER_ONE = 1;
@@ -29,30 +33,7 @@ public class HumanController extends Controller implements KeyListener {
 		if (!frame.isRacingInputEnabled()) {
 			return;
 		}
-		int keyCode = event.getKeyCode();
-		if (playerNumber == PLAYER_ONE) {
-			switch (keyCode) {
-				case KeyEvent.VK_DOWN:
-				case KeyEvent.VK_UP:
-				case KeyEvent.VK_RIGHT:
-				case KeyEvent.VK_LEFT:
-					car.applySteeringInput(keyCode);
-					break;
-				default:
-					break;
-			}
-		} else if (playerNumber == PLAYER_TWO) {
-			switch (keyCode) {
-				case KeyEvent.VK_S:
-				case KeyEvent.VK_W:
-				case KeyEvent.VK_D:
-				case KeyEvent.VK_A:
-					car.applySteeringInput(keyCode);
-					break;
-				default:
-					break;
-			}
-		}
+		applyKey(event.getKeyCode(), true);
 	}
 
 	@Override
@@ -60,30 +41,49 @@ public class HumanController extends Controller implements KeyListener {
 		if (!frame.isRacingInputEnabled()) {
 			return;
 		}
-		int keyCode = event.getKeyCode();
+		applyKey(event.getKeyCode(), false);
+	}
+
+	@Override
+	public void keyTyped(KeyEvent event) {
+		// Not used.
+	}
+
+	private void applyKey(int keyCode, boolean pressed) {
 		if (playerNumber == PLAYER_ONE) {
 			switch (keyCode) {
-				case KeyEvent.VK_DOWN:
 				case KeyEvent.VK_UP:
-					car.releaseAcceleration();
+					car.setAccelerating(pressed);
+					break;
+				case KeyEvent.VK_DOWN:
+					car.setBraking(pressed);
+					break;
+				case KeyEvent.VK_LEFT:
+					car.setSteeringLeft(pressed);
+					break;
+				case KeyEvent.VK_RIGHT:
+					car.setSteeringRight(pressed);
 					break;
 				default:
 					break;
 			}
 		} else if (playerNumber == PLAYER_TWO) {
 			switch (keyCode) {
-				case KeyEvent.VK_S:
 				case KeyEvent.VK_W:
-					car.releaseAcceleration();
+					car.setAccelerating(pressed);
+					break;
+				case KeyEvent.VK_S:
+					car.setBraking(pressed);
+					break;
+				case KeyEvent.VK_A:
+					car.setSteeringLeft(pressed);
+					break;
+				case KeyEvent.VK_D:
+					car.setSteeringRight(pressed);
 					break;
 				default:
 					break;
 			}
 		}
-	}
-
-	@Override
-	public void keyTyped(KeyEvent event) {
-		// Not used.
 	}
 }
