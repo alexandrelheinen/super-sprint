@@ -2,13 +2,21 @@ package controller;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import model.Circuit;
 import view.GameFrame;
 
 /**
- * Human driver: held arcade keys map to the same {@link model.Car} controls the
- * AI uses (accelerate / brake / steer left / steer right).
+ * Human driver: tracks physically held keys and maps them onto the same
+ * {@link model.Car} arcade controls the AI uses.
+ *
+ * <p>Keys are recorded on every press/release even during the countdown. Car
+ * controls are refreshed every tick once racing input is enabled, so holding a
+ * key through "GO" applies immediately instead of waiting for OS key-repeat.
+ * {@link #keyTyped} is intentionally unused — arrow keys do not produce typed
+ * events.
  */
 public class HumanController extends Controller implements KeyListener {
 
@@ -16,6 +24,7 @@ public class HumanController extends Controller implements KeyListener {
 	private static final int PLAYER_TWO = 2;
 
 	private final int playerNumber;
+	private final Set<Integer> pressedKeys = ConcurrentHashMap.newKeySet();
 
 	public HumanController(
 			int modelIndex,
@@ -29,61 +38,62 @@ public class HumanController extends Controller implements KeyListener {
 	}
 
 	@Override
-	public void keyPressed(KeyEvent event) {
-		if (!frame.isRacingInputEnabled()) {
-			return;
+	public void update() {
+		if (frame.isRacingInputEnabled()) {
+			syncCarFromPressedKeys();
+		} else {
+			car.clearControls();
 		}
-		applyKey(event.getKeyCode(), true);
+		super.update();
+	}
+
+	@Override
+	public void keyPressed(KeyEvent event) {
+		pressedKeys.add(event.getKeyCode());
+		if (frame.isRacingInputEnabled()) {
+			syncCarFromPressedKeys();
+		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent event) {
-		if (!frame.isRacingInputEnabled()) {
-			return;
+		pressedKeys.remove(event.getKeyCode());
+		if (frame.isRacingInputEnabled()) {
+			syncCarFromPressedKeys();
 		}
-		applyKey(event.getKeyCode(), false);
 	}
 
 	@Override
 	public void keyTyped(KeyEvent event) {
-		// Not used.
+		// Arrow keys and many game keys never produce typed events.
 	}
 
-	private void applyKey(int keyCode, boolean pressed) {
+	/**
+	 * Applies the currently held keys to the car. Package-visible for tests.
+	 */
+	void syncCarFromPressedKeys() {
 		if (playerNumber == PLAYER_ONE) {
-			switch (keyCode) {
-				case KeyEvent.VK_UP:
-					car.setAccelerating(pressed);
-					break;
-				case KeyEvent.VK_DOWN:
-					car.setBraking(pressed);
-					break;
-				case KeyEvent.VK_LEFT:
-					car.setSteeringLeft(pressed);
-					break;
-				case KeyEvent.VK_RIGHT:
-					car.setSteeringRight(pressed);
-					break;
-				default:
-					break;
-			}
-		} else if (playerNumber == PLAYER_TWO) {
-			switch (keyCode) {
-				case KeyEvent.VK_W:
-					car.setAccelerating(pressed);
-					break;
-				case KeyEvent.VK_S:
-					car.setBraking(pressed);
-					break;
-				case KeyEvent.VK_A:
-					car.setSteeringLeft(pressed);
-					break;
-				case KeyEvent.VK_D:
-					car.setSteeringRight(pressed);
-					break;
-				default:
-					break;
-			}
+			car.setAccelerating(pressedKeys.contains(KeyEvent.VK_UP));
+			car.setBraking(pressedKeys.contains(KeyEvent.VK_DOWN));
+			car.setSteeringLeft(pressedKeys.contains(KeyEvent.VK_LEFT));
+			car.setSteeringRight(pressedKeys.contains(KeyEvent.VK_RIGHT));
+			return;
 		}
+		if (playerNumber == PLAYER_TWO) {
+			car.setAccelerating(pressedKeys.contains(KeyEvent.VK_W));
+			car.setBraking(pressedKeys.contains(KeyEvent.VK_S));
+			car.setSteeringLeft(pressedKeys.contains(KeyEvent.VK_A));
+			car.setSteeringRight(pressedKeys.contains(KeyEvent.VK_D));
+		}
+	}
+
+	/** Test helper: simulate a physical key going down without racing enabled. */
+	void pressKeyForTest(int keyCode) {
+		pressedKeys.add(keyCode);
+	}
+
+	/** Test helper: simulate a physical key going up. */
+	void releaseKeyForTest(int keyCode) {
+		pressedKeys.remove(keyCode);
 	}
 }

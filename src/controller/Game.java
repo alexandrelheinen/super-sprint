@@ -143,6 +143,7 @@ public class Game {
 		countdown = null;
 		gameFrame.clearCountdownPresentation();
 		gameFrame.setRacingInputEnabled(true);
+		gameFrame.requestFocusInWindow();
 	}
 
 	/**
