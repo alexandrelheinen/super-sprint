@@ -144,7 +144,7 @@ AI opponents follow a geometric **reference path** (`TrackGeometry` / `Reference
 - Cross-track and heading errors produce steering commands.
 - Speed commands ramp toward a cruise speed with curvature feedforward on arcs.
 - When another car is nearby or the car drifts toward a wall, a sparse short-horizon **MPCC** (`DubinsMpccPlanner` / `HybridMpccPathFollowController`) replans speed and turn-rate commands with soft distance penalties so AI cars can locally avoid collisions without a CasADi dependency.
-- Wall / lane-boundary soft costs are weighted much higher than opponent soft costs: leaving the asphalt is treated as more critical than brushing another car.
+- Wall / lane-boundary soft costs are weighted much higher than opponent soft costs: leaving the asphalt is treated as more critical than brushing another car. Opponent proximity is only a mild, saturating preference so the AI can still take risks to overtake.
 - The resulting pose is applied back to the game `Car` each tick.
 
 This keeps arcade AI opponents on the racing line while still reacting to traffic.
