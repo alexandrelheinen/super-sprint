@@ -68,6 +68,11 @@ public class AiController extends Controller {
 		hybridController = (HybridMpccPathFollowController) trackingLoop.getController();
 	}
 
+	@Override
+	protected String driverLabelForSeat(int seatNumber) {
+		return "C";
+	}
+
 	/**
 	 * Builds the vehicle model and PD controller used by AI drivers. Exposed
 	 * so tests can simulate exactly the tracking setup used in-game before MPCC.
@@ -186,18 +191,18 @@ public class AiController extends Controller {
 	public void applyArcadeControls(double speedCommand, double turnRateCommand) {
 		double speedError = speedCommand - car.getSpeed();
 		if (speedError > SPEED_COMMAND_DEADBAND_MS) {
-			car.setAccelerating(true);
+			car.startAccelerating();
 		} else if (speedError < -BRAKE_COMMAND_DEADBAND_MS) {
-			car.setBraking(true);
+			car.startBraking();
 		} else {
-			car.setAccelerating(false);
-			car.setBraking(false);
+			car.stopAccelerating();
+			car.stopBraking();
 		}
 
 		double maxTurnRate = Math.max(car.getMaxTurnRate(), 1e-6);
 		double turnFraction = clamp(turnRateCommand / maxTurnRate, -1.0, 1.0);
-		car.setSteeringLeft(false);
-		car.setSteeringRight(false);
+		car.stopSteeringLeft();
+		car.stopSteeringRight();
 		if (Math.abs(turnFraction) < TURN_FRACTION_DEADBAND) {
 			steerDutyAccumulator = 0.0;
 			return;
@@ -206,9 +211,9 @@ public class AiController extends Controller {
 		if (steerDutyAccumulator >= 1.0) {
 			steerDutyAccumulator -= 1.0;
 			if (turnFraction > 0.0) {
-				car.setSteeringRight(true);
+				car.startSteeringRight();
 			} else {
-				car.setSteeringLeft(true);
+				car.startSteeringLeft();
 			}
 		}
 	}

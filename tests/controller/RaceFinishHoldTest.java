@@ -32,18 +32,18 @@ public class RaceFinishHoldTest {
 		GameFrame frame = new GameFrame(new int[] {0}, trackMap, trackIndex);
 		Circuit circuit = new Circuit(frame, trackMap);
 		circuit.initializeFinishLine(trackIndex);
-		Car car = new Car(0, 1, "1", frame, 1, circuit);
+		Car car = new Car(0, 1, "1", frame, circuit);
 
 		double xMeters = car.getPositionXMeters();
 		double yMeters = car.getPositionYMeters();
 		car.applyKinematicState(xMeters, yMeters, car.getAngle(), 25f);
-		car.releaseAcceleration();
+		car.clearControls();
 
 		int maxSteps = 20_000;
 		int steps = 0;
 		while (car.getSpeed() != 0f && steps < maxSteps) {
 			circuit.shouldRenderAfterVisualTick();
-			car.releaseAcceleration();
+			car.clearControls();
 			car.applyPhysics(DELTA_SECONDS);
 			steps++;
 		}

@@ -12,29 +12,40 @@ import view.GameFrame;
  * Human driver: tracks physically held keys and maps them onto the same
  * {@link model.Car} arcade controls the AI uses.
  *
- * <p>Keys are recorded on every press/release even during the countdown. Car
- * controls are refreshed every tick once racing input is enabled, so holding a
- * key through "GO" applies immediately instead of waiting for OS key-repeat.
- * {@link #keyTyped} is intentionally unused — arrow keys do not produce typed
- * events.
+ * <p>Which keys belong to this seat is fixed at construction via
+ * {@link ArcadeKeyBindings}. Press/release are always recorded (even during
+ * countdown); car controls sync every racing tick so a key held through GO
+ * applies immediately instead of waiting for OS key-repeat.
  */
 public class HumanController extends Controller implements KeyListener {
 
-	private static final int PLAYER_ONE = 1;
-	private static final int PLAYER_TWO = 2;
-
-	private final int playerNumber;
+	private final ArcadeKeyBindings keyBindings;
 	private final Set<Integer> pressedKeys = ConcurrentHashMap.newKeySet();
 
 	public HumanController(
 			int modelIndex,
 			int startPosition,
-			int playerNumber,
+			int humanSeatNumber,
+			GameFrame frame,
+			Circuit circuit) {
+		this(modelIndex, startPosition, ArcadeKeyBindings.forHumanSeat(humanSeatNumber), frame, circuit);
+	}
+
+	/** Construction with an explicit key map (tests / custom seats). */
+	HumanController(
+			int modelIndex,
+			int startPosition,
+			ArcadeKeyBindings keyBindings,
 			GameFrame frame,
 			Circuit circuit) {
 		super(modelIndex, startPosition, frame, circuit);
-		this.playerNumber = playerNumber;
+		this.keyBindings = keyBindings;
 		frame.addKeyListener(this);
+	}
+
+	@Override
+	protected String driverLabelForSeat(int seatNumber) {
+		return Integer.toString(seatNumber);
 	}
 
 	@Override
@@ -69,25 +80,29 @@ public class HumanController extends Controller implements KeyListener {
 	}
 
 	/**
-	 * Applies the currently held keys to the car. Package-visible for tests.
+	 * Applies the currently held keys to the car. Same path for every human
+	 * seat — only {@link #keyBindings} differs.
 	 */
 	void syncCarFromPressedKeys() {
-		if (playerNumber == PLAYER_ONE) {
-			car.setAccelerating(pressedKeys.contains(KeyEvent.VK_UP));
-			car.setBraking(pressedKeys.contains(KeyEvent.VK_DOWN));
-			car.setSteeringLeft(pressedKeys.contains(KeyEvent.VK_LEFT));
-			car.setSteeringRight(pressedKeys.contains(KeyEvent.VK_RIGHT));
-			return;
-		}
-		if (playerNumber == PLAYER_TWO) {
-			car.setAccelerating(pressedKeys.contains(KeyEvent.VK_W));
-			car.setBraking(pressedKeys.contains(KeyEvent.VK_S));
-			car.setSteeringLeft(pressedKeys.contains(KeyEvent.VK_A));
-			car.setSteeringRight(pressedKeys.contains(KeyEvent.VK_D));
+		applyHeldKey(keyBindings.accelerateKey(), car::startAccelerating, car::stopAccelerating);
+		applyHeldKey(keyBindings.brakeKey(), car::startBraking, car::stopBraking);
+		applyHeldKey(keyBindings.steerLeftKey(), car::startSteeringLeft, car::stopSteeringLeft);
+		applyHeldKey(keyBindings.steerRightKey(), car::startSteeringRight, car::stopSteeringRight);
+	}
+
+	private void applyHeldKey(int keyCode, Runnable whenPressed, Runnable whenReleased) {
+		if (pressedKeys.contains(keyCode)) {
+			whenPressed.run();
+		} else {
+			whenReleased.run();
 		}
 	}
 
-	/** Test helper: simulate a physical key going down without racing enabled. */
+	ArcadeKeyBindings keyBindings() {
+		return keyBindings;
+	}
+
+	/** Test helper: simulate a physical key going down. */
 	void pressKeyForTest(int keyCode) {
 		pressedKeys.add(keyCode);
 	}

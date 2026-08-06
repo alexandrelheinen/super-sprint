@@ -5,9 +5,12 @@ import model.Circuit;
 import model.GameCatalog;
 import view.GameFrame;
 
+/**
+ * Base race driver. Subclasses supply the HUD label via
+ * {@link #driverLabelForSeat(int)} (Replace Conditional with Polymorphism).
+ */
 public abstract class Controller {
 
-	private static final String AI_PLAYER_LABEL = "C";
 	private static final String LOG_CAR_CREATED = "Car created: ";
 	private static final String LOG_START_POSITION = "; start position ";
 	private static final String LOG_SEPARATOR = " ------------- ";
@@ -17,12 +20,10 @@ public abstract class Controller {
 	protected Car car;
 	protected GameFrame frame;
 
-	public Controller(int modelIndex, int startPosition, GameFrame frame, Circuit circuit) {
+	protected Controller(int modelIndex, int startPosition, GameFrame frame, Circuit circuit) {
 		playerCount++;
-		String name = (this instanceof HumanController)
-				? Integer.toString(playerCount)
-				: AI_PLAYER_LABEL;
-		car = new Car(modelIndex, startPosition, name, frame, playerCount, circuit);
+		int seatNumber = playerCount;
+		car = new Car(modelIndex, startPosition, driverLabelForSeat(seatNumber), frame, circuit);
 		System.out.println(
 				LOG_CAR_CREATED
 						+ GameCatalog.carModelName(modelIndex)
@@ -32,6 +33,9 @@ public abstract class Controller {
 		System.out.println(LOG_SEPARATOR);
 		this.frame = frame;
 	}
+
+	/** HUD / logging label for this seat (human seat index or AI marker). */
+	protected abstract String driverLabelForSeat(int seatNumber);
 
 	public Car getCar() {
 		return car;
@@ -43,5 +47,10 @@ public abstract class Controller {
 
 	public void update() {
 		car.applyPhysics(Game.TICK_INTERVAL_MS / MS_PER_SECOND);
+	}
+
+	/** Drops throttle, brake and steering so the shared plant can coast cleanly. */
+	public void clearDrivingControls() {
+		car.clearControls();
 	}
 }

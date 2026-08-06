@@ -31,7 +31,7 @@ public class FinishLineLapTest {
 		GameFrame frame = new GameFrame(new int[] {0}, trackMap, trackIndex);
 		circuit = new Circuit(frame, trackMap);
 		circuit.initializeFinishLine(trackIndex);
-		car = new Car(0, 1, "1", frame, 1, circuit);
+		car = new Car(0, 1, "1", frame, circuit);
 		laneCenterXMeters = WorldUnits.pxToM(
 				(Circuit.INNER_RADIUS + Circuit.OUTER_RADIUS) / 2.0 - Circuit.CAR_ANCHOR_HALF_WIDTH_PX);
 		lineYMeters = WorldUnits.pxToM(GameFrame.TILE_SIZE - Circuit.CAR_ANCHOR_HALF_HEIGHT_PX);

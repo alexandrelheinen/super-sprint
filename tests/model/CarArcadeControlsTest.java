@@ -1,6 +1,7 @@
 package model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ public class CarArcadeControlsTest {
 	public void cannotSteerWhileStopped() {
 		Car car = carAtRest();
 		float heading = car.getAngle();
-		car.setSteeringLeft(true);
+		car.startSteeringLeft();
 		car.applyPhysics(DELTA_SECONDS);
 		assertEquals(heading, car.getAngle(), EPSILON);
 		assertEquals(0f, car.getSpeed(), EPSILON);
@@ -32,7 +33,7 @@ public class CarArcadeControlsTest {
 				car.getAngle(),
 				20f);
 		float heading = car.getAngle();
-		car.setSteeringRight(true);
+		car.startSteeringRight();
 		car.applyPhysics(DELTA_SECONDS);
 		assertTrue(car.getAngle() > heading, "Expected right turn to increase heading");
 	}
@@ -41,7 +42,7 @@ public class CarArcadeControlsTest {
 	public void accelerateAndBrakeUseCarAccelerationStat() {
 		Car car = carAtRest();
 		double accel = car.getStat(Car.STAT_ACCELERATION_INDEX);
-		car.setAccelerating(true);
+		car.startAccelerating();
 		car.applyPhysics(DELTA_SECONDS);
 		assertEquals(accel * DELTA_SECONDS, car.getSpeed(), 1e-6);
 
@@ -51,10 +52,34 @@ public class CarArcadeControlsTest {
 				car.getPositionYMeters(),
 				car.getAngle(),
 				20f);
-		car.setBraking(true);
+		car.startBraking();
 		float before = car.getSpeed();
 		car.applyPhysics(DELTA_SECONDS);
 		assertTrue(car.getSpeed() < before, "Brake should reduce forward speed");
+	}
+
+	@Test
+	public void clearControlsDropsSteeringSoFinishCoastDoesNotSpin() {
+		Car car = carAtRest();
+		car.applyKinematicState(
+				car.getPositionXMeters(),
+				car.getPositionYMeters(),
+				car.getAngle(),
+				20f);
+		car.startSteeringLeft();
+		car.startAccelerating();
+		assertTrue(car.isSteeringLeft());
+		assertTrue(car.isAccelerating());
+
+		car.clearControls();
+		assertFalse(car.isSteeringLeft());
+		assertFalse(car.isAccelerating());
+		assertFalse(car.isBraking());
+		assertFalse(car.isSteeringRight());
+
+		float heading = car.getAngle();
+		car.applyPhysics(DELTA_SECONDS);
+		assertEquals(heading, car.getAngle(), EPSILON, "Cleared steer must not yaw while coasting");
 	}
 
 	@Test
@@ -72,6 +97,6 @@ public class CarArcadeControlsTest {
 		GameFrame frame = new GameFrame(new int[] {0}, trackMap, trackIndex);
 		Circuit circuit = new Circuit(frame, trackMap);
 		circuit.initializeFinishLine(trackIndex);
-		return new Car(0, 1, "1", frame, 1, circuit);
+		return new Car(0, 1, "1", frame, circuit);
 	}
 }

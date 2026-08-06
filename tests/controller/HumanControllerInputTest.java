@@ -42,6 +42,22 @@ public class HumanControllerInputTest {
 	}
 
 	@Test
+	public void wasdSeatUsesStoredBindingsWithoutPlayerNumberBranch() {
+		int trackIndex = 0;
+		int[][] trackMap = GameCatalog.trackMap(trackIndex);
+		GameFrame frame = new GameFrame(new int[] {0}, trackMap, trackIndex);
+		Circuit circuit = new Circuit(frame, trackMap);
+		circuit.initializeFinishLine(trackIndex);
+		HumanController human = new HumanController(0, 1, ArcadeKeyBindings.wasd(), frame, circuit);
+		frame.setRacingInputEnabled(true);
+		human.pressKeyForTest(KeyEvent.VK_W);
+		human.pressKeyForTest(KeyEvent.VK_A);
+		human.update();
+		assertTrue(human.getCar().isAccelerating());
+		assertTrue(human.getCar().isSteeringLeft());
+	}
+
+	@Test
 	public void keyReleaseClearsControlEvenIfTrackedDuringCountdown() {
 		int trackIndex = 0;
 		int[][] trackMap = GameCatalog.trackMap(trackIndex);
