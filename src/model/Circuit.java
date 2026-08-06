@@ -22,8 +22,8 @@ public class Circuit extends Observable {
 
 	public static final int INNER_RADIUS = 26;
 	public static final int OUTER_RADIUS = 191;
-	private static final double FINISH_LINE_RESET_DISTANCE = 3;
-	private static final double FINISH_LINE_CROSSING_DISTANCE = 3;
+	/** Extra width beyond the painted finish segment so wall-hugging cars still score. */
+	private static final double FINISH_LINE_LATERAL_MARGIN_PX = 8;
 	private static final double OFF_TRACK_SPEED_FACTOR = -0.2;
 	private static final double TILE_CENTER_DIVISOR = 2.0;
 	private static final int ONE_BASED_INDEX_OFFSET = 1;
@@ -114,18 +114,40 @@ public class Circuit extends Observable {
 				GameFrame.TILE_SIZE);
 	}
 
+	/**
+	 * Updates lap progress when {@code car} crosses the finish segment.
+	 * Counts only a real side-to-side transition through the start lane:
+	 * start/grid side → far side is {@code +1}, the reverse is {@code -1}.
+	 * Proximity alone (weaving near the line after a collision) does not score.
+	 */
 	public int crossFinishLine(Car car) {
-		int crossingDirection = 0;
-		if (car.hasCrossedFinishLine()) {
-			if (finishLine.ptLineDist(car.getX(), car.getY()) > FINISH_LINE_RESET_DISTANCE) {
-				car.toggleFinishLineFlag();
-			}
-		} else if (finishLine.ptLineDist(car.getX(), car.getY()) < FINISH_LINE_CROSSING_DISTANCE
-				&& finishLine.getP1().distance(car.getX(), car.getY()) < GameFrame.TILE_SIZE) {
-			crossingDirection = (int) -Math.signum(car.getSpeed() * Math.sin(car.getAngle()));
-			car.toggleFinishLineFlag();
+		if (finishLine == null) {
+			return 0;
 		}
-		return crossingDirection;
+
+		double centerX = WorldUnits.mToPx(car.getPositionXMeters()) + CAR_ANCHOR_HALF_WIDTH_PX;
+		double centerY = WorldUnits.mToPx(car.getPositionYMeters()) + CAR_ANCHOR_HALF_HEIGHT_PX;
+		double lineY = finishLine.getY1();
+		double laneLeft = Math.min(finishLine.getX1(), finishLine.getX2()) - FINISH_LINE_LATERAL_MARGIN_PX;
+		double laneRight = Math.max(finishLine.getX1(), finishLine.getX2()) + FINISH_LINE_LATERAL_MARGIN_PX;
+		boolean inLane = centerX >= laneLeft && centerX <= laneRight;
+
+		int side = 0;
+		if (centerY > lineY) {
+			side = 1;
+		} else if (centerY < lineY) {
+			side = -1;
+		}
+
+		int previousSide = car.getFinishLineSide();
+		int lapDelta = 0;
+		if (inLane && previousSide != 0 && side != 0 && previousSide != side) {
+			lapDelta = previousSide > 0 ? 1 : -1;
+		}
+		if (side != 0) {
+			car.setFinishLineSide(side);
+		}
+		return lapDelta;
 	}
 
 	public void tick() {

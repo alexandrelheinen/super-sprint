@@ -53,7 +53,12 @@ public class Car extends Observable {
 	private final int modelIndex;
 	private final String name;
 	private int lapCount;
-	private boolean finishLineCrossed;
+	/**
+	 * Which side of the finish line the car last occupied: {@code +1} start/grid
+	 * side, {@code -1} far side. Used so lap counting requires a real crossing
+	 * instead of mere proximity to the line.
+	 */
+	private int finishLineSide;
 
 	public Car(
 			int modelIndex,
@@ -86,7 +91,8 @@ public class Car extends Observable {
 		motionState = MOTION_STATE_IDLE;
 		spriteIndex = ranking - ONE_BASED_INDEX_OFFSET;
 		lapCount = 0;
-		finishLineCrossed = false;
+		// Every grid slot sits on the start side of the finish line.
+		finishLineSide = 1;
 	}
 
 	public int getX() {
@@ -134,8 +140,12 @@ public class Car extends Observable {
 		return name;
 	}
 
-	public boolean hasCrossedFinishLine() {
-		return finishLineCrossed;
+	public int getFinishLineSide() {
+		return finishLineSide;
+	}
+
+	public void setFinishLineSide(int finishLineSide) {
+		this.finishLineSide = finishLineSide;
 	}
 
 	public int getLapCount() {
@@ -176,10 +186,6 @@ public class Car extends Observable {
 	public void translateByMeters(double deltaXMeters, double deltaYMeters) {
 		positionMeters[0] += deltaXMeters;
 		positionMeters[1] += deltaYMeters;
-	}
-
-	public void toggleFinishLineFlag() {
-		finishLineCrossed = !finishLineCrossed;
 	}
 
 	public void applySteeringInput(int keyCode) {
