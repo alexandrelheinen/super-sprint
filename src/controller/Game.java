@@ -173,8 +173,8 @@ public class Game {
 
 	/**
 	 * Freezes the official race clock, ignores further driving input, and clears
-	 * throttle/brake so every car coasts. Results appear after the winner stops
-	 * and {@link #POST_FINISH_HOLD_MS} elapses.
+	 * every arcade control so cars coast without spinning from leftover steer.
+	 * Results appear after the winner stops and {@link #POST_FINISH_HOLD_MS} elapses.
 	 */
 	private void beginFinishSequence(int detectedWinner) {
 		finishing = true;
@@ -185,7 +185,7 @@ public class Game {
 		postStopHoldMs = 0;
 		gameFrame.setRacingInputEnabled(false);
 		for (Controller controller : controllers) {
-			controller.getCar().releaseAcceleration();
+			controller.clearDrivingControls();
 		}
 	}
 
@@ -203,7 +203,7 @@ public class Game {
 		double deltaSeconds = TICK_INTERVAL_MS / MS_PER_SECOND_D;
 		for (int index = 0; index < controllers.length; index++) {
 			Car car = controllers[index].getCar();
-			car.releaseAcceleration();
+			car.clearControls();
 			circuit.enforceTrackBoundaries(car);
 			car.applyPhysics(deltaSeconds);
 			for (int otherIndex = 0; otherIndex < index; otherIndex++) {

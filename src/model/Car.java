@@ -74,7 +74,6 @@ public class Car extends Observable {
 			int ranking,
 			String name,
 			GameFrame frame,
-			int playerNumber,
 			Circuit circuit) {
 		super();
 		this.circuit = circuit;
@@ -218,35 +217,49 @@ public class Car extends Observable {
 		positionMeters[1] += deltaYMeters;
 	}
 
-	/**
-	 * Arcade throttle: accelerate, brake, or neither (coast). Accelerate and
-	 * brake are mutually exclusive.
-	 */
-	public void setAccelerating(boolean accelerating) {
-		this.accelerating = accelerating;
-		if (accelerating) {
-			braking = false;
-		}
+	public void startAccelerating() {
+		accelerating = true;
+		braking = false;
 		refreshThrottleState();
 		setChanged();
 	}
 
-	public void setBraking(boolean braking) {
-		this.braking = braking;
-		if (braking) {
-			accelerating = false;
-		}
+	public void stopAccelerating() {
+		accelerating = false;
 		refreshThrottleState();
 		setChanged();
 	}
 
-	public void setSteeringLeft(boolean steeringLeft) {
-		this.steeringLeft = steeringLeft;
+	public void startBraking() {
+		braking = true;
+		accelerating = false;
+		refreshThrottleState();
 		setChanged();
 	}
 
-	public void setSteeringRight(boolean steeringRight) {
-		this.steeringRight = steeringRight;
+	public void stopBraking() {
+		braking = false;
+		refreshThrottleState();
+		setChanged();
+	}
+
+	public void startSteeringLeft() {
+		steeringLeft = true;
+		setChanged();
+	}
+
+	public void stopSteeringLeft() {
+		steeringLeft = false;
+		setChanged();
+	}
+
+	public void startSteeringRight() {
+		steeringRight = true;
+		setChanged();
+	}
+
+	public void stopSteeringRight() {
+		steeringRight = false;
 		setChanged();
 	}
 
