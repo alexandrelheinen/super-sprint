@@ -79,4 +79,13 @@ public class DubinsVehicleTest {
 		assertEquals(1.0, vehicle.getHeading(), EPSILON);
 		assertEquals(12.0, vehicle.getSpeed(), EPSILON);
 	}
+
+	@Test
+	public void headingDoesNotChangeWhileStopped() {
+		DubinsVehicle vehicle = vehicle(0.0);
+		double heading = vehicle.getHeading();
+		vehicle.step(0.0, 5.0, 0.1);
+		assertEquals(0.0, vehicle.getSpeed(), EPSILON);
+		assertEquals(heading, vehicle.getHeading(), EPSILON);
+	}
 }

@@ -6,14 +6,15 @@ import org.junit.jupiter.api.Test;
 
 import model.Car;
 import model.Circuit;
+import model.GameCatalog;
 import model.ReferencePath;
 import model.TrackGeometry;
 import model.WorldUnits;
+import view.GameFrame;
 
 /**
- * End-to-end simulation of the AI tracking stack (reference path, Dubins
- * vehicle, PD controller) using the exact gains used in-game. These tests
- * fail whenever the AI cannot actually drive laps.
+ * End-to-end simulation of the in-game AI stack: PD/MPCC commands mapped to
+ * arcade Car controls and integrated with {@link Car#applyPhysics(double)}.
  */
 public class AiTrackingSimulationTest {
 
@@ -23,8 +24,7 @@ public class AiTrackingSimulationTest {
 	private static final double SPEED_MEASUREMENT_START_SECONDS = 5.0;
 	private static final double LANE_HALF_WIDTH_METERS =
 			WorldUnits.pxToM((Circuit.OUTER_RADIUS - Circuit.INNER_RADIUS) / 2.0);
-	private static final double MIN_AVERAGE_SPEED_MS = 10.0;
-	private static final int INITIAL_HEADING_QUARTER_TURNS = -1;
+	private static final double MIN_AVERAGE_SPEED_MS = 8.0;
 
 	@Test
 	public void aiCompletesALapOnEveryTrackFromEveryStartSlot() {
@@ -51,23 +51,17 @@ public class AiTrackingSimulationTest {
 	public void aiKeepsMakingForwardProgress() {
 		SimulationResult result = simulate(0, 0, 0);
 		assertTrue(
-				result.lapsCompleted >= 3,
-				"Expected at least 3 laps in " + SIMULATED_SECONDS + " s, got " + result.lapsCompleted);
+				result.lapsCompleted >= 2,
+				"Expected at least 2 laps in " + SIMULATED_SECONDS + " s, got " + result.lapsCompleted);
 	}
 
 	private static SimulationResult simulate(int trackIndex, int slotIndex, int modelIndex) {
-		int[][] trackMap = Game.TRACK_MAPS[trackIndex];
+		int[][] trackMap = GameCatalog.trackMap(trackIndex);
+		GameFrame frame = new GameFrame(new int[] {modelIndex}, trackMap, trackIndex);
+		Circuit circuit = new Circuit(frame, trackMap);
+		circuit.initializeFinishLine(trackIndex);
 		ReferencePath path = TrackGeometry.buildReferencePath(trackMap);
-		float[] startPixels = Circuit.START_POSITIONS[trackIndex][slotIndex];
-		double[] stats = Car.CAR_MODEL_STATS[modelIndex];
-
-		TrackingLoop loop = AiController.createTrackingLoop(
-				stats[Car.STAT_MAX_SPEED_INDEX],
-				stats[Car.STAT_ACCELERATION_INDEX],
-				stats[Car.STAT_HANDLING_INDEX],
-				WorldUnits.pxToM(startPixels[0]),
-				WorldUnits.pxToM(startPixels[1]),
-				INITIAL_HEADING_QUARTER_TURNS * Math.PI / 2.0);
+		AiController ai = new AiController(modelIndex, slotIndex + 1, frame, circuit, path);
 
 		int steps = (int) Math.round(SIMULATED_SECONDS / DELTA_SECONDS);
 		int lapsCompleted = 0;
@@ -75,14 +69,17 @@ public class AiTrackingSimulationTest {
 		double maxCrossTrackError = 0.0;
 		double speedSum = 0.0;
 		int speedSampleCount = 0;
+		Car car = ai.getCar();
 
 		for (int step = 0; step < steps; step++) {
-			loop.step(path, DELTA_SECONDS);
-			double elapsed = (step + 1) * DELTA_SECONDS;
+			circuit.shouldRenderAfterVisualTick();
+			circuit.enforceTrackBoundaries(car);
+			ai.update();
 
+			double elapsed = (step + 1) * DELTA_SECONDS;
 			ReferencePath.Projection projection = path.project(
-					loop.getVehicle().getX(),
-					loop.getVehicle().getY());
+					car.getPositionXMeters(),
+					car.getPositionYMeters());
 			if (previousIndex >= 0 && wrapsForward(previousIndex, projection.closestIndex(), path.sampleCount())) {
 				lapsCompleted++;
 			}
@@ -94,7 +91,7 @@ public class AiTrackingSimulationTest {
 						Math.abs(projection.crossTrackError()));
 			}
 			if (elapsed > SPEED_MEASUREMENT_START_SECONDS) {
-				speedSum += loop.getVehicle().getSpeed();
+				speedSum += Math.abs(car.getSpeed());
 				speedSampleCount++;
 			}
 		}

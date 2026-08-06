@@ -2,7 +2,6 @@ package model;
 
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.util.Observable;
 
@@ -29,9 +28,14 @@ public class Car extends Observable {
 	 */
 	public static final int[][] CAR_MODEL_SPRITE_DIMENSIONS = GameConfig.CAR_MODEL_SPRITE_DIMENSIONS;
 
+	/**
+	 * Yaw rate scale shared by human and AI arcade controls: max turn rate is
+	 * {@code handling * TURN_RATE_PER_HANDLING} rad/s while moving.
+	 */
+	public static final double TURN_RATE_PER_HANDLING = 0.2;
+
 	private static final double COLLISION_BLEND = 0.1;
 	private static final double INITIAL_ANGLE = -Math.PI / 2;
-	private static final double TURN_RATE = 0.002;
 	private static final double STOP_THRESHOLD_MS = 1.1;
 	private static final double DECELERATION_FACTOR = 0.5;
 	private static final double COLLISION_ANGLE_FACTOR = 0.01;
@@ -59,6 +63,11 @@ public class Car extends Observable {
 	 * instead of mere proximity to the line.
 	 */
 	private int finishLineSide;
+
+	private boolean accelerating;
+	private boolean braking;
+	private boolean steeringLeft;
+	private boolean steeringRight;
 
 	public Car(
 			int modelIndex,
@@ -160,6 +169,11 @@ public class Car extends Observable {
 		return CAR_MODEL_STATS[modelIndex][statIndex];
 	}
 
+	/** Max yaw rate for this car's handling, in rad/s. */
+	public double getMaxTurnRate() {
+		return stats[STAT_HANDLING_INDEX] * TURN_RATE_PER_HANDLING;
+	}
+
 	public void setSpeed(float speedMs) {
 		this.speedMs = speedMs;
 	}
@@ -168,8 +182,24 @@ public class Car extends Observable {
 		this.angle = angle;
 	}
 
+	public boolean isAccelerating() {
+		return accelerating;
+	}
+
+	public boolean isBraking() {
+		return braking;
+	}
+
+	public boolean isSteeringLeft() {
+		return steeringLeft;
+	}
+
+	public boolean isSteeringRight() {
+		return steeringRight;
+	}
+
 	/**
-	 * Applies an externally integrated pose (e.g. Dubins tracker) and updates lap detection.
+	 * Applies an externally integrated pose (e.g. tests) and updates lap detection.
 	 */
 	public void applyKinematicState(double xMeters, double yMeters, float angle, float speedMs) {
 		positionMeters[0] = xMeters;
@@ -188,42 +218,69 @@ public class Car extends Observable {
 		positionMeters[1] += deltaYMeters;
 	}
 
-	public void applySteeringInput(int keyCode) {
-		switch (keyCode) {
-			case KeyEvent.VK_LEFT:
-			case KeyEvent.VK_A:
-				if (speedMs != 0.0) {
-					angle -= stats[STAT_HANDLING_INDEX] * TURN_RATE;
-				}
-				break;
-			case KeyEvent.VK_RIGHT:
-			case KeyEvent.VK_D:
-				if (speedMs != 0.0) {
-					angle += stats[STAT_HANDLING_INDEX] * TURN_RATE;
-				}
-				break;
-			case KeyEvent.VK_UP:
-			case KeyEvent.VK_W:
-				accelerationMs2 = stats[STAT_ACCELERATION_INDEX];
-				motionState = MOTION_STATE_ACCELERATING;
-				break;
-			case KeyEvent.VK_DOWN:
-			case KeyEvent.VK_S:
-				accelerationMs2 = -stats[STAT_ACCELERATION_INDEX];
-				motionState = MOTION_STATE_ACCELERATING;
-				break;
-			default:
-				break;
+	/**
+	 * Arcade throttle: accelerate, brake, or neither (coast). Accelerate and
+	 * brake are mutually exclusive.
+	 */
+	public void setAccelerating(boolean accelerating) {
+		this.accelerating = accelerating;
+		if (accelerating) {
+			braking = false;
 		}
+		refreshThrottleState();
 		setChanged();
 	}
 
+	public void setBraking(boolean braking) {
+		this.braking = braking;
+		if (braking) {
+			accelerating = false;
+		}
+		refreshThrottleState();
+		setChanged();
+	}
+
+	public void setSteeringLeft(boolean steeringLeft) {
+		this.steeringLeft = steeringLeft;
+		setChanged();
+	}
+
+	public void setSteeringRight(boolean steeringRight) {
+		this.steeringRight = steeringRight;
+		setChanged();
+	}
+
+	/** Clears all held arcade controls and coasts. */
+	public void clearControls() {
+		accelerating = false;
+		braking = false;
+		steeringLeft = false;
+		steeringRight = false;
+		releaseAcceleration();
+	}
+
 	public void releaseAcceleration() {
+		accelerating = false;
+		braking = false;
 		accelerationMs2 = 0;
 		motionState = MOTION_STATE_DECELERATING;
+		setChanged();
 	}
 
 	public void applyPhysics(double deltaSeconds) {
+		refreshThrottleState();
+
+		int steerDirection = 0;
+		if (steeringLeft && !steeringRight) {
+			steerDirection = -1;
+		} else if (steeringRight && !steeringLeft) {
+			steerDirection = 1;
+		}
+		// Same rule for human and AI: no yaw authority while stopped.
+		if (steerDirection != 0 && speedMs != 0.0) {
+			angle += steerDirection * getMaxTurnRate() * deltaSeconds;
+		}
+
 		if (motionState == MOTION_STATE_DECELERATING) {
 			if (speedMs < STOP_THRESHOLD_MS && speedMs > -STOP_THRESHOLD_MS) {
 				accelerationMs2 = 0;
@@ -245,6 +302,19 @@ public class Car extends Observable {
 
 		setChanged();
 		notifyRenderObservers();
+	}
+
+	private void refreshThrottleState() {
+		if (accelerating) {
+			accelerationMs2 = stats[STAT_ACCELERATION_INDEX];
+			motionState = MOTION_STATE_ACCELERATING;
+		} else if (braking) {
+			accelerationMs2 = -stats[STAT_ACCELERATION_INDEX];
+			motionState = MOTION_STATE_ACCELERATING;
+		} else if (motionState != MOTION_STATE_DECELERATING && motionState != MOTION_STATE_IDLE) {
+			accelerationMs2 = 0;
+			motionState = MOTION_STATE_DECELERATING;
+		}
 	}
 
 	/**
