@@ -10,11 +10,15 @@ import model.ReferencePath;
  *
  * <p>Single-shooting NLP over speed and turn-rate commands, warm-started from
  * PD and refined with smooth pass seeds + light coordinate descent. Walls are
- * near no-go; progress and speed are strongly rewarded so traffic is bypassed
- * rather than waited out; racing-line contouring is weak inside a free band.
+ * near no-go; car actuator limits (max speed, acceleration, turn rate) enter as
+ * soft saturating costs; progress and speed are strongly rewarded so traffic is
+ * bypassed rather than waited out; racing-line contouring is weak inside a free
+ * band. The Dubins plant still hard-saturates actuators when integrating.
  */
 public final class DubinsMpccPlanner {
 
+	/** Refine may probe mildly past actuator limits; soft costs pull back. */
+	private static final double SOFT_LIMIT_SEARCH_SCALE = 1.5;
 	private final MpccConfig config;
 	private final PdPathFollowController warmStartController;
 
@@ -182,6 +186,8 @@ public final class DubinsMpccPlanner {
 				* Math.max(1.0, vehicle.getMaxAcceleration() * config.getDtSeconds());
 		double turnStep = config.getRefineStepScale() * Math.max(0.15, vehicle.getMaxTurnRate() * 0.18);
 		double bestCost = evaluate(vehicle, path, obstacles, speeds, turns);
+		double speedSearchMax = vehicle.getMaxSpeed() * SOFT_LIMIT_SEARCH_SCALE;
+		double turnSearchMax = vehicle.getMaxTurnRate() * SOFT_LIMIT_SEARCH_SCALE;
 
 		for (int pass = 0; pass < config.getRefinePassCount(); pass++) {
 			boolean improved = false;
@@ -196,7 +202,7 @@ public final class DubinsMpccPlanner {
 						true,
 						speedStep,
 						vehicle.getMinSpeed(),
-						vehicle.getMaxSpeed(),
+						speedSearchMax,
 						bestCost);
 				double nextCost = improveScalar(
 						vehicle,
@@ -207,8 +213,8 @@ public final class DubinsMpccPlanner {
 						index,
 						false,
 						turnStep,
-						-vehicle.getMaxTurnRate(),
-						vehicle.getMaxTurnRate(),
+						-turnSearchMax,
+						turnSearchMax,
 						bestCost);
 				if (nextCost < bestCost - 1e-9) {
 					improved = true;
@@ -327,6 +333,13 @@ public final class DubinsMpccPlanner {
 			double deltaSpeed = speeds[index] - previousSpeedCommand;
 			double deltaTurn = turns[index] - previousTurnCommand;
 			cost += config.getWeightControl() * (deltaSpeed * deltaSpeed + deltaTurn * deltaTurn);
+			cost += actuatorSoftConstraintCost(
+					speeds[index],
+					turns[index],
+					deltaSpeed,
+					deltaTurn,
+					dt,
+					vehicle);
 			previousSpeedCommand = speeds[index];
 			previousTurnCommand = turns[index];
 
@@ -334,6 +347,45 @@ public final class DubinsMpccPlanner {
 			cost += obstacleCost(rollout.getX(), rollout.getY(), time, obstacles);
 		}
 		return cost;
+	}
+
+	/**
+	 * Soft saturating penalties for car-model actuator limits. The Dubins plant
+	 * still hard-clips during rollout; these terms make the NLP prefer feasible
+	 * unsaturated commands instead of relying only on post-hoc clamping.
+	 */
+	private double actuatorSoftConstraintCost(
+			double speedCommand,
+			double turnRateCommand,
+			double deltaSpeed,
+			double deltaTurn,
+			double dtSeconds,
+			DubinsVehicle vehicle) {
+		double speedHigh = speedCommand - vehicle.getMaxSpeed();
+		double speedLow = vehicle.getMinSpeed() - speedCommand;
+		double turnExcess = Math.abs(turnRateCommand) - vehicle.getMaxTurnRate();
+		double accelExcess = 0.0;
+		double turnAccelExcess = 0.0;
+		if (dtSeconds > 1e-12) {
+			accelExcess = Math.abs(deltaSpeed) / dtSeconds - vehicle.getMaxAcceleration();
+			turnAccelExcess = Math.abs(deltaTurn) / dtSeconds - vehicle.getMaxTurnRateDot();
+		}
+		return config.getWeightSpeedLimit() * saturatingViolation(Math.max(speedHigh, speedLow))
+				+ config.getWeightTurnLimit() * saturatingViolation(turnExcess)
+				+ config.getWeightAcceleration() * (
+						saturatingViolation(accelExcess) + saturatingViolation(turnAccelExcess));
+	}
+
+	/**
+	 * Soft barrier used for actuator, wall, and obstacle slack — grows then
+	 * saturates so a single huge violation cannot dominate every other term.
+	 */
+	private static double saturatingViolation(double violation) {
+		if (violation <= 0.0) {
+			return 0.0;
+		}
+		double saturated = violation / (1.0 + 0.65 * violation);
+		return saturated * saturated;
 	}
 
 	/**
@@ -372,8 +424,7 @@ public final class DubinsMpccPlanner {
 			double clearance = distance - config.getEgoRadiusMeters() - obstacle.getRadiusMeters();
 			double violation = config.getObstacleSafeMarginMeters() - clearance;
 			if (violation > 0.0) {
-				double saturated = violation / (1.0 + 0.65 * violation);
-				total += config.getWeightObstacle() * saturated * saturated;
+				total += config.getWeightObstacle() * saturatingViolation(violation);
 			}
 		}
 		return total;

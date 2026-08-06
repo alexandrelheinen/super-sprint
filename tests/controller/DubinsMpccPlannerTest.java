@@ -223,6 +223,30 @@ public class DubinsMpccPlannerTest {
 						+ passCost + " follow=" + followCost);
 	}
 
+	@Test
+	public void softActuatorLimitsPreferFeasibleCommandsOverIdenticalPlantRollout() {
+		ReferencePath path = TestPaths.straightEast(240, 0.5);
+		// Already at max speed: commanding 2x maxSpeed saturates to the same plant
+		// trajectory, so only the soft actuator terms can separate the costs.
+		DubinsVehicle vehicle = vehicleAt(5.0, 0.0, 0.0, 30.0);
+		DubinsMpccPlanner planner = planner(30.0);
+		int horizon = planner.getConfig().getHorizonStepCount();
+
+		double[] feasibleSpeeds = fill(horizon, 30.0);
+		double[] infeasibleSpeeds = fill(horizon, 60.0);
+		double[] turns = fill(horizon, 0.0);
+
+		double feasibleCost = planner.evaluate(vehicle, path, List.of(), feasibleSpeeds, turns);
+		double infeasibleCost = planner.evaluate(vehicle, path, List.of(), infeasibleSpeeds, turns);
+		assertTrue(
+				infeasibleCost > feasibleCost + 1.0,
+				"Soft maxSpeed constraint should penalize overspeed commands even when the plant clips");
+		assertTrue(
+				planner.getConfig().getWeightSpeedLimit() > 0.0
+						&& planner.getConfig().getWeightTurnLimit() > 0.0
+						&& planner.getConfig().getWeightAcceleration() > 0.0);
+	}
+
 	private static DubinsMpccPlanner planner(double cruiseSpeed) {
 		PdPathFollowController pd = new PdPathFollowController(4.0, 1.0, 2.5, 2.4, 0.8, cruiseSpeed, 0.45);
 		return new DubinsMpccPlanner(MpccConfig.DEFAULT, pd);
