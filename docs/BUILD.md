@@ -33,6 +33,7 @@ build/generated/…        Build-time sprites (cars, Kenney, track previews)
 | `./gradlew test` | Run the JUnit 5 suite |
 | `./gradlew smokeTest` | Headless launch test (Xvfb, short timeout) |
 | `./gradlew demoRace -PTRACK=3 -PCARS=0,0,0,0` | All-AI exhibition race |
+| `./gradlew recordDemo -PTRACK=3 -PCARS=0,0,0,0` | Record demo MP4 (needs DISPLAY/ffmpeg) |
 | `./gradlew packageRelease -PappVersion=1.2.3` | Portable zip (needs JRE to run) |
 | `./gradlew packageRelease -PappVersion=1.2.3 -PappImage=true` | Portable zip + OS app-image |
 | `./gradlew clean` | Remove build outputs |
@@ -61,7 +62,9 @@ During the build, Gradle:
 
 ## Release demo videos
 
-Pushing a `v*` tag triggers `.github/workflows/release-demos.yml`. The job records two MP4s and attaches them to the GitHub Release (fastest pack on Dune Horseshoe, slowest pack on Desert Elbow).
+Pushing a `v*` tag triggers `.github/workflows/release-demos.yml`. The job runs
+`./gradlew recordDemo` twice under Xvfb and attaches the MP4s to the GitHub Release
+(fastest pack on Dune Horseshoe, slowest pack on Desert Elbow).
 
 ## Release binaries
 

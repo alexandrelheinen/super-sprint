@@ -47,13 +47,12 @@ jobs:
           xvfb-run -a -s '-screen 0 1280x1024x24' bash -lc '
             openbox &
             sleep 1
-            ./gradlew --quiet classes processResources
-            bash scripts/record-demo-race.sh \
-              artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4 \
-              3 2,1,7,4 3
-            bash scripts/record-demo-race.sh \
-              artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4 \
-              1 5,6,3,0 3
+            ./gradlew --no-daemon recordDemo \
+              -PTRACK=3 -PCARS=2,1,7,4 -PLAPS=3 \
+              -PDEMO_MP4=artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
+            ./gradlew --no-daemon recordDemo \
+              -PTRACK=1 -PCARS=5,6,3,0 -PLAPS=3 \
+              -PDEMO_MP4=artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
           '
 
       - name: Upload demo videos as workflow artifacts

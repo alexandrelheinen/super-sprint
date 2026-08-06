@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Headless smoke test: launch the installed application briefly under Xvfb.
+# Headless smoke test: launch the Gradle installDist application briefly under Xvfb.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
 SMOKE_TIMEOUT_SEC="${SMOKE_TIMEOUT_SEC:-5}"
-APP_SCRIPT="$(echo build/install/*/bin/super-sprint-supelec)"
+APP_SCRIPT="${ROOT_DIR}/build/install/super-sprint-supelec/bin/super-sprint-supelec"
 
 if [[ ! -x "${APP_SCRIPT}" ]]; then
 	echo "Missing installed app launcher at ${APP_SCRIPT}. Run: ./gradlew installDist" >&2
