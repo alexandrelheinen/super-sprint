@@ -7,6 +7,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional existing release tag to attach the new MP4s to (e.g. v2.5)'
+        required: false
+        type: string
 
 concurrency:
   group: release-demos-${{ github.ref }}
@@ -41,30 +46,31 @@ jobs:
       - name: Record release demo races
         env:
           DEMO_FPS: '30'
+          DEMO_MIN_CONTENT_RATIO: '0.15'
         run: |
           set -euo pipefail
           # Grid order is ascending maxSpeed (slowest in front, fastest last).
           # Fastest four: 2,1,7,4 on Dune Horseshoe. Slowest four: 5,6,3,0 on Desert Elbow.
           FAST_MP4=artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
           SLOW_MP4=artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
-          # Fresh Xvfb per demo so a previous Java/openbox session cannot leave
-          # stale window ids that break xdotool on the next recording.
-          record_one() {
-            local track="$1" cars="$2" output="$3"
-            # Large framebuffer + 1x Java UI scale; the record script grabs the
-            # full Xvfb screen so oversized Swing shells cannot break x11grab.
-            xvfb-run -a -s '-screen 0 2560x1600x24' bash -lc "
-              set -euo pipefail
-              openbox &
-              sleep 1
-              ./gradlew --no-daemon recordDemo \
-                -PTRACK=${track} -PCARS=${cars} -PLAPS=3 \
-                -PDEMO_MP4=${output}
-            "
-            test -s "${output}"
-          }
-          record_one 3 2,1,7,4 "${FAST_MP4}"
-          record_one 1 5,6,3,0 "${SLOW_MP4}"
+          # Keep Xvfb at 1280x1024: AppShell sizes itself as a fraction of the
+          # screen, so a huge framebuffer inflates the window and slows paints.
+          # Record both demos in one Xvfb/openbox session — a fresh server per
+          # demo races with Gradle/xdotool and can finish before a mapped window
+          # is visible (v2.5 shipped a near-black Desert Elbow clip that way).
+          xvfb-run -a -s '-screen 0 1280x1024x24' bash -lc "
+            set -euo pipefail
+            openbox &
+            sleep 1
+            ./gradlew --no-daemon recordDemo \
+              -PTRACK=3 -PCARS=2,1,7,4 -PLAPS=3 \
+              -PDEMO_MP4=${FAST_MP4}
+            ./gradlew --no-daemon recordDemo \
+              -PTRACK=1 -PCARS=5,6,3,0 -PLAPS=3 \
+              -PDEMO_MP4=${SLOW_MP4}
+          "
+          test -s "${FAST_MP4}"
+          test -s "${SLOW_MP4}"
 
       - name: Upload demo videos as workflow artifacts
         uses: actions/upload-artifact@v4
@@ -76,13 +82,14 @@ jobs:
           if-no-files-found: error
 
       - name: Attach demo videos to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
           files: |
             artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
             artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
           fail_on_unmatched_files: true
-          generate_release_notes: true
+          generate_release_notes: ${{ inputs.release_tag == '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
