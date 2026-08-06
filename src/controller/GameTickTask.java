@@ -47,6 +47,11 @@ public class GameTickTask extends TimerTask {
 
 		circuit.tick();
 		for (int index = 0; index < controllers.length; index++) {
+			if (controllers[index] instanceof AiController aiController) {
+				aiController.updateOpponents(controllers);
+			}
+		}
+		for (int index = 0; index < controllers.length; index++) {
 			circuit.enforceTrackBoundaries(controllers[index].getCar());
 			controllers[index].update();
 			for (int otherIndex = 0; otherIndex < index; otherIndex++) {

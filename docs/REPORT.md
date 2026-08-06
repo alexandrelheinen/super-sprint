@@ -143,9 +143,10 @@ AI opponents follow a geometric **reference path** (`TrackGeometry` / `Reference
 
 - Cross-track and heading errors produce steering commands.
 - Speed commands ramp toward a cruise speed with curvature feedforward on arcs.
+- When another car is nearby, a sparse short-horizon **MPCC** (`DubinsMpccPlanner` / `HybridMpccPathFollowController`) replans speed and turn-rate commands with soft distance penalties so AI cars can locally avoid collisions without a CasADi dependency.
 - The resulting pose is applied back to the game `Car` each tick.
 
-This keeps arcade AI opponents on the racing line without full planning.
+This keeps arcade AI opponents on the racing line while still reacting to traffic.
 
 ### 4.4 Hall of Fame (`HallOfFame`, `Result`)
 
@@ -254,9 +255,11 @@ The 2026 maintenance work added contributor standards, a reproducible Makefile b
 | `Game` | controller | Race session orchestration |
 | `Controller` | controller | Abstract player/AI binding to `Car` |
 | `HumanController` | controller | Keyboard input |
-| `AiController` | controller | Path-following AI |
+| `AiController` | controller | Path-following AI with sparse MPCC avoidance |
 | `PdPathFollowController` | controller | PD tracking on a reference path |
-| `TrackingLoop` | controller | Dubins vehicle + PD step |
+| `HybridMpccPathFollowController` | controller | PD default + sparse Dubins MPCC |
+| `DubinsMpccPlanner` | controller | Short-horizon shooting MPCC |
+| `TrackingLoop` | controller | Dubins vehicle + path-follower step |
 | `GameTickTask` | controller | Timer tick callback |
 | `Car` | model | Physics and rendering notifications |
 | `Circuit` | model | Track grid, boundaries, timing |

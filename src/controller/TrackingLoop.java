@@ -9,15 +9,19 @@ import model.ReferencePath;
 public class TrackingLoop {
 
 	private final DubinsVehicle vehicle;
-	private final PdPathFollowController controller;
+	private final PathFollowController controller;
 
-	public TrackingLoop(DubinsVehicle vehicle, PdPathFollowController controller) {
+	public TrackingLoop(DubinsVehicle vehicle, PathFollowController controller) {
 		this.vehicle = vehicle;
 		this.controller = controller;
 	}
 
 	public DubinsVehicle getVehicle() {
 		return vehicle;
+	}
+
+	public PathFollowController getController() {
+		return controller;
 	}
 
 	/**
