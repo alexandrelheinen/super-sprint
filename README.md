@@ -56,6 +56,11 @@ make demo-race TRACK=1 CARS="0 1 2 3"
 make record-demo TRACK=3 CARS=0,0,0,0
 ```
 
+Pushing a `v*` tag runs `.github/workflows/release-demos.yml`, which calls `make record-demo` twice under Xvfb and attaches the MP4s to the GitHub Release:
+
+1. **Four fastest cars** (`2,1,7,4`) on Dune Horseshoe, ascending `maxSpeed` grid order.
+2. **Four slowest cars** (`5,6,3,0`) on Desert Elbow, same ascending grid order.
+
 See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and troubleshooting.
 
 ## Controls
