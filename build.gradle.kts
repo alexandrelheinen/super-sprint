@@ -129,13 +129,14 @@ tasks.register<Exec>("recordDemo") {
 	val cars = providers.gradleProperty("CARS")
 	val laps = providers.gradleProperty("LAPS").orElse("3")
 	val output = providers.gradleProperty("DEMO_MP4")
-	environment("RECORD_JAR", tasks.jar.flatMap { it.archiveFile }.get().asFile.absolutePath)
+	val jarPath = tasks.jar.flatMap { it.archiveFile }
 	// Placeholder replaced in doFirst once -PTRACK/-PCARS are available.
 	commandLine("bash", "-c", "echo 'recordDemo misconfigured'; exit 1")
 	doFirst {
 		if (!track.isPresent || !cars.isPresent) {
 			throw GradleException("Missing -PTRACK=<trackId> and/or -PCARS=<carIds>")
 		}
+		environment("RECORD_JAR", jarPath.get().asFile.absolutePath)
 		val args = mutableListOf("bash", "scripts/record-demo-race.sh")
 		if (output.isPresent) {
 			args += output.get()
