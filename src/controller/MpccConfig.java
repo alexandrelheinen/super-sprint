@@ -40,9 +40,7 @@ public final class MpccConfig {
 			2.2,
 			2.5,
 			1.2,
-			2,
-			0.94,
-			0.30);
+			2);
 
 	private final int horizonStepCount;
 	private final double dtSeconds;
@@ -64,8 +62,6 @@ public final class MpccConfig {
 	private final double contourDeadzoneMeters;
 	private final double refineStepScale;
 	private final int refinePassCount;
-	private final double cruiseSpeedRatio;
-	private final double curvatureGain;
 
 	public MpccConfig(
 			int horizonStepCount,
@@ -87,9 +83,7 @@ public final class MpccConfig {
 			double wallTriggerMarginMeters,
 			double contourDeadzoneMeters,
 			double refineStepScale,
-			int refinePassCount,
-			double cruiseSpeedRatio,
-			double curvatureGain) {
+			int refinePassCount) {
 		if (weightWall <= weightObstacle) {
 			throw new IllegalArgumentException(
 					"weightWall must exceed weightObstacle (walls are more critical than cars)");
@@ -114,8 +108,6 @@ public final class MpccConfig {
 		this.contourDeadzoneMeters = contourDeadzoneMeters;
 		this.refineStepScale = refineStepScale;
 		this.refinePassCount = refinePassCount;
-		this.cruiseSpeedRatio = cruiseSpeedRatio;
-		this.curvatureGain = curvatureGain;
 	}
 
 	public int getHorizonStepCount() {
@@ -196,13 +188,5 @@ public final class MpccConfig {
 
 	public int getRefinePassCount() {
 		return refinePassCount;
-	}
-
-	public double getCruiseSpeedRatio() {
-		return cruiseSpeedRatio;
-	}
-
-	public double getCurvatureGain() {
-		return curvatureGain;
 	}
 }

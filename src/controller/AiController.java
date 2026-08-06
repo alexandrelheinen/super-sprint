@@ -21,7 +21,13 @@ public class AiController extends Controller {
 	private static final double CROSS_TRACK_KP_PER_HANDLING = 0.06;
 	private static final double SPEED_KP = 2.4;
 	private static final double SPEED_KD = 0.8;
-	private static final double CRUISE_SPEED_RATIO = 0.88;
+	/**
+	 * Target straight-line cruise as a fraction of the car model's
+	 * {@code maxSpeed}. Must stay at {@code 1.0} so PD and MPCC share the same
+	 * saturated top speed — a softer PD cruise lets pack cars on MPCC pull away
+	 * permanently from a loner still on PD.
+	 */
+	private static final double CRUISE_SPEED_RATIO = 1.0;
 
 	private final ReferencePath referencePath;
 	private final TrackingLoop trackingLoop;
