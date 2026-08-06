@@ -68,6 +68,17 @@ make smoke-test
 
 This wraps the JVM with `xvfb-run` and terminates after five seconds. A exit code of `0` means the process started successfully.
 
+## Release demo videos
+
+Pushing a `v*` tag triggers `.github/workflows/release-demos.yml`. The job runs `make record-demo` twice under Xvfb and attaches the MP4s to the GitHub Release:
+
+| Asset | Command |
+|-------|---------|
+| `ai-demo-fastest-increasing-dune-horseshoe.mp4` | `make record-demo TRACK=3 CARS=2,1,7,4` |
+| `ai-demo-slowest-increasing-desert-elbow.mp4` | `make record-demo TRACK=1 CARS=5,6,3,0` |
+
+Car lists are ascending `maxSpeed` (slowest in front, fastest last): fastest pack `2,1,7,4`, slowest pack `5,6,3,0`.
+
 ## Clean
 
 ```bash

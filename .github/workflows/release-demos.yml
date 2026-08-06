@@ -1,0 +1,74 @@
+name: Release demos
+
+# Records two all-AI exhibition races on a v* tag push and attaches the MP4s to
+# the GitHub Release for that tag.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: release-demos-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  record-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install recording dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb ffmpeg xdotool python3-pil openbox
+
+      - name: Record release demo races
+        env:
+          DEMO_FPS: '30'
+        run: |
+          # Grid order is ascending maxSpeed (slowest in front, fastest last).
+          # Fastest four: 2,1,7,4 on Dune Horseshoe. Slowest four: 5,6,3,0 on Desert Elbow.
+          xvfb-run -a -s '-screen 0 1280x1024x24' bash -lc '
+            openbox &
+            sleep 1
+            make record-demo \
+              TRACK=3 \
+              CARS=2,1,7,4 \
+              LAPS=3 \
+              DEMO_MP4=artifacts/demo/ai-demo-fastest-increasing-dune-horseshoe.mp4
+            make record-demo \
+              TRACK=1 \
+              CARS=5,6,3,0 \
+              LAPS=3 \
+              DEMO_MP4=artifacts/demo/ai-demo-slowest-increasing-desert-elbow.mp4
+          '
+
+      - name: Upload demo videos as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-demo-videos
+          path: artifacts/demo/*.mp4
+          if-no-files-found: error
+
+      - name: Attach demo videos to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/demo/*.mp4
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
